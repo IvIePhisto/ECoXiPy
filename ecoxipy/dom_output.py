@@ -1,20 +1,21 @@
 # -*- coding: utf-8 -*-
 
-from . import Output
+ur'''\
+The :class:`ecoxipy.dom_output.DOMOutput` creates DOM structures:
 
+>>> dom_output = DOMOutput()
+>>> doc = dom_output.document
+>>> from ecoxipy import MarkupBuilder
+>>> b = MarkupBuilder(dom_output)
+>>> element = b.section(b.p('Hello World!'), None, b.p(u'äöüß'), b.p('<&>'), b('<raw/>text', b.br, (str(i) for i in range(3)), (str(i) for i in range(3, 6))), attr='\'"<&>')
+>>> element.toxml() == u"""<section attr="'&quot;&lt;&amp;&gt;"><p>Hello World!</p><p>äöüß</p><p>&lt;&amp;&gt;</p><raw/>text<br/>012345</section>"""
+True
+'''
 
-def _dom_create_element(document, name, attributes, children):
-    element = document.createElement(name)
-    for name in attributes:
-        element.setAttribute(name, attributes[name])
-    for child in children:
-        if isinstance(child, dom.Node):
-            element.appendChild(child)
-        else:
-            child = document.createTextNode(child)
-            element.appendChild(child)
-    document.documentElement = element
-    return element
+from xml import dom
+from xml.dom import minidom
+
+from . import Output, _dom_create_element
 
 
 class DOMOutput(Output):

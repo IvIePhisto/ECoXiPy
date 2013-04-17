@@ -1,5 +1,20 @@
 # -*- coding: utf-8 -*-
 
+ur'''\
+:class:`ecoxipy.string_output.StringOutput` creates strings of encoded
+XML and is aimed at high performance by using string concatenation:
+
+>>> xml_output = StringOutput(out_encoding=None)
+>>> from ecoxipy import MarkupBuilder
+>>> b = MarkupBuilder(xml_output)
+>>> xml = b.section(b.p('Hello World!'), None, b.p(u'äöüß'), b.p('<&>'), b('<raw/>text', b.br, (str(i) for i in range(3)), (str(i) for i in range(3, 6))), attr='\'"<&>')
+>>> xml == u"""<section attr="'&quot;&lt;&amp;&gt;"><p>Hello World!</p><p>äöüß</p><p>&lt;&amp;&gt;</p><raw/>text<br/>012345</section>"""
+True
+'''
+
+
+from xml.sax.saxutils import escape, quoteattr
+
 from . import Output
 
 
@@ -7,9 +22,9 @@ class StringOutput(Output):
     '''A :class:`Output` implementation which creates XML as strings of the
     specified encoding.
 
-    :param in_encoding: The name of the encoding to use decode :class:`str`
+    :param in_encoding: The name of the encoding to decode :class:`str`
         instances if neccessary.
-    :param out_encoding: The name of the encoding to use encode
+    :param out_encoding: The name of the encoding to encode
         :class:`unicode` instances or :const:`None`.
     :param entities: A mapping of characters to text to replace them with
         when escaping.
@@ -109,24 +124,22 @@ class StringOutput(Output):
         :returns: The XML string created.
         :rtype: class:`str`
         '''
-        element_name = self._escape(self._decode(name))
+        element_name = self._escape(self._encode(self._decode(name)))
         attributes_string = self._join([
             self._format_attribute.format(
-                self._escape(self._decode(attribute_name)),
-                self._quoteattr(
-                        self._decode(attributes[attribute_name])
-                )
+                self._escape(self._encode(self._decode(attribute_name))),
+                self._quoteattr(self._encode(self._decode(
+                    attributes[attribute_name])))
             )
             for attribute_name in attributes
         ])
-        # TODO finish decoding, encoding
         if len(children) == 0:
             element_string = self._format_element_empty.format(
                 element_name, attributes_string)
         else:
             children_string = self._join([
                 child if isinstance(child, self._xml_string)
-                    else self._escape(child)
+                    else self._escape(self._encode(self._decode(child)))
                 for child in children
             ])
             element_string = self._format_element.format(
@@ -155,4 +168,40 @@ class StringOutput(Output):
 class _XMLStr(str): pass
 
 class _XMLUnicode(unicode): pass
+
+
+def xml_string_namespace(builder_name, vocabulary):
+    ur'''\
+    Uses :func:`ecoxipy.markup_builder_namespace` to decorate the target
+    function with the given ``vocabulary``.
+
+    :param builder_name: The name the :class:`MarkupBuilder` instance is
+        available under.
+    :param vocabulary: An iterable of element names.
+    :returns: The decorated function with it's namespace extented with the
+        element creators defined by the vocabulary.
+
+
+    Example:
+
+    >>> builds_html = xml_string_namespace('_b', {'section', 'p', 'br'})
+    >>> @builds_html
+    ... def view(value):
+    ...     return section(
+    ...         p(value),
+    ...         None,
+    ...         p(u'äöüß'),
+    ...         p('<&>'),
+    ...         _b('<raw/>text', br, (str(i) for i in range(3))),
+    ...         (str(i) for i in range(3, 6)),
+    ...         attr='\'"<&>'
+    ...     )
+    ...
+    >>> view('Hello World!') == u"""<section attr="'&quot;&lt;&amp;&gt;"><p>Hello World!</p><p>äöüß</p><p>&lt;&amp;&gt;</p><raw/>text<br/>012345</section>""".encode('utf-8')
+    True
+    '''
+    from tinkerpy import flatten
+    from . import markup_builder_namespace
+    return markup_builder_namespace(StringOutput, builder_name,
+        *flatten(vocabulary))
 

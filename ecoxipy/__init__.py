@@ -2,20 +2,17 @@
 
 '''\
 This package provides facilities to easily build `XML
-<http://www.w3.org/XML/>` documents.
+<http://www.w3.org/XML/>` documents. It's module provides the basic API,
+see :mod:`ecoxipy.string_output`, :mod:`ecoxipy.element_output` and
+:mod:`ecoxipy.dom_output` for :class:`Output` implementations.
+:mod:`ecoxipy.html` is a convenient :func:`tinkerpy.namespace` to create HTML.
 '''
 
-import inspect
-import re
+
 import collections
+from xml import dom
 from abc import ABCMeta, abstractmethod
 
-from xml.sax.saxutils import XMLGenerator, escape, quoteattr
-from xml.sax.xmlreader import AttributesImpl
-from xml import dom
-from xml.dom import minidom
-
-from StringIO import StringIO
 
 
 class MarkupBuilder(object):
@@ -81,155 +78,6 @@ class MarkupBuilder(object):
     of arguments. In this process the arguments are parsed, converted,
     encoded or kept the same, depending on their type and the
     :class:`Output` implementation.
-
-
-    Examples:
-
-    >>> b = MarkupBuilder()
-    >>> element = b.article(
-    ...     {'umlaut-attribute': u'äöüß', 'lang': 'de'},
-    ...     b.h1('<Example>', data='to quote: <&>"\''),
-    ...     b.p('Hello ', b.em('World'), '!'),
-    ...     None,
-    ...     b.div(
-    ...         # Insert elements with special names using subscripts:
-    ...         b['data-element'](u'äöüß <&>'),
-    ...         # Import content by calling the builder:
-    ...         b(
-    ...             '<p attr="value">raw content</p>Some Text',
-    ...             # Create an element without calling the creating method:
-    ...             b.br,
-    ...             (str(i) for i in range(3))
-    ...         ),
-    ...         (str(i) for i in range(3, 6))
-    ...     ),
-    ...     lang='en', count=1
-    ... )
-
-
-    Getting the :class:`unicode` value of an :class:`Element` creates an
-    XML unicode string:
-
-    >>> document_string = u"""<article count="1" lang="en" umlaut-attribute="äöüß"><h1 data="to quote: &lt;&amp;&gt;&quot;'">&lt;Example&gt;</h1><p>Hello <em>World</em>!</p><div><data-element>äöüß &lt;&amp;&gt;</data-element><p attr="value">raw content</p>Some Text<br/>012345</div></article>"""
-    >>> unicode(element) == document_string
-    True
-
-
-    Getting the :class:`str` value of an :class:`Element` creates an `UTF-8`
-    encoded XML string:
-
-    >>> str(element) == document_string.encode('utf-8')
-    True
-
-
-    You can also create indented XML when calling the
-    :meth:`Element.__unicode__` and :meth:`Element.__str__` by supplying the
-    ``indent_incr`` argument:
-
-    >>> indented_document_string = u"""\
-    ... <article count="1" lang="en" umlaut-attribute="äöüß">
-    ...     <h1 data="to quote: &lt;&amp;&gt;&quot;'">
-    ...         &lt;Example&gt;
-    ...     </h1>
-    ...     <p>
-    ...         Hello
-    ...         <em>
-    ...             World
-    ...         </em>
-    ...         !
-    ...     </p>
-    ...     <div>
-    ...         <data-element>
-    ...             äöüß &lt;&amp;&gt;
-    ...         </data-element>
-    ...         <p attr="value">
-    ...             raw content
-    ...         </p>
-    ...         Some Text
-    ...         <br/>
-    ...         0
-    ...         1
-    ...         2
-    ...         3
-    ...         4
-    ...         5
-    ...     </div>
-    ... </article>
-    ... """
-    >>> element.__unicode__(indent_incr='    ') == indented_document_string
-    True
-    >>> element.__str__(indent_incr='    ') == indented_document_string.encode('utf-8')
-    True
-
-
-    :class:`Element` instances can also generate SAX events (with
-    :meth:`Element.create_sax_events`):
-
-    >>> from StringIO import StringIO
-    >>> string_out = StringIO()
-    >>> content_handler = element.create_sax_events(out=string_out)
-    >>> string_out.getvalue() == u"""<article lang="en" count="1" umlaut-attribute="äöüß"><h1 data="to quote: &lt;&amp;&gt;&quot;'">&lt;Example&gt;</h1><p>Hello <em>World</em>!</p><div><data-element>äöüß &lt;&amp;&gt;</data-element><p attr="value">raw content</p>Some Text<br></br>012345</div></article>""".encode('utf-8')
-    True
-    >>> string_out.close()
-    >>> string_out = StringIO()
-    >>> content_handler = element.create_sax_events(indent_incr='    ', out=string_out)
-    >>> string_out.getvalue() == u"""\
-    ... <article lang="en" count="1" umlaut-attribute="äöüß">
-    ...     <h1 data="to quote: &lt;&amp;&gt;&quot;'">&lt;Example&gt;</h1>
-    ...     <p>Hello
-    ...         <em>World</em>!
-    ...     </p>
-    ...     <div>
-    ...         <data-element>äöüß &lt;&amp;&gt;</data-element>
-    ...         <p attr="value">raw content</p>Some Text
-    ...         <br></br>012345
-    ...     </div>
-    ... </article>\
-    ... """.encode('utf-8')
-    True
-
-
-    :class:`ecoxipy.dom_output.DOMOutput` creates DOM structures:
-
-    >>> from ecoxipy.dom_output import DOMOutput
-    >>> dom_output = DOMOutput()
-    >>> doc = dom_output.document
-    >>> b = MarkupBuilder(dom_output)
-    >>> element = b.section(b.p('Hello World!'), None, b.p(u'äöüß'), b.p('<&>'), b('<raw/>text', b.br, (str(i) for i in range(3)), (str(i) for i in range(3, 6))), attr='\'"<&>')
-    >>> element.toxml() == u"""<section attr="'&quot;&lt;&amp;&gt;"><p>Hello World!</p><p>äöüß</p><p>&lt;&amp;&gt;</p><raw/>text<br/>012345</section>"""
-    True
-
-
-    :class:`ecoxipy.string_output.StringOutput` creates strings of encoded
-    XML and is aimed at high performance by using string concatenation:
-
-    >>> from ecoxipy.string_output import StringOutput
-    >>> xml_output = StringOutput(out_encoding=None)
-    >>> b = MarkupBuilder(xml_output)
-    >>> xml = b.section(b.p('Hello World!'), None, b.p(u'äöüß'), b.p('<&>'), b('<raw/>text', b.br, (str(i) for i in range(3)), (str(i) for i in range(3, 6))), attr='\'"<&>')
-    >>> xml == u"""<section attr="'&quot;&lt;&amp;&gt;"><p>Hello World!</p><p>äöüß</p><p>&lt;&amp;&gt;</p><raw/>text<br/>012345</section>"""
-    True
-
-
-    Using :func:`markup_builder_namespace` to decorate functions or methods
-    makes it even more convenient to use :class:`MarkupBuilder`, but the
-    allowed elements have to be defined:
-
-    >>> builds_html = markup_builder_namespace(StringOutput, 'section', 'p', 'br', _=b)
-    >>> @builds_html
-    ... def view(value):
-    ...     return section(
-    ...         p(value),
-    ...         None,
-    ...         p(u'äöüß'),
-    ...         p('<&>'),
-    ...         _('<raw/>text', br, (str(i) for i in range(3))),
-    ...         (str(i) for i in range(3, 6)),
-    ...         attr='\'"<&>'
-    ...     )
-    ...
-    >>> view('Hello World!') == u"""<section attr="'&quot;&lt;&amp;&gt;"><p>Hello World!</p><p>äöüß</p><p>&lt;&amp;&gt;</p><raw/>text<br/>012345</section>"""
-    True
     '''
 
     def __init__(self, output=None):
@@ -350,21 +198,62 @@ class Output(object):
         '''
 
 
-def markup_builder_namespace(output, *element_names, **kargs):
-    '''\
-    Creates a :class:`MarkupBuilder` instance with a new instance of the given
-    ``output`` class. Using :func:`tinkerpy.namespace` all in
-    ``element_names`` defined names are bound to the appropriate `virtual`
-    methods of the created builder.
+def markup_builder_namespace(output, builder_name, *element_names, **kargs):
+    ur'''\
+    A function decorator. Creates a :class:`MarkupBuilder` instance with a new
+    instance of the given ``output`` class. Using :func:`tinkerpy.namespace`
+    all in ``element_names`` defined names are bound to the appropriate
+    `virtual` methods of the created builder.
 
     :param output: The :class:`Output` class to use.
+    :param builder_name: The name the :class:`MarkupBuilder` instance is
+        available under.
     :param element_names: The names to bind to the appropriate `virtual`
         builder methods.
     :param kargs: Arguments passed to the ``output`` constructor.
+    :returns: The decorated function with it's namespace extented with the
+        element creators defined by the vocabulary.
+
+
+    Using :func:`markup_builder_namespace` to decorate functions or methods
+    makes it more convenient to use :class:`MarkupBuilder`, but the allowed
+    elements have to be defined preemptively:
+
+    >>> from ecoxipy.string_output import StringOutput
+    >>> builds_html = markup_builder_namespace(StringOutput, '_b', 'section', 'p', 'br')
+    >>> @builds_html
+    ... def view(value):
+    ...     return section(
+    ...         p(value),
+    ...         None,
+    ...         p(u'äöüß'),
+    ...         p('<&>'),
+    ...         _b('<raw/>text', br, (str(i) for i in range(3))),
+    ...         (str(i) for i in range(3, 6)),
+    ...         attr='\'"<&>'
+    ...     )
+    ...
+    >>> view('Hello World!') == u"""<section attr="'&quot;&lt;&amp;&gt;"><p>Hello World!</p><p>äöüß</p><p>&lt;&amp;&gt;</p><raw/>text<br/>012345</section>""".encode('utf-8')
+    True
     '''
     from tinkerpy import namespace
     builder = MarkupBuilder(output(**kargs))
     return namespace(builder,
         *element_names,
-        _b=builder
+        **{builder_name: builder}
     )
+
+
+def _dom_create_element(document, name, attributes, children):
+    element = document.createElement(name)
+    for name in attributes:
+        element.setAttribute(name, attributes[name])
+    for child in children:
+
+        if isinstance(child, dom.Node):
+            element.appendChild(child)
+        else:
+            child = document.createTextNode(child)
+            element.appendChild(child)
+    document.documentElement = element
+    return element

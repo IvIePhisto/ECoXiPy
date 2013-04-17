@@ -31,6 +31,6 @@ than using SAX, DOM or Beautiful Soup.
       zip_safe=True,
       install_requires=[
           'TinkerPy'
-      ]
+      ],
       test_suite='tests'
 )

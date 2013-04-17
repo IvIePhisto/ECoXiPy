@@ -1,6 +1,134 @@
 # -*- coding: utf-8 -*-
 
-from . import Output
+ur'''\
+Used with :class:`MarkupBuilder` :class:`ElementOutput` creates structures
+consisting of :class:`Element` and :class:`Attributes` instances.
+
+
+Basic Example:
+
+>>> from ecoxipy import MarkupBuilder
+>>> b = MarkupBuilder()
+>>> element = b.article(
+...     {'umlaut-attribute': u'äöüß', 'lang': 'de'},
+...     b.h1('<Example>', data='to quote: <&>"\''),
+...     b.p('Hello', b.em(' World'), '!'),
+...     None,
+...     b.div(
+...         # Insert elements with special names using subscripts:
+...         b['data-element'](u'äöüß <&>'),
+...         # Import content by calling the builder:
+...         b(
+...             '<p attr="value">raw content</p>Some Text',
+...             # Create an element without calling the creating method:
+...             b.br,
+...             (str(i) for i in range(3))
+...         ),
+...         (str(i) for i in range(3, 6))
+...     ),
+...     lang='en', count=1
+... )
+
+
+Getting the :class:`unicode` value of an :class:`Element` creates a
+XML Unicode string:
+
+>>> document_string = u"""<article count="1" lang="en" umlaut-attribute="äöüß"><h1 data="to quote: &lt;&amp;&gt;&quot;'">&lt;Example&gt;</h1><p>Hello<em> World</em>!</p><div><data-element>äöüß &lt;&amp;&gt;</data-element><p attr="value">raw content</p>Some Text<br/>012345</div></article>"""
+>>> unicode(element) == document_string
+True
+
+
+Getting the :class:`str` value of an :class:`Element` creates an `UTF-8`
+encoded XML string:
+
+>>> str(element) == document_string.encode('utf-8')
+True
+
+
+You can also create indented XML when calling the
+:meth:`Element.__unicode__` and :meth:`Element.__str__` by supplying the
+``indent_incr`` argument:
+
+>>> indented_document_string = u"""\
+... <article count="1" lang="en" umlaut-attribute="äöüß">
+...     <h1 data="to quote: &lt;&amp;&gt;&quot;'">
+...         &lt;Example&gt;
+...     </h1>
+...     <p>
+...         Hello
+...         <em>
+...              World
+...         </em>
+...         !
+...     </p>
+...     <div>
+...         <data-element>
+...             äöüß &lt;&amp;&gt;
+...         </data-element>
+...         <p attr="value">
+...             raw content
+...         </p>
+...         Some Text
+...         <br/>
+...         0
+...         1
+...         2
+...         3
+...         4
+...         5
+...     </div>
+... </article>
+... """
+>>> indented_unicode = element.__unicode__(indent_incr='    ')
+>>> for i in range(len(indented_document_string)):
+...     if indented_document_string[i] != indented_unicode[i]:
+...         print u'[{}]{} - {}'.format(i, ord(indented_document_string[i]), ord(indented_unicode[i]))
+...         print '-----'
+...         print indented_document_string[:i]
+...         print '-----'
+...         print indented_document_string[i:]
+...         print '-----'
+...         print indented_unicode[i:]
+...         break
+>>> element.__unicode__(indent_incr='    ') == indented_document_string
+True
+>>> element.__str__(indent_incr='    ') == indented_document_string.encode('utf-8')
+True
+
+
+:class:`Element` instances can also generate SAX events (with
+:meth:`Element.create_sax_events`):
+
+>>> from StringIO import StringIO
+>>> string_out = StringIO()
+>>> content_handler = element.create_sax_events(out=string_out)
+>>> string_out.getvalue() == u"""<article lang="en" count="1" umlaut-attribute="äöüß"><h1 data="to quote: &lt;&amp;&gt;&quot;'">&lt;Example&gt;</h1><p>Hello<em> World</em>!</p><div><data-element>äöüß &lt;&amp;&gt;</data-element><p attr="value">raw content</p>Some Text<br></br>012345</div></article>""".encode('utf-8')
+True
+>>> string_out.close()
+>>> string_out = StringIO()
+>>> content_handler = element.create_sax_events(indent_incr='    ', out=string_out)
+>>> string_out.getvalue() == u"""\
+... <article lang="en" count="1" umlaut-attribute="äöüß">
+...     <h1 data="to quote: &lt;&amp;&gt;&quot;'">&lt;Example&gt;</h1>
+...     <p>Hello
+...         <em> World</em>!
+...     </p>
+...     <div>
+...         <data-element>äöüß &lt;&amp;&gt;</data-element>
+...         <p attr="value">raw content</p>Some Text
+...         <br></br>012345
+...     </div>
+... </article>\
+... """.encode('utf-8')
+True
+'''
+
+from xml import dom
+from xml.dom import minidom
+from xml.sax.saxutils import XMLGenerator
+from xml.sax.xmlreader import AttributesImpl
+
+from . import Output, _dom_create_element
 
 
 class ElementOutput(Output):
@@ -240,6 +368,7 @@ class Element(object):
             indent = ''
         self._create_sax_events(content_handler, indent_incr, indent)
         return content_handler
+
 
 class Attributes(object):
     u'''A mapping class representing attributes. For attribute names (keys)
