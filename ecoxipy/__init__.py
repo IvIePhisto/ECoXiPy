@@ -12,7 +12,6 @@ See :mod:`ecoxipy.string_output`, :mod:`ecoxipy.element_output` and
 :mod:`ecoxipy.html` is a convenient :func:`tinkerpy.namespace` to create HTML.
 '''
 
-
 import collections
 from xml import dom
 from abc import ABCMeta, abstractmethod
