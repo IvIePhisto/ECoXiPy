@@ -51,23 +51,15 @@ You can also create indented XML when calling the
 
 >>> indented_document_string = u"""\
 ... <article count="1" lang="en" umlaut-attribute="äöüß">
-...     <h1 data="to quote: &lt;&amp;&gt;&quot;'">
-...         &lt;Example&gt;
-...     </h1>
+...     <h1 data="to quote: &lt;&amp;&gt;&quot;'">&lt;Example&gt;</h1>
 ...     <p>
 ...         Hello
-...         <em>
-...              World
-...         </em>
+...         <em> World</em>
 ...         !
 ...     </p>
 ...     <div>
-...         <data-element>
-...             äöüß &lt;&amp;&gt;
-...         </data-element>
-...         <p attr="value">
-...             raw content
-...         </p>
+...         <data-element>äöüß &lt;&amp;&gt;</data-element>
+...         <p attr="value">raw content</p>
 ...         Some Text
 ...         <br/>
 ...         0
@@ -79,17 +71,6 @@ You can also create indented XML when calling the
 ...     </div>
 ... </article>
 ... """
->>> indented_unicode = element.__unicode__(indent_incr='    ')
->>> for i in range(len(indented_document_string)):
-...     if indented_document_string[i] != indented_unicode[i]:
-...         print u'[{}]{} - {}'.format(i, ord(indented_document_string[i]), ord(indented_unicode[i]))
-...         print '-----'
-...         print indented_document_string[:i]
-...         print '-----'
-...         print indented_document_string[i:]
-...         print '-----'
-...         print indented_unicode[i:]
-...         break
 >>> element.__unicode__(indent_incr='    ') == indented_document_string
 True
 >>> element.__str__(indent_incr='    ') == indented_document_string.encode('utf-8')

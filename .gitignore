@@ -1,6 +1,8 @@
 build/
 doc/_build/
 
+.DS_Store
+
 *.py[cod]
 
 # C extensions

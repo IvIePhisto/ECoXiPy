@@ -148,7 +148,7 @@ class StringOutput(Output):
 
     def embed(self, *content):
         '''Encodes the elements of ``content`` if they are not :class:`str`
-        instances.
+        or :class:`unicode` instances.
 
         :param content: The content to encode.
         :type content: :class:`str` or :class:`unicode`
@@ -160,7 +160,7 @@ class StringOutput(Output):
                 return value
             return self._encode(self._decode(value))
         if len(content) == 1:
-            return handle_content(content[0])
+            return self._xml_string(handle_content(content[0]))
         return self._xml_string(self._join([
             handle_content(content_element) for content_element in content
         ]))

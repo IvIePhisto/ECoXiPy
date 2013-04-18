@@ -1,9 +1,13 @@
 # -*- coding: utf-8 -*-
 
 '''\
-This package provides facilities to easily build `XML
-<http://www.w3.org/XML/>` documents. It's module provides the basic API,
-see :mod:`ecoxipy.string_output`, :mod:`ecoxipy.element_output` and
+The package :mod:`ecoxipy` provides facilities to easily build
+`XML <http://www.w3.org/XML/>`_ documents. It provides the basic API,
+consisting of :class:`MarkupBuilder` and :class:`Output`.
+:func:`markup_builder_namespace` is a decorator to make the use of
+:class:`MarkupBuilder` more convenient.
+
+See :mod:`ecoxipy.string_output`, :mod:`ecoxipy.element_output` and
 :mod:`ecoxipy.dom_output` for :class:`Output` implementations.
 :mod:`ecoxipy.html` is a convenient :func:`tinkerpy.namespace` to create HTML.
 '''
@@ -228,7 +232,8 @@ def markup_builder_namespace(output, builder_name, *element_names, **kargs):
     ...         None,
     ...         p(u'äöüß'),
     ...         p('<&>'),
-    ...         _b('<raw/>text', br, (str(i) for i in range(3))),
+    ...         _b('<raw/>text'),
+    ...         _b(br, (str(i) for i in range(3))),
     ...         (str(i) for i in range(3, 6)),
     ...         attr='\'"<&>'
     ...     )

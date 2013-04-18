@@ -32,5 +32,5 @@ than using SAX, DOM or Beautiful Soup.
       install_requires=[
           'TinkerPy'
       ],
-      test_suite='tests'
+      test_suite='tests.test_suite'
 )
