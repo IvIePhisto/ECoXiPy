@@ -1,7 +1,16 @@
 # -*- coding: utf-8 -*-
-
 ur'''\
-The :class:`ecoxipy.dom_output.DOMOutput` creates DOM structures:
+
+:mod:`ecoxipy.dom_output` - DOM Creation
+========================================
+
+:class:`DOMOutput` creates `DOM <http://www.w3.org/DOM/>`_ (implemented in
+Python by :mod:`xml.dom`) structures.
+
+
+.. _ecoxipy.dom_output.examples:
+
+Usage Example:
 
 >>> dom_output = DOMOutput()
 >>> doc = dom_output.document
@@ -45,7 +54,7 @@ class DOMOutput(Output):
         '''Returns a DOM element representing the created element.
 
         :param name: The name of the element to create.
-        :type name: :class:`str`
+        :type name: :func:`str`
         :param children: The iterable of children to add to the element to
             create.
         :param attributes: The mapping of arguments of the element to create.
@@ -58,7 +67,7 @@ class DOMOutput(Output):
         '''Imports the elements of ``content`` as XML and returns DOM nodes.
 
         :param content: the XML to import
-        :type content: :class:`str`, :class:`unicode` or :class:`xml.dom.Node`
+        :type content: :func:`str`, :func:`unicode` or :class:`xml.dom.Node`
         :raises xml.parsers.expat.ExpatError: If a ``content`` element cannot
             be parsed.
         :rtype: a list of class:`xml.dom.Node` instances or a single instance

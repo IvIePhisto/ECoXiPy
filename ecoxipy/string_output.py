@@ -1,8 +1,16 @@
 # -*- coding: utf-8 -*-
-
 ur'''\
-:class:`ecoxipy.string_output.StringOutput` creates strings of encoded
-XML and is aimed at high performance by using string concatenation:
+
+:mod:`ecoxipy.string_output` - XML as Strings
+=============================================
+
+:class:`StringOutput` creates strings of XML and aims at high performance by
+using string concatenation.
+
+
+.. _ecoxipy.string_output.examples:
+
+Usage Example:
 
 >>> xml_output = StringOutput(out_encoding=None)
 >>> from ecoxipy import MarkupBuilder
@@ -22,10 +30,10 @@ class StringOutput(Output):
     '''A :class:`Output` implementation which creates XML as strings of the
     specified encoding.
 
-    :param in_encoding: The name of the encoding to decode :class:`str`
+    :param in_encoding: The name of the encoding to decode :func:`str`
         instances if neccessary.
     :param out_encoding: The name of the encoding to encode
-        :class:`unicode` instances or :const:`None`.
+        :func:`unicode` instances or :const:`None`.
     :param entities: A mapping of characters to text to replace them with
         when escaping.
 
@@ -36,17 +44,17 @@ class StringOutput(Output):
     Element and attribute names, attribute values and text content data which
     are processed as follows:
 
-        * Instances which are neither :class:`str` or :class:`unicode`
+        * Instances which are neither :func:`str` or :func:`unicode`
           instances converted using :func:`unicode`.
 
-        * If ``in_encoding`` and ``out_encoding`` differ, :class:`str`
-          instances are decoded to :class:`unicode` using ``in_encoding`` as
+        * If ``in_encoding`` and ``out_encoding`` differ, :func:`str`
+          instances are decoded to :func:`unicode` using ``in_encoding`` as
           the encoding.
 
-        * :class:`unicode` instances are left untouched.
+        * :func:`unicode` instances are left untouched.
 
     ``encoding`` is :const:`None`
-        :class:`unicode` instances are not processed. Non-:class:`str`
+        :func:`unicode` instances are not processed. Non-:func:`str`
         instances are
 
     Element and attribute names as well as attribute values are escaped using
@@ -64,10 +72,10 @@ class StringOutput(Output):
     attribute names, attribute values and text content data is then
     processed as follows depending on the type:
 
-        * :class:`str` instances are left untouched. There are none if
+        * :func:`str` instances are left untouched. There are none if
           ``out_encoding`` differs from ``in_encoding``.
 
-        * :class:`unicode` instances are left untouched if ``out_encoding`` is
+        * :func:`unicode` instances are left untouched if ``out_encoding`` is
           :const:`None`, otherwise they are encoded using ``out_encoding`` as
           the encoding.
     '''
@@ -76,6 +84,8 @@ class StringOutput(Output):
         self._in_encoding = in_encoding
         self._out_encoding = out_encoding
         self._different_encodings = in_encoding == out_encoding
+        self._decode_str = self._different_encodings and self._in_encoding is not None
+        self._endode_unicode = out_encoding is not None
         if out_encoding is None:
             self._join = u''.join
             self._format_attribute = u' {}={}'
@@ -94,7 +104,7 @@ class StringOutput(Output):
 
     def _decode(self, value):
         if isinstance(value, str):
-            if self._different_encodings and self._in_encoding is not None:
+            if self._decode_str:
                 return value.decode(self._in_encoding)
             return value
         elif isinstance(value, unicode):
@@ -103,7 +113,7 @@ class StringOutput(Output):
             return unicode(value)
 
     def _encode(self, value):
-        if self._out_encoding is not None and isinstance(value, unicode):
+        if self._endode_unicode and isinstance(value, unicode):
             return value.encode(self._out_encoding)
         return value
 
@@ -118,7 +128,7 @@ class StringOutput(Output):
         initialization.
 
         :param name: The name of the element to create.
-        :type name: :class:`str` of :class:`unicode`
+        :type name: :func:`str` of :func:`unicode`
         :param children: The iterable of children.
         :param attributes: The mapping of arguments.
         :returns: The XML string created.
@@ -147,12 +157,12 @@ class StringOutput(Output):
         return self._xml_string(element_string)
 
     def embed(self, *content):
-        '''Encodes the elements of ``content`` if they are not :class:`str`
-        or :class:`unicode` instances.
+        '''Encodes the elements of ``content`` if they are not :func:`str`
+        or :func:`unicode` instances.
 
         :param content: The content to encode.
-        :type content: :class:`str` or :class:`unicode`
-        :returns: a :class:`list` of :class:`str` instances or a single
+        :type content: :func:`str` or :func:`unicode`
+        :returns: a :func:`list` of :func:`str` instances or a single
             instance
         '''
         def handle_content(value):
@@ -168,40 +178,4 @@ class StringOutput(Output):
 class _XMLStr(str): pass
 
 class _XMLUnicode(unicode): pass
-
-
-def xml_string_namespace(builder_name, vocabulary):
-    ur'''\
-    Uses :func:`ecoxipy.markup_builder_namespace` to decorate the target
-    function with the given ``vocabulary``.
-
-    :param builder_name: The name the :class:`MarkupBuilder` instance is
-        available under.
-    :param vocabulary: An iterable of element names.
-    :returns: The decorated function with it's namespace extented with the
-        element creators defined by the vocabulary.
-
-
-    Example:
-
-    >>> builds_html = xml_string_namespace('_b', {'section', 'p', 'br'})
-    >>> @builds_html
-    ... def view(value):
-    ...     return section(
-    ...         p(value),
-    ...         None,
-    ...         p(u'äöüß'),
-    ...         p('<&>'),
-    ...         _b('<raw/>text', br, (str(i) for i in range(3))),
-    ...         (str(i) for i in range(3, 6)),
-    ...         attr='\'"<&>'
-    ...     )
-    ...
-    >>> view('Hello World!') == u"""<section attr="'&quot;&lt;&amp;&gt;"><p>Hello World!</p><p>äöüß</p><p>&lt;&amp;&gt;</p><raw/>text<br/>012345</section>""".encode('utf-8')
-    True
-    '''
-    from tinkerpy import flatten
-    from . import markup_builder_namespace
-    return markup_builder_namespace(StringOutput, builder_name,
-        *flatten(vocabulary))
 

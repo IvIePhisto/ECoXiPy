@@ -1,11 +1,20 @@
 # -*- coding: utf-8 -*-
-
 ur'''\
-Used with :class:`MarkupBuilder` :class:`ElementOutput` creates structures
-consisting of :class:`Element` and :class:`Attributes` instances.
+
+:mod:`ecoxipy.element_output` - Low-Footprint XML Structures
+============================================================
+
+:class:`ElementOutput` creates structures consisting of :class:`Element`
+instances, which are an immutable low-footprint alternative to what
+:class:`ecoxipy.dom_output.DOMOutput`.
 
 
-Basic Example:
+.. _ecoxipy.element_output.examples:
+
+Examples
+--------
+
+Basic Usage:
 
 >>> from ecoxipy import MarkupBuilder
 >>> b = MarkupBuilder()
@@ -30,7 +39,7 @@ Basic Example:
 ... )
 
 
-Getting the :class:`unicode` value of an :class:`Element` creates a
+Getting the :func:`unicode` value of an :class:`Element` creates a
 XML Unicode string:
 
 >>> document_string = u"""<article count="1" lang="en" umlaut-attribute="äöüß"><h1 data="to quote: &lt;&amp;&gt;&quot;'">&lt;Example&gt;</h1><p>Hello<em> World</em>!</p><div><data-element>äöüß &lt;&amp;&gt;</data-element><p attr="value">raw content</p>Some Text<br/>012345</div></article>"""
@@ -38,7 +47,7 @@ XML Unicode string:
 True
 
 
-Getting the :class:`str` value of an :class:`Element` creates an `UTF-8`
+Getting the :func:`str` value of an :class:`Element` creates an `UTF-8`
 encoded XML string:
 
 >>> str(element) == document_string.encode('utf-8')
@@ -102,6 +111,21 @@ True
 ... </article>\
 ... """.encode('utf-8')
 True
+
+
+:class:`Output` Implementation
+------------------------------
+
+.. autoclass:: ecoxipy.element_output.ElementOutput
+
+
+Representation
+--------------
+
+.. autoclass:: ecoxipy.element_output.Element
+    :special-members: __str__, __unicode__
+
+.. autoclass:: ecoxipy.element_output.Attributes
 '''
 
 from xml import dom
@@ -109,18 +133,22 @@ from xml.dom import minidom
 from xml.sax.saxutils import XMLGenerator
 from xml.sax.xmlreader import AttributesImpl
 
+from tinkerpy import ImmutableDict
 from . import Output, _dom_create_element
 
 
 class ElementOutput(Output):
-    '''A :class:`Output` implementation which creates :class:`Element`
+    '''\
+    An :class:`Output` implementation which creates :class:`Element`
     instances and strings.
     '''
+
     def element(self, name, children, attributes):
-        '''Returns a :class:`Element`.
+        '''\
+        Returns a :class:`Element`.
 
         :param name: The name of the element to create.
-        :type name: :class:`str`
+        :type name: :func:`str`
         :param children: The iterable of children to add to the element to
             create.
         :param attributes: The mapping of arguments of the element to create.
@@ -130,17 +158,20 @@ class ElementOutput(Output):
         return Element(name, children, attributes)
 
     def embed(self, *content):
-        '''Parses the non-:class:`Element` elements of ``content`` as XML and
-        returns an a :class:`list` of :class:`Element` and :class:`unicode`
+        '''\
+        Parses the non-:class:`Element` elements of ``content`` as XML and
+        returns an a :func:`list` of :class:`Element` and :func:`unicode`
         instances or a single instance.
 
         :param content: XML strings and/or elements.
-        :type content: :class:`Element`, :class:`str` or :class:`unicode`
+        :type content: :class:`Element`, :func:`str` or :func:`unicode`
         :returns: The elements parsed or a single element.
         :raises xml.parsers.expat.ExpatError: If XML is not well-formed.
         :rtype:
-            :class:`Element` or a :class:`list` of :class:`Element` instances
+            :class:`Element` or a :func:`list` of :class:`Element` instances
         '''
+        imported_content = []
+
         def import_xml(text):
             def import_element(element):
                 name = element.tagName
@@ -167,44 +198,51 @@ class ElementOutput(Output):
                 return None
 
             def import_nodes(nodes):
-                imported_nodes = []
                 for node in nodes:
                     node = import_node(node)
                     if node is not None:
-                        imported_nodes.append(node)
-                return imported_nodes
+                        imported_content.append(node)
 
-            document = minidom.parseString('<ROOT>' + text + '</ROOT>')
-            return import_nodes(document.documentElement.childNodes)
+            if text.startswith('<!DOCTYPE') and text.endswith('>'):
+                imported_content.append(Doctype(*text[9:-1].split()))
+            else:
+                document = minidom.parseString('<ROOT>' + text + '</ROOT>')
+                import_nodes(document.documentElement.childNodes)
 
-        imported_content = []
         for content_element in content:
-            if isinstance(content_element, unicode):
-                content_element = content_element.encode('utf-8')
-            if isinstance(content_element, str):
-                imported_content.extend(import_xml(content_element))
-            elif isinstance(content_element, Element):
+            if isinstance(content_element, (Element, Doctype)):
                 imported_content.append(content_element)
+            else:
+                if not isinstance(content_element, (str, unicode)):
+                    content_element = unicode(content_element)
+                if isinstance(content_element, unicode):
+                    content_element = content_element.encode('utf-8')
+                if isinstance(content_element, str):
+                    import_xml(content_element)
         if len(imported_content) == 1:
             return imported_content[0]
         return imported_content
 
 
 class Element(object):
-    '''A markup element.
+    '''\
+    Represents a XML element and is immutable.
 
     If the :func:`str` or :func:`unicode` functions are used on a
-    :class:`Element` instance, a XML document encoded as a UTF-8 :class:`str`
-    instance or :class:`unicode` instance respectively is returned.
+    :class:`Element` instance, a XML document encoded as a UTF-8 :func:`str`
+    instance or :func:`unicode` instance respectively is returned.
 
     :param name:
         The name of the element to create. It's unicode value will be used.
 
     :param children: The children of the element.
-    :type children: an iterable of items
+    :type children: iterable of items
     :param attributes: The attributes of the element.
-    :type attributes: an subscriptable iterable over keys
+    :type attributes: subscriptable iterable over keys
     '''
+
+    __slots__ = ('_name', '_children', '_attributes')
+
     def __init__(self, name, children, attributes):
         self._name = unicode(name)
         self._children = tuple(children)
@@ -217,14 +255,16 @@ class Element(object):
 
     @property
     def children(self):
-        '''A :class:`tuple` of the contained content (:class:`Element`
-        instances or :class:`unicode` instances).
+        '''\
+        A :func:`tuple` of the contained content (:class:`Element`
+        instances or :func:`unicode` instances).
         '''
         return self._children
 
     @property
     def attributes(self):
-        '''A :class:`Attributes` instance containing the element's attributes.
+        '''\
+        An :class:`Attributes` instance containing the element's attributes.
         The key represents an attribute's name, the value is the attribute's
         value.
         '''
@@ -236,8 +276,8 @@ class Element(object):
         :param indent_incr: If this is not :const:`None` this activates
             pretty printing. In this case it should be a string and it is used
             for indenting.
-        :type indent_incr: :class:`str`
-        :returns: The XML representation of the element as an :class:`str`
+        :type indent_incr: :func:`str`
+        :returns: The XML representation of the element as an :func:`str`
             instance with encoding `UTF-8`.
         '''
         document = self.create_dom_document()
@@ -255,8 +295,8 @@ class Element(object):
         :param indent_incr: If this is not :const:`None` this activates
             pretty printing. In this case it should be a string and it is used
             for indenting.
-        :type indent_incr: :class:`str`
-        :returns: The XML representation of the element as an :class:`unicode`
+        :type indent_incr: :func:`str`
+        :returns: The XML representation of the element as an :func:`unicode`
             instance.
         '''
         return self.__str__(indent_incr).decode('utf-8')
@@ -268,9 +308,9 @@ class Element(object):
         :returns: The created children list.
         '''
         children = [
-            document.createTextNode(child)
-            if isinstance(child, str) or isinstance(child, unicode)
-            else child.create_dom_element(document)
+            child.create_dom_element(document)
+            if isinstance(child, Element)
+            else document.createTextNode(unicode(child))
             for child in self.children
         ]
         return children
@@ -339,7 +379,7 @@ class Element(object):
         :param indent_incr: If this is not :const:`None` this activates
             pretty printing. In this case it should be a string and it is used
             for indenting.
-        :type indent_incr: :class:`str`
+        :type indent_incr: :func:`str`
         :returns: The content handler used.
         '''
         if content_handler is None:
@@ -351,15 +391,11 @@ class Element(object):
         return content_handler
 
 
-class Attributes(object):
-    u'''A mapping class representing attributes. For attribute names (keys)
-    and values their :class:`unicode` representation is used in all places.
-
-    :func:`len`, :const:`del`, :const:`in` and item getting and setting are
-    :supported.
-
-    :param attributes: Attributes to define on initialization.
-    :type attributes: an subscriptable iterable over keys
+class Attributes(ImmutableDict):
+    u'''\
+    An immutable dictionary representing XML attributes. For attribute names
+    (keys) and values their :func:`unicode` representation is used in all
+    places.
 
     Usage examples:
 
@@ -368,60 +404,74 @@ class Attributes(object):
     ... })
     >>> attrs['foo']
     u'bar'
-    >>> attrs['foo'] = 'Hello World!'
-    >>> print attrs['foo']
-    Hello World!
     >>> len(attrs)
     4
     >>> 'foo' in attrs
     True
-    >>> del attrs['foo']
-    >>> attrs['foo']
-    Traceback (most recent call last):
-    KeyError: u'foo'
-    >>> len(attrs)
-    3
-    >>> 'foo' in attrs
-    False
-    >>> for name in attrs.keys(): print name
-    umlauts
-    äöüß
-    one
-    >>> for value in attrs.values(): print value
-    äöüß
-    umlauts
-    1
+    >>> for name, value in attrs.items(): print u'{}: {}'.format(name, value)
+    umlauts: äöüß
+    foo: bar
+    äöüß: umlauts
+    one: 1
     '''
-    def __init__(self, attributes):
-        self._dict = dict()
-        for name in attributes:
-            self[name] = attributes[name]
-
-    def __len__(self):
-        return len(self._dict)
-
-    def __delitem__(self, name):
-        del self._dict[unicode(name)]
+    def __init__(self, *args, **kargs):
+        self._dict = dict(*args, **kargs)
+        for name, value in self._dict.items():
+            unicode_name = unicode(name)
+            unicode_value = unicode(value)
+            if not isinstance(name, unicode):
+                del self._dict[name]
+            if value != unicode_value or unicode_name not in self._dict:
+                self._dict[unicode_name] = unicode_value
 
     def __getitem__(self, name):
-        return self._dict[unicode(name)]
+        return ImmutableDict.__getitem__(self, unicode(name))
 
-    def __setitem__(self, name, value):
-        self._dict[unicode(name)] = unicode(value)
 
-    def __iter__(self):
-        return self._dict.__iter__()
+class Doctype(object):
+    __slots__ = ('_name', '_system_id', '_public_id')
 
-    def keys(self):
-        '''Returns a :class:`list` of the names of the attributes.'''
-        return self._dict.keys()
+    def __init__(self, name, system_id=None, public_id=None):
+        self._name = unicode(name)
+        if system_id is None:
+            system_id = u''
+        else:
+            system_id = unicode(system_id)
+        if public_id is None:
+            public_id = u''
+        else:
+            public_id = unicode(public_id)
+        self._system_id = system_id
+        self._public_id = public_id
 
-    def values(self):
-        '''Returns a :class:`list` of the values of the attributes.'''
-        return self._dict.values()
+    @property
+    def name(self):
+        return self._name
 
-    def items(self):
-        '''Returns a :class:`list` of :class:`tuple` instances containing
-        the name of an attribute at index 0 and the value at index 1.
-        '''
-        return self._dict.items()
+    @property
+    def system_id(self):
+        return self._system_id
+
+    @property
+    def public_id(self):
+        return self._public_id
+
+    def __str__(self):
+        return ''.join((
+            '<!DOCTYPE ', self.name.encode('UTF-8'),
+            '' if len(self.system_id) == 0 else ' ',
+            self.system_id.encode('UTF-8'),
+            '' if len(self.public_id) == 0 else ' ',
+            self.public_id.encode('UTF-8'),
+            '>',
+        ))
+
+    def __unicode__(self):
+        return u''.join((
+            u'<!DOCTYPE ', self.name,
+            u'' if len(self.system_id) == 0 else u' ',
+            self.system_id,
+            u'' if len(self.public_id) == 0 else u' ',
+            self.public_id,
+            u'>',
+        ))

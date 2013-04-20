@@ -1,15 +1,11 @@
 # -*- coding: utf-8 -*-
-
 '''\
-The package :mod:`ecoxipy` provides facilities to easily build
-`XML <http://www.w3.org/XML/>`_ documents. It provides the basic API,
-consisting of :class:`MarkupBuilder` and :class:`Output`.
-:func:`markup_builder_namespace` is a decorator to make the use of
-:class:`MarkupBuilder` more convenient.
 
-See :mod:`ecoxipy.string_output`, :mod:`ecoxipy.element_output` and
-:mod:`ecoxipy.dom_output` for :class:`Output` implementations.
-:mod:`ecoxipy.html` is a convenient :func:`tinkerpy.namespace` to create HTML.
+:mod:`ecoxipy` - The ECoXiPy API
+================================
+
+The package :mod:`ecoxipy` provides the basic API, consisting of
+:class:`MarkupBuilder` and :class:`Output`.
 '''
 
 import collections
@@ -24,15 +20,15 @@ class MarkupBuilder(object):
 
     :param output:
 
-        The output to use. If this is :const:`None` the default output
+        The output to use. If this is :const:`None`,
         :class:`ecoxipy.element_output.ElementOutput` is used.
 
-    :type output: The :class:`Output` to use.
+    :type output: :class:`Output`
 
     :raises: :class:`TypeError` if ``output`` is of the wrong type.
 
 
-    Each attribute access on an instance of this class returns a method which
+    Each attribute access on an instance of this class returns a method, which
     on calling creates an element in the output representation determined by
     the used :class:`Output` subclass instance. The name of the element is the
     same as the name of the attribute. Its children are the positional
@@ -55,16 +51,16 @@ class MarkupBuilder(object):
 
             Each entry of this mapping defines an attribute of the created
             element, the name being the key and the value being the value
-            identified by the key. The keys and values should be :class:`str`
-            or :class:`unicode` instances.
+            identified by the key. The keys and values should be :func:`str`
+            or :func:`unicode` instances.
 
-        Those elements of ``children`` which are iterable mapping types
+        Those items of ``children``, which are iterable mapping types
         (``child[name] for name in child``) define attributes. The entries of
-        ``attributes`` overwrite entries from ``children`` elements.
+        ``attributes`` overwrite entries from ``children`` items.
 
-        Those other elements of ``children`` which are iterable or iterators
-        are replaced with their elements, callables are replaced with the
-        result of the call.
+        Those other items of ``children``, which are iterable or iterators
+        are replaced with their items, callables are replaced with the
+        result of their call.
 
 
     As this way not all element names can be used, you can retrieve a
@@ -73,7 +69,7 @@ class MarkupBuilder(object):
     children or attributes is shorter.
 
     You can also call :class:`MarkupBuilder` instances. As with the
-    ``children`` argument of the builders dynamic methods, those elements of
+    ``children`` argument of the builder's dynamic methods, those elements of
     the argument list, which are iterable or iterators, are unpacked. Those
     arguments which are callables are replaced by the result of the call. The
     :class:`MarkupBuilder` instance call returns a
@@ -89,7 +85,7 @@ class MarkupBuilder(object):
             output = ElementOutput()
         else:
             if not isinstance(output, Output):
-                raise TypeError('A "wob2.web.markup.Output" object must be given.')
+                raise TypeError('An "ecoxipy.Output" object must be given.')
         self._output = output
 
     @classmethod
@@ -124,7 +120,7 @@ class MarkupBuilder(object):
     def __getitem__(self, name):
         def parse_arguments(children, attributes):
             '''\
-            Creates a children :class:`list` and an attributes :class:`dict`.
+            Creates a children :func:`list` and an attributes :class:`dict`.
 
             :param children:
                 text, elements, attribute mappings and children lists
@@ -135,7 +131,7 @@ class MarkupBuilder(object):
                 an iterable mapping [``attributes[name] for name in
                 attributes``]
             :returns:
-                a :class:`tuple` of a :class:`list` at index 0 of children and
+                a :func:`tuple` of a :func:`list` at index 0 of children and
                 a :class:`dict` at index 1 of attributes
 
             Those elements of ``children`` which are iterable mapping types
@@ -168,10 +164,10 @@ class MarkupBuilder(object):
 
 class Output(object):
     '''\
-    Abstract class defining the :class:`MarkupBuilder` output interface.
+    Abstract base class defining the :class:`MarkupBuilder` output interface.
 
     The abstract methods are called by :class:`MarkupBuilder` instances to
-    create an element (:meth:`element`) or to add raw data (:meth:`raw`).
+    create an element (:meth:`element`) or to add raw data (:meth:`embed`).
     '''
     __metaclass__ = ABCMeta
 
@@ -182,7 +178,7 @@ class Output(object):
         :class:`MarkupBuilder` instances.
 
         :param name: The name of the element to create.
-        :type name: :class:`str` or :class:`unicode`
+        :type name: :func:`str` or :func:`unicode`
         :param children: The iterable of children to add to the element to
             create.
         :param attributes: The mapping of attributes of the element to create.
@@ -201,63 +197,15 @@ class Output(object):
         '''
 
 
-def markup_builder_namespace(output, builder_name, *element_names, **kargs):
-    ur'''\
-    A function decorator. Creates a :class:`MarkupBuilder` instance with a new
-    instance of the given ``output`` class. Using :func:`tinkerpy.namespace`
-    all in ``element_names`` defined names are bound to the appropriate
-    `virtual` methods of the created builder.
-
-    :param output: The :class:`Output` class to use.
-    :param builder_name: The name the :class:`MarkupBuilder` instance is
-        available under.
-    :param element_names: The names to bind to the appropriate `virtual`
-        builder methods.
-    :param kargs: Arguments passed to the ``output`` constructor.
-    :returns: The decorated function with it's namespace extented with the
-        element creators defined by the vocabulary.
-
-
-    Using :func:`markup_builder_namespace` to decorate functions or methods
-    makes it more convenient to use :class:`MarkupBuilder`, but the allowed
-    elements have to be defined preemptively:
-
-    >>> from ecoxipy.string_output import StringOutput
-    >>> builds_html = markup_builder_namespace(StringOutput, '_b', 'section', 'p', 'br')
-    >>> @builds_html
-    ... def view(value):
-    ...     return section(
-    ...         p(value),
-    ...         None,
-    ...         p(u'äöüß'),
-    ...         p('<&>'),
-    ...         _b('<raw/>text'),
-    ...         _b(br, (str(i) for i in range(3))),
-    ...         (str(i) for i in range(3, 6)),
-    ...         attr='\'"<&>'
-    ...     )
-    ...
-    >>> view('Hello World!') == u"""<section attr="'&quot;&lt;&amp;&gt;"><p>Hello World!</p><p>äöüß</p><p>&lt;&amp;&gt;</p><raw/>text<br/>012345</section>""".encode('utf-8')
-    True
-    '''
-    from tinkerpy import namespace
-    builder = MarkupBuilder(output(**kargs))
-    return namespace(builder,
-        *element_names,
-        **{builder_name: builder}
-    )
-
-
 def _dom_create_element(document, name, attributes, children):
     element = document.createElement(name)
     for name in attributes:
-        element.setAttribute(name, attributes[name])
+        element.setAttribute(unicode(name), unicode(attributes[name]))
     for child in children:
-
         if isinstance(child, dom.Node):
             element.appendChild(child)
         else:
-            child = document.createTextNode(child)
+            child = document.createTextNode(unicode(child))
             element.appendChild(child)
     document.documentElement = element
     return element
