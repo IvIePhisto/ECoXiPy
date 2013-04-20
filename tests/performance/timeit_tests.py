@@ -7,19 +7,17 @@ import ecoxipy_string_output
 import ecoxipy_dom_output
 
 
-TIMEIT_NUMBER = 200
+TIMEIT_NUMBER = 500
 TIMEIT_DATA_COUNT = 100
-create_test_run = lambda module: "{}.create_testdoc('Test Page', 'Hello World!', {})".format(module.__name__, TIMEIT_DATA_COUNT)
-create_test_setup = lambda module: "from __main__ import {0}; {0}.create_testdoc('startup', 'startup', {1})".format(module.__name__, TIMEIT_DATA_COUNT)
-
-timeit_run = lambda module: timeit.timeit(
-    create_test_run(module),
-    setup=create_test_setup(module),
-    number=TIMEIT_NUMBER)
-
-create_percent = lambda t, m: '{: >6.2f} %'.format((t-m)/m*100)
 
 if __name__ == '__main__':
+    create_test_run = lambda module: "{}.create_testdoc('Test Page', 'Hello World!', {})".format(module.__name__, TIMEIT_DATA_COUNT)
+    create_test_setup = lambda module: "from __main__ import {0}; {0}.create_testdoc('startup', 'startup', {1})".format(module.__name__, TIMEIT_DATA_COUNT)
+    create_percent = lambda t, m: '{: >6.2f} %'.format((t-m)/m*100)
+    timeit_run = lambda module: timeit.timeit(
+        create_test_run(module),
+        setup=create_test_setup(module),
+        number=TIMEIT_NUMBER)
     sax_time = timeit_run(xml_sax)
     dom_time = timeit_run(xml_dom_minidom)
     element_out_time = timeit_run(ecoxipy_element_output)
