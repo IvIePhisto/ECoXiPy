@@ -36,5 +36,8 @@ def create_testdoc(_title, _content, _data_count, _data_text):
             div_element.appendChild(p_element)
             p_text = text(_data_text)
             p_element.appendChild(p_text)
-    return html_doc.toxml('UTF-8')
+    try:
+        return html_doc.toxml('UTF-8')
+    finally:
+        html_doc.unlink()
 

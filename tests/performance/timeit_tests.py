@@ -71,7 +71,7 @@ Running Times:
         import os.path
         if not os.path.isfile(path):
             with open(path, 'w') as f:
-                f.write('Repetitions,Data Count,xml.sax,xml.dom.minidom,ecoxipy.dom_output,ecoxipy_element_output,ecoxipy_string_output\n')
+                f.write('Repetitions,Data Count,xml.sax,xml.dom.minidom,ecoxipy.dom_output,ecoxipy.element_output,ecoxipy.string_output\n')
         with open(path, 'a') as f:
             f.write('{},{},{},{},{},{},{}\n'.format(
                 repetitions, data_count,
