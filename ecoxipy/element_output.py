@@ -149,7 +149,7 @@ class ElementOutput(Output):
         '''
         return Element(name, children, attributes)
 
-    def embed(self, *content):
+    def embed(self, content):
         '''\
         Parses the non-:class:`Element` elements of ``content`` as XML and
         returns an a :func:`list` of :class:`Element` and :func:`unicode`

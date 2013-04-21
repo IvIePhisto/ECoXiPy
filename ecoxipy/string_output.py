@@ -87,17 +87,17 @@ class StringOutput(Output):
         self._decode_str = self._different_encodings and self._in_encoding is not None
         self._endode_unicode = out_encoding is not None
         if out_encoding is None:
+            self._xml_string = _XMLUnicode
             self._join = u''.join
-            self._format_attribute = u' {}={}'
             self._format_element = u'<{0}{1}>{2}</{0}>'
             self._format_element_empty = u'<{0}{1}/>'
-            self._xml_string = _XMLUnicode
+            self._format_attribute = u' {}={}'
         else:
+            self._xml_string = _XMLStr
             self._join = ''.join
-            self._format_attribute = ' {}={}'
             self._format_element = '<{0}{1}>{2}</{0}>'
             self._format_element_empty = '<{0}{1}/>'
-            self._xml_string = _XMLStr
+            self._format_attribute = ' {}={}'
         if entities is None:
             entities = {}
         self._entities = entities
@@ -156,7 +156,7 @@ class StringOutput(Output):
                 element_name, attributes_string, children_string)
         return self._xml_string(element_string)
 
-    def embed(self, *content):
+    def embed(self, content):
         '''Encodes the elements of ``content`` if they are not :func:`str`
         or :func:`unicode` instances.
 

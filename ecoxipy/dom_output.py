@@ -63,7 +63,7 @@ class DOMOutput(Output):
         '''
         return _dom_create_element(self._document, name, attributes, children)
 
-    def embed(self, *content):
+    def embed(self, content):
         '''Imports the elements of ``content`` as XML and returns DOM nodes.
 
         :param content: the XML to import

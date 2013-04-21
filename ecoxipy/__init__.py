@@ -92,7 +92,7 @@ class MarkupBuilder(object):
     def _preprocess(cls, content, target_list, target_attributes=None):
         if content is None:
             return
-        if isinstance(content, str) or isinstance(content, unicode):
+        if isinstance(content, (str, unicode)):
             target_list.append(content)
         elif (target_attributes is not None
                 and isinstance(content, collections.Mapping)):
@@ -115,10 +115,10 @@ class MarkupBuilder(object):
         processed_content = []
         for content_element in content:
             self._preprocess(content_element, processed_content)
-        return self._output.embed(*processed_content)
+        return self._output.embed(processed_content)
 
     def __getitem__(self, name):
-        def parse_arguments(children, attributes):
+        def build(*children, **attributes):
             '''\
             Creates a children :func:`list` and an attributes :class:`dict`.
 
@@ -144,22 +144,15 @@ class MarkupBuilder(object):
             ``children`` elements.
             '''
             new_children = []
-            new_attributes = dict()
+            new_attributes = {}
             for child in children:
                 self._preprocess(child, new_children, new_attributes)
-            for name in attributes:
-                new_attributes[name] = attributes[name]
-            return (new_children, new_attributes)
-
-        def build(*children, **attributes):
-            return self._output.element(
-                name,
-                *parse_arguments(children, attributes)
-            )
+            for attr_name in attributes:
+                new_attributes[attr_name] = attributes[attr_name]
+            return self._output.element(name, new_children, new_attributes)
         return build
 
-    def __getattr__(self, name):
-        return self[name]
+    __getattr__ = __getitem__
 
 
 class Output(object):
@@ -186,12 +179,13 @@ class Output(object):
         '''
 
     @abstractmethod
-    def embed(self, *content):
+    def embed(self, content):
         '''Imports the elements of ``content`` as data in the output
         representation.
 
         :param content: The data to parse.
-        :type content: depends on :class:`Output` implementation
+        :type content: a list, handling of elements depends on
+            :class:`Output` implementation
         :returns:
             a list of children or a single child in output representation
         '''
