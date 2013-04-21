@@ -13,10 +13,10 @@ Chapters
 .. toctree::
 
     base
-    string_output
-    element_output
-    dom_output
     decorators
+    string_output
+    dom_output
+    element_output
 
 
 TL;DR [#f1]_
