@@ -6,6 +6,7 @@ The hierarchical structure of XML is easy to spot and the code to create XML
 is much shorter than using SAX, DOM or similar APIs.
 
 
+<!--
 ## Getting Started
 
 Install using [setuptools](https://pypi.python.org/pypi/setuptools):
@@ -18,6 +19,7 @@ You might also be interested in:
 * [ECoXiPy on PyPi](https://pypi.python.org/pypi/ECoXiPy)
 * [ECoXiPy Documentation](http://pythonhosted.org/ECoXiPy/)
 
+-->
 
 ## Development
 
@@ -53,6 +55,8 @@ faster than all others, followed by `xml.sax`, `xml.dom.minidom`,
 `ecoxipy.dom_output` with `ecoxipy.element_output` at the end. Run the tests
 your own or see the testing results in the repository under
 `doc/perf_test_results`.
+
+![Performance Test Results Graph](https://raw.github.com/IvIePhisto/ECoXiPy/master/doc/perf_test_results/timeit.png)
 
 Run [timeit](http://docs.python.org/2/library/timeit.html) tests (linear
 increase of `data_count` yields exponential test document size increase):
