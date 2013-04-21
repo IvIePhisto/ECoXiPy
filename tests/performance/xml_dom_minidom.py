@@ -2,7 +2,7 @@ from xml.dom import XHTML_NAMESPACE
 from xml.dom.minidom import getDOMImplementation
 
 
-def create_testdoc(_title, _content, _data_count):
+def create_testdoc(_title, _content, _data_count, _data_text):
     dom_impl = getDOMImplementation()
     #html_doctype = dom_impl.createDocumentType('html', '', '')
     html_doc = dom_impl.createDocument(XHTML_NAMESPACE, 'html', None)
@@ -27,10 +27,14 @@ def create_testdoc(_title, _content, _data_count):
     p_text = text(_content)
     p_element.appendChild(p_text)
     for i in range(_data_count):
-        p_element = element('p')
-        body_element.appendChild(p_element)
-        p_element.setAttribute('data-i', unicode(i))
-        p_text = text(unicode(i))
-        p_element.appendChild(p_text)
+        div_element = element('div')
+        body_element.appendChild(div_element)
+        div_element.setAttribute('data-i', unicode(i))
+        for j in range(_data_count):
+            p_element = element('p')
+            p_element.setAttribute('data-j', unicode(j))
+            div_element.appendChild(p_element)
+            p_text = text(_data_text)
+            p_element.appendChild(p_text)
     return html_doc.toxml('UTF-8')
 

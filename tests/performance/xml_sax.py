@@ -4,7 +4,7 @@ from xml.sax.saxutils import XMLGenerator
 from xml.sax.xmlreader import AttributesImpl
 from StringIO import StringIO
 
-def create_testdoc(_title, _content, _data_count):
+def create_testdoc(_title, _content, _data_count, _data_text):
     xml_doc = StringIO()
     try:
         xml_generator = XMLGenerator(xml_doc, 'UTF-8')
@@ -29,9 +29,12 @@ def create_testdoc(_title, _content, _data_count):
         text(_content)
         end_element('p')
         for i in range(_data_count):
-            start_element('p', {'data-i': unicode(_data_count)})
-            text(unicode(_data_count))
-            end_element('p')
+            start_element('div', attrs({'data-i': unicode(i)}))
+            for j in range(_data_count):
+                start_element('p', attrs({'data-j': unicode(j)}))
+                text(_data_text)
+                end_element('p')
+            end_element('div')
         end_element('body')
         end_element('html')
         xml_generator.endDocument()
