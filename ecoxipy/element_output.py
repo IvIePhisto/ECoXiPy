@@ -173,15 +173,16 @@ class ElementOutput(Output):
         imported_content = []
 
         def import_xml(text):
-            def import_element(element):
+            def import_element(children_list, element):
                 name = element.tagName
-                children = import_nodes(element.childNodes)
+                children = []
+                import_nodes(children, element.childNodes)
                 attributes = import_attributes(element)
                 imported_element = Element(name, children, attributes)
-                return imported_element
+                children_list.append(imported_element)
 
-            def import_text(text):
-                return text.data
+            def import_text(children_list, text):
+                children_list.append(text.data)
 
             def import_attributes(element):
                 attributes = dict()
@@ -189,25 +190,20 @@ class ElementOutput(Output):
                     attributes[attr.name] = attr.value
                 return attributes
 
-            def import_node(node):
-                if node.nodeType == dom.Node.ELEMENT_NODE:
-                    return import_element(node)
-                elif node.nodeType in [dom.Node.TEXT_NODE,
-                        dom.Node.CDATA_SECTION_NODE]:
-                    return import_text(node)
-                return None
-
-            def import_nodes(nodes):
+            def import_nodes(children_list, nodes):
                 for node in nodes:
-                    node = import_node(node)
-                    if node is not None:
-                        imported_content.append(node)
+                    if node.nodeType == dom.Node.ELEMENT_NODE:
+                        import_element(children_list, node)
+                    elif node.nodeType in [dom.Node.TEXT_NODE,
+                            dom.Node.CDATA_SECTION_NODE]:
+                        import_text(children_list, node)
 
             if text.startswith('<!DOCTYPE') and text.endswith('>'):
                 imported_content.append(Doctype(*text[9:-1].split()))
             else:
                 document = minidom.parseString('<ROOT>' + text + '</ROOT>')
-                import_nodes(document.documentElement.childNodes)
+                import_nodes(imported_content,
+                    document.documentElement.childNodes)
 
         for content_element in content:
             if isinstance(content_element, (Element, Doctype)):
