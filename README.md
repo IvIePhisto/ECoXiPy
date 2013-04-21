@@ -26,6 +26,11 @@ Install egg for development:
     python setup.py develop
 
 
+Build documentation:
+
+    python setup.py build_sphinx
+
+
 ### Testing
 
 These tests require [TinkerPy](https://github.com/IvIePhisto/TinkerPy) to
@@ -37,11 +42,11 @@ Execute unit tests:
     python setup.py test
 
 
-Run `timeit` tests:
+Run [timeit](http://docs.python.org/2/library/timeit.html) tests:
 
     python tests/performance/timeit_tests.py
 
 
-Run `cProfile` tests:
+Run [cProfile](http://docs.python.org/2/library/profile.html) tests:
 
     python tests/performance/profiling_tests.py

@@ -42,7 +42,7 @@ Basic Usage:
 Getting the :func:`unicode` value of an :class:`Element` creates a
 XML Unicode string:
 
->>> document_string = u"""<article count="1" lang="en" umlaut-attribute="äöüß"><h1 data="to quote: &lt;&amp;&gt;&quot;'">&lt;Example&gt;</h1><p>Hello<em> World</em>!</p><div><data-element>äöüß &lt;&amp;&gt;</data-element><p attr="value">raw content</p>Some Text<br/>012345</div></article>"""
+>>> document_string = u"""<article lang="en" count="1" umlaut-attribute="äöüß"><h1 data="to quote: &lt;&amp;&gt;&quot;'">&lt;Example&gt;</h1><p>Hello<em> World</em>!</p><div><data-element>äöüß &lt;&amp;&gt;</data-element><p attr="value">raw content</p>Some Text<br></br>012345</div></article>"""
 >>> unicode(element) == document_string
 True
 
@@ -59,27 +59,17 @@ You can also create indented XML when calling the
 ``indent_incr`` argument:
 
 >>> indented_document_string = u"""\
-... <article count="1" lang="en" umlaut-attribute="äöüß">
+... <article lang="en" count="1" umlaut-attribute="äöüß">
 ...     <h1 data="to quote: &lt;&amp;&gt;&quot;'">&lt;Example&gt;</h1>
-...     <p>
-...         Hello
-...         <em> World</em>
-...         !
+...     <p>Hello
+...         <em> World</em>!
 ...     </p>
 ...     <div>
 ...         <data-element>äöüß &lt;&amp;&gt;</data-element>
-...         <p attr="value">raw content</p>
-...         Some Text
-...         <br/>
-...         0
-...         1
-...         2
-...         3
-...         4
-...         5
+...         <p attr="value">raw content</p>Some Text
+...         <br></br>012345
 ...     </div>
-... </article>
-... """
+... </article>"""
 >>> element.__unicode__(indent_incr='    ') == indented_document_string
 True
 >>> element.__str__(indent_incr='    ') == indented_document_string.encode('utf-8')
@@ -132,6 +122,7 @@ from xml import dom
 from xml.dom import minidom
 from xml.sax.saxutils import XMLGenerator
 from xml.sax.xmlreader import AttributesImpl
+from StringIO import StringIO
 
 from tinkerpy import ImmutableDict
 from . import Output, _dom_create_element
@@ -276,14 +267,13 @@ class Element(object):
         :returns: The XML representation of the element as an :func:`str`
             instance with encoding `UTF-8`.
         '''
-        document = self.create_dom_document()
-        element = document.documentElement
-        if indent_incr is None:
-            xml = element.toxml(encoding='utf-8')
-        else:
-            xml = element.toprettyxml(indent_incr, encoding='utf-8')
-        document.unlink()
-        return xml
+        element_str = StringIO()
+        try:
+            self.create_sax_events(out=element_str, out_encoding='UTF-8',
+                indent_incr=indent_incr)
+            return element_str.getvalue()
+        finally:
+            element_str.close()
 
     def __unicode__(self, indent_incr=None):
         '''Creates a string containing the XML representation of the element.
@@ -295,7 +285,7 @@ class Element(object):
         :returns: The XML representation of the element as an :func:`unicode`
             instance.
         '''
-        return self.__str__(indent_incr).decode('utf-8')
+        return self.__str__(indent_incr=indent_incr).decode('UTF-8')
 
     def _create_dom_children(self, document):
         '''Creates DOM children using the supplied ``document``.
@@ -362,7 +352,7 @@ class Element(object):
         content_handler.endElement(self.name)
 
     def create_sax_events(self, content_handler=None, out=None,
-            indent_incr=None):
+            out_encoding=None, indent_incr=None):
         '''Creates SAX events.
 
         :param content_handler: If this is :const:`None` a
@@ -370,8 +360,10 @@ class Element(object):
             content handler. If in this case ``out`` is not :const:`None`,
             it is used for output.
         :type content_handler: :class:`xml.sax.ContentHandler`
-        :param out: The output to write to if a ``content_handler`` is given.
+        :param out: The output to write to if no ``content_handler`` is given.
             It should have a ``write`` method like files.
+        :param out_encoding: The output encoding if no ``content_handler``
+            is given and ``out`` is not :const:`None`.
         :param indent_incr: If this is not :const:`None` this activates
             pretty printing. In this case it should be a string and it is used
             for indenting.
@@ -379,7 +371,7 @@ class Element(object):
         :returns: The content handler used.
         '''
         if content_handler is None:
-            content_handler = XMLGenerator(out, 'utf-8')
+            content_handler = XMLGenerator(out, out_encoding)
         indent = None
         if indent_incr is not None:
             indent = ''
