@@ -13,8 +13,8 @@ Chapters
 .. toctree::
 
     base
-    element_output
     string_output
+    element_output
     dom_output
     decorators
 
@@ -22,17 +22,13 @@ Chapters
 TL;DR [#f1]_
 ------------
 
-If you want to jump right in, have a look at the examples:
+If you want to jump right in, have a look at the examples...
 
 
 The most convenient usage - if you can live with defining allowed element
 names beforehand or want to create HTML5
 
     :ref:`ecoxipy.decorators <ecoxipy.decorators.examples>`
-
-Create low-footprint XML structures
-
-    :ref:`ecoxipy.element_output <ecoxipy.element_output.examples>`
 
 XML as Strings
 
@@ -41,6 +37,10 @@ XML as Strings
 DOM Creation
 
     :ref:`ecoxipy.dom_output <ecoxipy.dom_output.examples>`
+
+Create low-footprint XML structures
+
+    :ref:`ecoxipy.element_output <ecoxipy.element_output.examples>`
 
 
 .. [#f1] "*Too long; didn't read*"
