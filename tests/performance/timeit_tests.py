@@ -7,7 +7,7 @@ import ecoxipy_string_output
 import ecoxipy_dom_output
 
 
-TIMEIT_NUMBER = 500
+TIMEIT_NUMBER = 200
 TIMEIT_DATA_COUNT = 100
 
 if __name__ == '__main__':

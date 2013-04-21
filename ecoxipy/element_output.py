@@ -31,9 +31,9 @@ Basic Usage:
 ...             '<p attr="value">raw content</p>Some Text',
 ...             # Create an element without calling the creating method:
 ...             b.br,
-...             (str(i) for i in range(3))
+...             (i for i in range(3))
 ...         ),
-...         (str(i) for i in range(3, 6))
+...         (i for i in range(3, 6))
 ...     ),
 ...     lang='en', count=1
 ... )
@@ -60,16 +60,29 @@ You can also create indented XML when calling the
 
 >>> indented_document_string = u"""\
 ... <article lang="en" count="1" umlaut-attribute="äöüß">
-...     <h1 data="to quote: &lt;&amp;&gt;&quot;'">&lt;Example&gt;</h1>
-...     <p>Hello
-...         <em> World</em>!
+...     <h1 data="to quote: &lt;&amp;&gt;&quot;'">
+...         &lt;Example&gt;
+...     </h1>
+...     <p>
+...         Hello
+...         <em>
+...              World
+...         </em>
+...         !
 ...     </p>
 ...     <div>
-...         <data-element>äöüß &lt;&amp;&gt;</data-element>
-...         <p attr="value">raw content</p>Some Text
-...         <br></br>012345
+...         <data-element>
+...             äöüß &lt;&amp;&gt;
+...         </data-element>
+...         <p attr="value">
+...             raw content
+...         </p>
+...         Some Text
+...         <br></br>
+...         012345
 ...     </div>
-... </article>"""
+... </article>
+... """
 >>> element.__unicode__(indent_incr='    ') == indented_document_string
 True
 >>> element.__str__(indent_incr='    ') == indented_document_string.encode('utf-8')
@@ -87,19 +100,7 @@ True
 >>> string_out.close()
 >>> string_out = StringIO()
 >>> content_handler = element.create_sax_events(indent_incr='    ', out=string_out)
->>> string_out.getvalue() == u"""\
-... <article lang="en" count="1" umlaut-attribute="äöüß">
-...     <h1 data="to quote: &lt;&amp;&gt;&quot;'">&lt;Example&gt;</h1>
-...     <p>Hello
-...         <em> World</em>!
-...     </p>
-...     <div>
-...         <data-element>äöüß &lt;&amp;&gt;</data-element>
-...         <p attr="value">raw content</p>Some Text
-...         <br></br>012345
-...     </div>
-... </article>\
-... """.encode('utf-8')
+>>> string_out.getvalue() == indented_document_string.encode('utf-8')
 True
 
 
@@ -329,27 +330,48 @@ class Element(object):
         element = self.create_dom_element(document)
         return document
 
-    def _create_sax_events(self, content_handler, indent_incr, indent):
+    def _create_sax_events(self, content_handler, indent):
         '''Creates SAX events for the element.'''
-        child_indent = None
-        if indent_incr is not None:
-            if indent != '':
-                content_handler.characters('\n' + indent)
-            child_indent = indent_incr + indent
+        if indent:
+            indent_incr, indent_count = indent
+            child_indent = (indent_incr, indent_count + 1)
+        else:
+            child_indent = indent
+        def do_indent(at_start=False):
+            if indent:
+                if indent_count > 0 or not at_start:
+                    content_handler.characters('\n')
+                for i in range(indent_count):
+                    content_handler.characters(indent_incr)
+        do_indent(True)
         attributes = AttributesImpl(self.attributes)
         content_handler.startElement(self.name, attributes)
-        has_element_children = False
+        last_event_characters = False
         for child in self.children:
-            if isinstance(child, str) or isinstance(child, unicode):
-                content_handler.characters(child)
-            else:
+            if isinstance(child, Element):
                 child._create_sax_events(
-                    content_handler, indent_incr, child_indent)
-                has_element_children |= True
-        if indent_incr is not None:
-            if has_element_children:
-                content_handler.characters('\n' + indent)
+                    content_handler, child_indent)
+                last_event_characters = False
+            else:
+                if isinstance(child, Doctype):
+                    try:
+                        content_handler.notationDecl(child.name, child.system_id,
+                            child.public_id)
+                        last_event_characters = False
+                    except AttributeError:
+                        pass
+                else:
+                    if indent and not last_event_characters:
+                        do_indent()
+                        content_handler.characters(indent_incr)
+                    content_handler.characters(unicode(child))
+                    last_event_characters = True
+        if len(self.children) > 0:
+            do_indent()
         content_handler.endElement(self.name)
+        if indent and indent_count == 0:
+            content_handler.characters('\n')
+
 
     def create_sax_events(self, content_handler=None, out=None,
             out_encoding=None, indent_incr=None):
@@ -372,10 +394,11 @@ class Element(object):
         '''
         if content_handler is None:
             content_handler = XMLGenerator(out, out_encoding)
-        indent = None
-        if indent_incr is not None:
-            indent = ''
-        self._create_sax_events(content_handler, indent_incr, indent)
+        if indent_incr is None:
+            indent = False
+        else:
+            indent = (indent_incr, 0)
+        self._create_sax_events(content_handler, indent)
         return content_handler
 
 
