@@ -42,9 +42,10 @@ Execute unit tests:
     python setup.py test
 
 
-Run [timeit](http://docs.python.org/2/library/timeit.html) tests:
+Run [timeit](http://docs.python.org/2/library/timeit.html) tests (linear
+increase of `data_count` yields exponential test document size increase):
 
-    python tests/performance/timeit_tests.py
+    python tests/performance/timeit_tests.py [<repetitions> <data count> [<CSV output path>]]
 
 
 Run [cProfile](http://docs.python.org/2/library/profile.html) tests:
