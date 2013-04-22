@@ -34,7 +34,6 @@ It could be used like this:
 '<!DOCTYPE html><html xmlns="http://www.w3.org/1999/xhtml/"><head><title>A Test</title></head><body><h1>A Test</h1><p>Hello World &amp; Universe!</p></body></html>'
 ```
 
-<!--
 ## Getting Started
 
 Install using [setuptools](https://pypi.python.org/pypi/setuptools):
@@ -47,7 +46,7 @@ You might also be interested in:
 * [ECoXiPy on PyPi](https://pypi.python.org/pypi/ECoXiPy)
 * [ECoXiPy Documentation](http://pythonhosted.org/ECoXiPy/)
 
--->
+
 ## Development
 
 Install egg for development:
