@@ -82,9 +82,10 @@ class DOMOutput(Output):
         :rtype: a list of class:`xml.dom.Node` instances or a single instance
 
         ``content`` items will be treated as follows:
-        *   func:`str`, :func:`unicode` will be parsed as XML.
-        *   :class:`xml.dom.Node` instances will be embedded.
-        *   Others objects will be converted to :class:`unicode` and create
+
+        * func:`str`, :func:`unicode` will be parsed as XML.
+        * :class:`xml.dom.Node` instances will be embedded.
+        * Others objects will be converted to :func:`unicode` and create
             text nodes.
         '''
         imported = self._document.childNodes.__class__()

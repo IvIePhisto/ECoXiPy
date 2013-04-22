@@ -70,7 +70,7 @@ class MarkupBuilder(object):
     ``children`` argument of the builder's dynamic methods, those elements of
     the argument list, which are iterable or iterators, are unpacked. Those
     arguments which are callables are replaced by the result of the call. The
-    :class:`MarkupBuilder` instance call returns a
+    :class:`MarkupBuilder` instance call returns an
     :class:`Output`-implementation-dependant representation for the list
     of arguments. In this process the arguments are parsed, converted,
     encoded or kept the same, depending on their type and the

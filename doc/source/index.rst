@@ -28,13 +28,13 @@ See this example of how to create a simple HTML5 document template function::
         )
 
 
-This can be used like this:
+It could be used like this:
 
->>> create_testdoc('A Test', 'Hello World!')
-'<!DOCTYPE html><html xmlns="http://www.w3.org/1999/xhtml/"><head><title>A Test</title></head><body><h1>A Test</h1><p>Hello World!</p></body></html>'
+>>> create_testdoc('A Test', 'Hello World & Universe!')
+'<!DOCTYPE html><html xmlns="http://www.w3.org/1999/xhtml/"><head><title>A Test</title></head><body><h1>A Test</h1><p>Hello World &amp; Universe!</p></body></html>'
 
 
-Chapters
+Contents
 --------
 
 .. toctree::

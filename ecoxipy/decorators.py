@@ -15,7 +15,7 @@ Examples
 
 :func:`markup_builder_namespace` creates a :func:`tinkerpy.namespace`
 decorator to create XML using a newly created
-:class:`etoxipy.MarkupBuilder` instance. It takes a
+:class:`etoxipy.MarkupBuilder` instance. It takes an
 :class:`ecoxipy.Output` implementation, the name under which the builder is
 available and a list of allowed element names:
 

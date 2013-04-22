@@ -271,7 +271,7 @@ class Element(object):
         '''\
         Creates a string containing the XML representation of the element.
 
-        :returns: The XML representation of the element as an :func:`str`
+        :returns: The XML representation of the element as a :func:`str`
             instance with encoding `UTF-8`.
         '''
         return self._create_str(encoding='UTF-8')

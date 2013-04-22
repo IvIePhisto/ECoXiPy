@@ -30,8 +30,8 @@ def create_testdoc(_title, _content):
 It could be used like this:
 
 ```python
->>> create_testdoc('A Test', 'Hello World!')
-'<!DOCTYPE html><html xmlns="http://www.w3.org/1999/xhtml/"><head><title>A Test</title></head><body><h1>A Test</h1><p>Hello World!</p></body></html>'
+>>> create_testdoc('A Test', 'Hello World & Universe!')
+'<!DOCTYPE html><html xmlns="http://www.w3.org/1999/xhtml/"><head><title>A Test</title></head><body><h1>A Test</h1><p>Hello World &amp; Universe!</p></body></html>'
 ```
 
 <!--
@@ -50,16 +50,19 @@ You might also be interested in:
 -->
 ## Development
 
-You should have [TinkerPy](https://github.com/IvIePhisto/TinkerPy) installed.
-
-
-### Common Tasks
-
 Install egg for development:
 
     python setup.py develop
 
-Build documentation:
+
+This installs [TinkerPy](https://github.com/IvIePhisto/TinkerPy), if you omit
+it you must install TinkerPy manually.
+
+
+### Common Tasks
+
+Build documentation with [Sphinx](http://sphinx-doc.org) (which of course
+must be installed):
 
     python setup.py build_sphinx
 

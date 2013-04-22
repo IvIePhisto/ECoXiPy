@@ -27,7 +27,7 @@ from . import Output
 
 
 class StringOutput(Output):
-    '''A :class:`Output` implementation which creates XML as strings of the
+    '''An :class:`ecoxipy.Output` implementation which creates XML as strings of the
     specified encoding.
 
     :param in_encoding: The name of the encoding to decode :func:`str`

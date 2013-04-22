@@ -9,10 +9,10 @@ setup(name='ECoXiPy',
       long_description="""\
 This Python project allows for easy creation of XML. The hierarchical
 structure of XML is easy to spot and the code to create XML is much shorter
-than using SAX, DOM or Beautiful Soup.
+than using SAX, DOM or similar APIs.
 """,
       classifiers=[
-            'Development Status :: 4 - Beta',
+            'Development Status :: 5 - Production/Stable',
             'Intended Audience :: Developers',
             'License :: OSI Approved :: MIT License',
             'Natural Language :: English',
@@ -26,7 +26,7 @@ than using SAX, DOM or Beautiful Soup.
       author_email='pohl-michael@gmx.biz',
       url='https://github.com/IvIePhisto/ECoXiPy',
       license='MIT License',
-      packages=find_packages(exclude=['ez_setup', 'examples', 'tests']),
+      packages=find_packages(exclude=['ez_setup', 'doc', 'tests']),
       include_package_data=False,
       zip_safe=True,
       install_requires=[
