@@ -14,7 +14,6 @@ def create_testdoc(_title, _content, _data_count, _data_text):
         attrs = lambda values: AttributesImpl(values)
         empty_attrs = attrs({})
         xml_generator.startDocument()
-        #xml_generator.notationDecl('html', '', '')
         start_element('html', attrs({'xmlns': XHTML_NAMESPACE}))
         start_element('head', empty_attrs)
         start_element('title', empty_attrs)
@@ -41,4 +40,3 @@ def create_testdoc(_title, _content, _data_count, _data_text):
         return xml_doc.getvalue()
     finally:
         xml_doc.close()
-

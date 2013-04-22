@@ -5,7 +5,7 @@ This Python project allows for easy creation of [XML](http://www.w3.org/XML/).
 The hierarchical structure of XML is easy to spot and the code to create XML
 is much shorter than using SAX, DOM or similar APIs.
 
-See this example of how to create a simple HTML5 document template function:
+Here's a simple HTML5 document template function:
 
 ```python
 from ecoxipy.decorators import html5
@@ -27,7 +27,7 @@ def create_testdoc(_title, _content):
     )
 ```
 
-This can be used like this:
+It could be used like this:
 
 ```python
 >>> create_testdoc('A Test', 'Hello World!')
@@ -68,22 +68,15 @@ Execute unit tests:
     python setup.py test
 
 
-### Performance Testing
+### Performance Tests
 
 The performance tests create (nearly) the same HTML document in form of an
-UTF-8 encoded string using different APIs. All supplied `ecoxipy.Output`
-implementations (in `ecoxipy.string_output`, `ecoxipy.dom_output` and
-`ecoxipy.element_output`) are tested as well as `xml.sax` and
-`xml.dom.minidom` for comparison.
+UTF-8 encoded string using different APIs. The output as an UTF-8 encoded
+string was chosen as most XML will ultimately be serialised in this form. All
+supplied `ecoxipy.Output` implementations (in `ecoxipy.string_output`,
+`ecoxipy.dom_output` and `ecoxipy.element_output`) are tested as well as
+`xml.sax` and `xml.dom.minidom` for comparison.
 
-The output as an UTF-8 encoded string was chosen as most XML will ultimately
-be serialised in this form. These tests show that `ecoxipy.string_output` is
-faster than all others, followed by `xml.sax`, `xml.dom.minidom`,
-`ecoxipy.dom_output` with `ecoxipy.element_output` at the end. Run the tests
-your own or see the testing results in the repository under
-`doc/perf_test_results`.
-
-![Performance Test Results Graph](https://raw.github.com/IvIePhisto/ECoXiPy/master/doc/perf_test_results/timeit.png)
 
 Run [timeit](http://docs.python.org/2/library/timeit.html) tests (linear
 increase of `data_count` yields exponential test document size increase):
@@ -94,3 +87,12 @@ increase of `data_count` yields exponential test document size increase):
 Run [cProfile](http://docs.python.org/2/library/profile.html) tests:
 
     python tests/performance/profiling_tests.py
+
+
+These tests show that `ecoxipy.string_output` is faster than all others,
+followed by `xml.sax`, `ecoxipy.element_output`, `xml.dom.minidom` with
+`ecoxipy.dom_output` at the end. Run the tests on your own or see my testing
+results in the repository under
+[doc/perf_test_results/timeit.pdf](https://raw.github.com/IvIePhisto/ECoXiPy/master/doc/perf_test_results/timeit.pdf).
+
+![Performance Testing Results Graph](https://raw.github.com/IvIePhisto/ECoXiPy/master/doc/perf_test_results/timeit.png)
