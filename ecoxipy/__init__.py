@@ -25,8 +25,6 @@ class MarkupBuilder(object):
 
     :type output: :class:`Output`
 
-    :raises: :class:`TypeError` if ``output`` is of the wrong type.
-
 
     Each attribute access on an instance of this class returns a method, which
     on calling creates an element in the output representation determined by
@@ -83,9 +81,6 @@ class MarkupBuilder(object):
         if output is None:
             from element_output import ElementOutput
             output = ElementOutput()
-        else:
-            if not isinstance(output, Output):
-                raise TypeError('An "ecoxipy.Output" object must be given.')
         self._output = output
 
     @classmethod
@@ -119,30 +114,6 @@ class MarkupBuilder(object):
 
     def __getitem__(self, name):
         def build(*children, **attributes):
-            '''\
-            Creates a children :func:`list` and an attributes :class:`dict`.
-
-            :param children:
-                text, elements, attribute mappings and children lists
-            :type children:
-                an iterable over items [``for child in children``]
-            :param attributes: the main attributes
-            :type attributes:
-                an iterable mapping [``attributes[name] for name in
-                attributes``]
-            :returns:
-                a :func:`tuple` of a :func:`list` at index 0 of children and
-                a :class:`dict` at index 1 of attributes
-
-            Those elements of ``children`` which are iterable mapping types
-            (``child[name] for name in child``) are not returned in the
-            children list but their entries define entries of the returned
-            attributes dictionary. Other elements which are iterable or
-            iterators are replaced with their elements, callables are replaced
-            by the result of their call. The entries of ``attributes``
-            complement the returned dictionary or overwrite entries from
-            ``children`` elements.
-            '''
             new_children = []
             new_attributes = {}
             for child in children:
@@ -172,7 +143,7 @@ class Output(object):
 
         :param name: The name of the element to create.
         :type name: :func:`str` or :func:`unicode`
-        :param children: The iterable of children to add to the element to
+        :param children: The list of children to add to the element to
             create.
         :param attributes: The mapping of attributes of the element to create.
         :returns: The element representation created.
@@ -183,23 +154,9 @@ class Output(object):
         '''Imports the elements of ``content`` as data in the output
         representation.
 
-        :param content: The data to parse.
+        :param content: The list of data to parse.
         :type content: a list, handling of elements depends on
             :class:`Output` implementation
         :returns:
             a list of children or a single child in output representation
         '''
-
-
-def _dom_create_element(document, name, attributes, children):
-    element = document.createElement(name)
-    for name in attributes:
-        element.setAttribute(unicode(name), unicode(attributes[name]))
-    for child in children:
-        if isinstance(child, dom.Node):
-            element.appendChild(child)
-        else:
-            child = document.createTextNode(unicode(child))
-            element.appendChild(child)
-    document.documentElement = element
-    return element

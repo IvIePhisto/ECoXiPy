@@ -127,7 +127,8 @@ from StringIO import StringIO
 
 from tinkerpy import ImmutableDict
 
-from . import Output, _dom_create_element
+from . import Output
+from dom_output import _dom_create_element
 from string_output import StringOutput as _StringOutput
 
 
@@ -192,15 +193,12 @@ class ElementOutput(Output):
                             dom.Node.CDATA_SECTION_NODE]:
                         import_text(children_list, node)
 
-            if text.startswith('<!DOCTYPE') and text.endswith('>'):
-                imported_content.append(Doctype(*text[9:-1].split()))
-            else:
-                document = minidom.parseString('<ROOT>' + text + '</ROOT>')
-                import_nodes(imported_content,
-                    document.documentElement.childNodes)
+            document = minidom.parseString('<ROOT>' + text + '</ROOT>')
+            import_nodes(imported_content,
+                document.documentElement.childNodes)
 
         for content_element in content:
-            if isinstance(content_element, (Element, Doctype)):
+            if isinstance(content_element, Element):
                 imported_content.append(content_element)
             else:
                 if not isinstance(content_element, (str, unicode)):
@@ -265,7 +263,7 @@ class Element(object):
             out = _StringOutput(out_encoding=encoding)
         return out.element(self.name, [
                     child._create_str(out)
-                    if isinstance(child, (Element, Doctype)) else child
+                    if isinstance(child, Element) else child
                 for child in self.children
             ], self.attributes)
 
@@ -355,19 +353,11 @@ class Element(object):
                     content_handler, child_indent)
                 last_event_characters = False
             else:
-                if isinstance(child, Doctype):
-                    try:
-                        content_handler.notationDecl(child.name, child.system_id,
-                            child.public_id)
-                        last_event_characters = False
-                    except AttributeError:
-                        pass
-                else:
-                    if indent and not last_event_characters:
-                        do_indent()
-                        content_handler.characters(indent_incr)
-                    content_handler.characters(unicode(child))
-                    last_event_characters = True
+                if indent and not last_event_characters:
+                    do_indent()
+                    content_handler.characters(indent_incr)
+                content_handler.characters(unicode(child))
+                last_event_characters = True
         if len(self.children) > 0:
             do_indent()
         content_handler.endElement(self.name)
@@ -438,55 +428,3 @@ class Attributes(ImmutableDict):
 
     def __getitem__(self, name):
         return ImmutableDict.__getitem__(self, unicode(name))
-
-
-class Doctype(object):
-    __slots__ = ('_name', '_system_id', '_public_id')
-
-    def __init__(self, name, system_id=None, public_id=None):
-        self._name = unicode(name)
-        if system_id is None:
-            system_id = u''
-        else:
-            system_id = unicode(system_id)
-        if public_id is None:
-            public_id = u''
-        else:
-            public_id = unicode(public_id)
-        self._system_id = system_id
-        self._public_id = public_id
-
-    @property
-    def name(self):
-        return self._name
-
-    @property
-    def system_id(self):
-        return self._system_id
-
-    @property
-    def public_id(self):
-        return self._public_id
-
-    def _create_str(self, out):
-        return out.embed(unicode(self))
-
-    def __str__(self):
-        return ''.join((
-            '<!DOCTYPE ', self.name.encode('UTF-8'),
-            '' if len(self.system_id) == 0 else ' ',
-            self.system_id.encode('UTF-8'),
-            '' if len(self.public_id) == 0 else ' ',
-            self.public_id.encode('UTF-8'),
-            '>',
-        ))
-
-    def __unicode__(self):
-        return u''.join((
-            u'<!DOCTYPE ', self.name,
-            u'' if len(self.system_id) == 0 else u' ',
-            self.system_id,
-            u'' if len(self.public_id) == 0 else u' ',
-            self.public_id,
-            u'>',
-        ))

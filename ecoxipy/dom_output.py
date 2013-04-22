@@ -12,19 +12,28 @@ Python by :mod:`xml.dom`) structures.
 
 Usage Example:
 
+>>> from xml.dom.minidom import getDOMImplementation
+>>> dom_br = getDOMImplementation().createDocument(None, 'br', None).documentElement
 >>> dom_output = DOMOutput()
 >>> doc = dom_output.document
 >>> from ecoxipy import MarkupBuilder
 >>> b = MarkupBuilder(dom_output)
->>> element = b.section(b.p('Hello World!'), None, b.p(u'äöüß'), b.p('<&>'), b('<raw/>text', b.br, (str(i) for i in range(3)), (str(i) for i in range(3, 6))), attr='\'"<&>')
->>> element.toxml() == u"""<section attr="'&quot;&lt;&amp;&gt;"><p>Hello World!</p><p>äöüß</p><p>&lt;&amp;&gt;</p><raw/>text<br/>012345</section>"""
+>>> element = b.section(
+...     b.p('Hello World!'),
+...     None,
+...     b(u'<p>äöüß</p>'),
+...     b.p('<&>'),
+...     b('<raw/>text', b.br, (i for i in range(3)), (i for i in range(3, 6)), dom_br),
+...     attr='\'"<&>'
+...  )
+>>> element.toxml() == u"""<section attr="'&quot;&lt;&amp;&gt;"><p>Hello World!</p><p>äöüß</p><p>&lt;&amp;&gt;</p><raw/>text<br/>012345<br/></section>"""
 True
 '''
 
 from xml import dom
 from xml.dom import minidom
 
-from . import Output, _dom_create_element
+from . import Output
 
 
 class DOMOutput(Output):
@@ -67,60 +76,54 @@ class DOMOutput(Output):
         '''Imports the elements of ``content`` as XML and returns DOM nodes.
 
         :param content: the XML to import
-        :type content: :func:`str`, :func:`unicode` or :class:`xml.dom.Node`
+        :type content: The content to be embedded
         :raises xml.parsers.expat.ExpatError: If a ``content`` element cannot
             be parsed.
         :rtype: a list of class:`xml.dom.Node` instances or a single instance
+
+        ``content`` items will be treated as follows:
+        *   func:`str`, :func:`unicode` will be parsed as XML.
+        *   :class:`xml.dom.Node` instances will be embedded.
+        *   Others objects will be converted to :class:`unicode` and create
+            text nodes.
         '''
-        def embed_dom_node(node):
-            def import_element(element):
-                imported_element = self._document.createElement(
-                    element.tagName)
-                attributes = element.attributes
-                for name, value in attributes.items():
-                    imported_element.setAttribute(name, value)
-                import_dom_nodes(
-                    imported_element.childNodes, element.childNodes)
-                return imported_element
-
-            def import_text(text):
-                return self._document.createTextNode(text.data)
-
-            if node.nodeType == dom.Node.ELEMENT_NODE:
-                return import_element(node)
-            elif node.nodeType in [dom.Node.TEXT_NODE,
-                    dom.Node.CDATA_SECTION_NODE]:
-                return import_text(node)
-            return None
-
-        def import_dom_nodes(parentNodes, nodes):
-            for node in nodes:
-                imported_node = import_dom_node(node)
-                if imported_node is not None:
-                    parentNodes.append(imported_node)
+        imported = self._document.childNodes.__class__()
 
         def import_xml(text):
             document = minidom.parseString('<ROOT>{}</ROOT>'.format(text))
-            nodes = []
-            if isinstance(document, self._document.__class__):
-                for node in document.documentElement.childNodes:
-                    if node.nodeType in supported_node_types:
-                        nodes.append(node)
-            else:
-                import_dom_nodes(nodes, document.documentElement.childNodes)
-            return nodes
+            doc_element = document.documentElement
+            current_node = doc_element.firstChild
+            while current_node is not None:
+                next_node = current_node.nextSibling
+                doc_element.removeChild(current_node)
+                imported.append(current_node)
+                current_node = next_node
+            document.unlink()
 
-        supported_node_types = (dom.Node.ELEMENT_NODE, dom.Node.TEXT_NODE,
-            dom.Node.CDATA_SECTION_NODE)
-        imported = self._document.childNodes.__class__()
         for content_element in content:
-            if isinstance(content_element, unicode):
-                content_element = content_element.encode('utf-8')
-            if isinstance(content_element, str):
-                imported.extend(import_xml(content_element))
-            elif isinstance(content_element, dom.Node):
-                if content_element.nodeType in supported_node_types:
-                    imported.append(content_element)
+            if isinstance(content_element, dom.Node):
+                imported.append(content_element)
+            else:
+                if isinstance(content_element, unicode):
+                    content_element = content_element.encode('UTF-8')
+                if isinstance(content_element, str):
+                    import_xml(content_element)
+                else:
+                    imported.append(self._document.createTextNode(
+                        unicode(content_element)))
         if len(imported) == 1:
             return imported[0]
         return imported
+
+
+def _dom_create_element(document, name, attributes, children):
+    element = document.createElement(name)
+    for name in attributes:
+        element.setAttribute(unicode(name), unicode(attributes[name]))
+    for child in children:
+        if isinstance(child, dom.Node):
+            element.appendChild(child)
+        else:
+            element.appendChild(document.createTextNode(unicode(child)))
+    document.documentElement = element
+    return element

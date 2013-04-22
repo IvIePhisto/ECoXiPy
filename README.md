@@ -5,6 +5,34 @@ This Python project allows for easy creation of [XML](http://www.w3.org/XML/).
 The hierarchical structure of XML is easy to spot and the code to create XML
 is much shorter than using SAX, DOM or similar APIs.
 
+See this example of how to create a simple HTML5 document template function:
+
+```python
+from ecoxipy.decorators import html5
+
+@html5
+def create_testdoc(_title, _content):
+    return _b(
+        '<!DOCTYPE html>',
+        html(
+            head(
+                title(_title)
+            ),
+            body(
+                h1(_title),
+                p(_content)
+            ),
+            xmlns='http://www.w3.org/1999/xhtml/'
+        )
+    )
+```
+
+This can be used like this:
+
+```python
+>>> create_testdoc('A Test', 'Hello World!')
+'<!DOCTYPE html><html xmlns="http://www.w3.org/1999/xhtml/"><head><title>A Test</title></head><body><h1>A Test</h1><p>Hello World!</p></body></html>'
+```
 
 <!--
 ## Getting Started
@@ -20,7 +48,6 @@ You might also be interested in:
 * [ECoXiPy Documentation](http://pythonhosted.org/ECoXiPy/)
 
 -->
-
 ## Development
 
 You should have [TinkerPy](https://github.com/IvIePhisto/TinkerPy) installed.

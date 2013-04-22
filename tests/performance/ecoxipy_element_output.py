@@ -1,6 +1,6 @@
 from xml.dom import XHTML_NAMESPACE
 
-from ecoxipy.element_output import ElementOutput, Doctype
+from ecoxipy.element_output import ElementOutput
 from ecoxipy.decorators import markup_builder_namespace
 
 

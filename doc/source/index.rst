@@ -7,6 +7,33 @@ and the code to create XML is much shorter than using SAX, DOM or similar
 APIs.
 
 
+See this example of how to create a simple HTML5 document template function::
+
+    from ecoxipy.decorators import html5
+
+    @html5
+    def create_testdoc(_title, _content):
+        return _b(
+            '<!DOCTYPE html>',
+            html(
+                head(
+                    title(_title)
+                ),
+                body(
+                    h1(_title),
+                    p(_content)
+                ),
+                xmlns='http://www.w3.org/1999/xhtml/'
+            )
+        )
+
+
+This can be used like this:
+
+>>> create_testdoc('A Test', 'Hello World!')
+'<!DOCTYPE html><html xmlns="http://www.w3.org/1999/xhtml/"><head><title>A Test</title></head><body><h1>A Test</h1><p>Hello World!</p></body></html>'
+
+
 Chapters
 --------
 
@@ -26,7 +53,8 @@ If you want to jump right in, have a look at the examples...
 
 
 The most convenient usage - if you can live with defining allowed element
-names beforehand or want to create HTML5
+names beforehand, want to define a vocabulary anyway or just want to create
+HTML5:
 
     :ref:`ecoxipy.decorators <ecoxipy.decorators.examples>`
 
