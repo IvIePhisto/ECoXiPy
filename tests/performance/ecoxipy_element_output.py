@@ -6,7 +6,8 @@ from ecoxipy.decorators import markup_builder_namespace
 
 @markup_builder_namespace(ElementOutput, '_b', 'html', 'head', 'title', 'body', 'h1', 'p')
 def create_testdoc(_title, _content, _data_count, _data_text):
-    return html(
+    return str(
+        html(
             head(
                 title(_title)
             ),
@@ -19,5 +20,5 @@ def create_testdoc(_title, _content, _data_count, _data_text):
                     for i in range(_data_count))
             ),
             xmlns=XHTML_NAMESPACE
-        ).__str__()
-
+        )
+    )

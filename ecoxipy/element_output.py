@@ -42,7 +42,7 @@ Basic Usage:
 Getting the :func:`unicode` value of an :class:`Element` creates a
 XML Unicode string:
 
->>> document_string = u"""<article lang="en" count="1" umlaut-attribute="äöüß"><h1 data="to quote: &lt;&amp;&gt;&quot;'">&lt;Example&gt;</h1><p>Hello<em> World</em>!</p><div><data-element>äöüß &lt;&amp;&gt;</data-element><p attr="value">raw content</p>Some Text<br></br>012345</div></article>"""
+>>> document_string = u"""<article lang="en" count="1" umlaut-attribute="äöüß"><h1 data="to quote: &lt;&amp;&gt;&quot;'">&lt;Example&gt;</h1><p>Hello<em> World</em>!</p><div><data-element>äöüß &lt;&amp;&gt;</data-element><p attr="value">raw content</p>Some Text<br/>012345</div></article>"""
 >>> unicode(element) == document_string
 True
 
@@ -54,9 +54,22 @@ encoded XML string:
 True
 
 
+:class:`Element` instances can also generate SAX events (with
+:meth:`Element.create_sax_events`):
+
 You can also create indented XML when calling the
 :meth:`Element.__unicode__` and :meth:`Element.__str__` by supplying the
 ``indent_incr`` argument:
+
+>>> from StringIO import StringIO
+>>> string_out = StringIO()
+>>> content_handler = element.create_sax_events(out=string_out)
+>>> string_out.getvalue() == u"""<article lang="en" count="1" umlaut-attribute="äöüß"><h1 data="to quote: &lt;&amp;&gt;&quot;'">&lt;Example&gt;</h1><p>Hello<em> World</em>!</p><div><data-element>äöüß &lt;&amp;&gt;</data-element><p attr="value">raw content</p>Some Text<br></br>012345</div></article>""".encode('utf-8')
+True
+>>> string_out.close()
+
+
+Using SAX you can also create indented XML:
 
 >>> indented_document_string = u"""\
 ... <article lang="en" count="1" umlaut-attribute="äöüß">
@@ -83,25 +96,12 @@ You can also create indented XML when calling the
 ...     </div>
 ... </article>
 ... """
->>> element.__unicode__(indent_incr='    ') == indented_document_string
-True
->>> element.__str__(indent_incr='    ') == indented_document_string.encode('utf-8')
-True
-
-
-:class:`Element` instances can also generate SAX events (with
-:meth:`Element.create_sax_events`):
-
->>> from StringIO import StringIO
->>> string_out = StringIO()
->>> content_handler = element.create_sax_events(out=string_out)
->>> string_out.getvalue() == u"""<article lang="en" count="1" umlaut-attribute="äöüß"><h1 data="to quote: &lt;&amp;&gt;&quot;'">&lt;Example&gt;</h1><p>Hello<em> World</em>!</p><div><data-element>äöüß &lt;&amp;&gt;</data-element><p attr="value">raw content</p>Some Text<br></br>012345</div></article>""".encode('utf-8')
-True
->>> string_out.close()
 >>> string_out = StringIO()
 >>> content_handler = element.create_sax_events(indent_incr='    ', out=string_out)
 >>> string_out.getvalue() == indented_document_string.encode('utf-8')
 True
+>>> string_out.close()
+
 
 
 :class:`Output` Implementation
@@ -126,7 +126,9 @@ from xml.sax.xmlreader import AttributesImpl
 from StringIO import StringIO
 
 from tinkerpy import ImmutableDict
+
 from . import Output, _dom_create_element
+from string_output import StringOutput as _StringOutput
 
 
 class ElementOutput(Output):
@@ -258,38 +260,36 @@ class Element(object):
         '''
         return self._attributes
 
-    def __str__(self, indent_incr=None):
-        '''Creates a string containing the XML representation of the element.
+    def _create_str(self, out=None, encoding=None):
+        if out is None:
+            out = _StringOutput(out_encoding=encoding)
+        return out.element(self.name, [
+                    child._create_str(out)
+                    if isinstance(child, (Element, Doctype)) else child
+                for child in self.children
+            ], self.attributes)
 
-        :param indent_incr: If this is not :const:`None` this activates
-            pretty printing. In this case it should be a string and it is used
-            for indenting.
-        :type indent_incr: :func:`str`
+    def __str__(self):
+        '''\
+        Creates a string containing the XML representation of the element.
+
         :returns: The XML representation of the element as an :func:`str`
             instance with encoding `UTF-8`.
         '''
-        element_str = StringIO()
-        try:
-            self.create_sax_events(out=element_str, out_encoding='UTF-8',
-                indent_incr=indent_incr)
-            return element_str.getvalue()
-        finally:
-            element_str.close()
+        return self._create_str(encoding='UTF-8')
 
-    def __unicode__(self, indent_incr=None):
-        '''Creates a string containing the XML representation of the element.
+    def __unicode__(self):
+        '''\
+        Creates a string containing the XML representation of the element.
 
-        :param indent_incr: If this is not :const:`None` this activates
-            pretty printing. In this case it should be a string and it is used
-            for indenting.
-        :type indent_incr: :func:`str`
         :returns: The XML representation of the element as an :func:`unicode`
             instance.
         '''
-        return self.__str__(indent_incr=indent_incr).decode('UTF-8')
+        return self._create_str()
 
     def _create_dom_children(self, document):
-        '''Creates DOM children using the supplied ``document``.
+        '''\
+        Creates DOM children using the supplied ``document``.
 
         :param document: The DOM document to use as the node factory.
         :returns: The created children list.
@@ -303,7 +303,8 @@ class Element(object):
         return children
 
     def create_dom_element(self, document):
-        '''Creates a DOM element representing the element.
+        '''\
+        Creates a DOM element representing the element.
 
         :param document: The document to create DOM nodes with.
         :type document: :class:`xml.dom.Document`
@@ -315,7 +316,8 @@ class Element(object):
         return element
 
     def create_dom_document(self, dom_implementation=None):
-        '''Creates a DOM document with the document element
+        '''\
+        Creates a DOM document with the document element
         representing the element.
 
         :param dom_implementation: The DOM implementation to use to create a
@@ -371,7 +373,6 @@ class Element(object):
         content_handler.endElement(self.name)
         if indent and indent_count == 0:
             content_handler.characters('\n')
-
 
     def create_sax_events(self, content_handler=None, out=None,
             out_encoding=None, indent_incr=None):
@@ -466,6 +467,9 @@ class Doctype(object):
     @property
     def public_id(self):
         return self._public_id
+
+    def _create_str(self, out):
+        return out.embed(unicode(self))
 
     def __str__(self):
         return ''.join((
