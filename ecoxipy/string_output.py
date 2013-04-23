@@ -15,7 +15,7 @@ Usage Example:
 >>> xml_output = StringOutput(out_encoding=None)
 >>> from ecoxipy import MarkupBuilder
 >>> b = MarkupBuilder(xml_output)
->>> xml = b.section(b.p('Hello World!'), None, b.p(u'äöüß'), b.p('<&>'), b('<raw/>text', b.br, (str(i) for i in range(3)), (str(i) for i in range(3, 6))), attr='\'"<&>')
+>>> xml = b.section(b.p('Hello World!'), None, b.p(u'äöüß'), b.p(b & '<&>'), b('<raw/>text', b.br, (str(i) for i in range(3)), (str(i) for i in range(3, 6))), attr='\'"<&>')
 >>> xml == u"""<section attr="'&quot;&lt;&amp;&gt;"><p>Hello World!</p><p>äöüß</p><p>&lt;&amp;&gt;</p><raw/>text<br/>012345</section>"""
 True
 '''
@@ -81,11 +81,22 @@ class StringOutput(Output):
     '''
     def __init__(self, in_encoding='utf-8', out_encoding='utf-8',
             entities=None):
-        self._in_encoding = in_encoding
-        self._out_encoding = out_encoding
-        self._different_encodings = in_encoding == out_encoding
-        self._decode_str = self._different_encodings and self._in_encoding is not None
-        self._endode_unicode = out_encoding is not None
+        if in_encoding != out_encoding and in_encoding is not None:
+            self._decode = lambda value: (
+                value.decode(in_encoding)
+                if isinstance(value, str) else unicode(value)
+            )
+        else:
+            self._decode = lambda value: (
+                value if isinstance(value, str) else unicode(value)
+            )
+        if out_encoding is None:
+            self._encode = lambda value: value
+        else:
+            self._encode = lambda value: (
+                value.encode(out_encoding)
+                if isinstance(value, unicode) else value
+            )
         if out_encoding is None:
             self._xml_string = _XMLUnicode
             self._join = u''.join
@@ -102,42 +113,29 @@ class StringOutput(Output):
             entities = {}
         self._entities = entities
 
-    def _decode(self, value):
-        if isinstance(value, str):
-            if self._decode_str:
-                return value.decode(self._in_encoding)
-            return value
-        elif isinstance(value, unicode):
-            return value
-        else:
-            return unicode(value)
-
-    def _encode(self, value):
-        if self._endode_unicode and isinstance(value, unicode):
-            return value.encode(self._out_encoding)
-        return value
-
     def _escape(self, value):
         return escape(value, self._entities)
 
     def _quoteattr(self, value):
         return quoteattr(value, self._entities)
 
+    def _prepare(self, value):
+        return self._escape(self._encode(self._decode(value)))
+
     def element(self, name, children, attributes):
         '''Returns a XML element string with the encoding given on
         initialization.
 
         :param name: The name of the element to create.
-        :type name: :func:`str` of :func:`unicode`
         :param children: The iterable of children.
         :param attributes: The mapping of arguments.
         :returns: The XML string created.
-        :rtype: class:`str`
+        :rtype: :func:`str` or :func:`unicode`
         '''
-        element_name = self._escape(self._encode(self._decode(name)))
+        element_name = self._prepare(name)
         attributes_string = self._join([
             self._format_attribute.format(
-                self._escape(self._encode(self._decode(attribute_name))),
+                self._prepare(attribute_name),
                 self._quoteattr(self._encode(self._decode(
                     attributes[attribute_name])))
             )
@@ -149,7 +147,7 @@ class StringOutput(Output):
         else:
             children_string = self._join([
                 child if isinstance(child, self._xml_string)
-                    else self._escape(self._encode(self._decode(child)))
+                    else self._prepare(child)
                 for child in children
             ])
             element_string = self._format_element.format(
@@ -161,7 +159,6 @@ class StringOutput(Output):
         or :func:`unicode` instances.
 
         :param content: The content to encode.
-        :type content: :func:`str` or :func:`unicode`
         :returns: a :func:`list` of :func:`str` instances or a single
             instance
         '''
@@ -172,8 +169,25 @@ class StringOutput(Output):
         if len(content) == 1:
             return self._xml_string(handle_content(content[0]))
         return self._xml_string(self._join([
-            handle_content(content_element) for content_element in content
+            handle_content(content_item) for content_item in content
         ]))
+
+    def text(self, content):
+        '''\
+        Creates :func:`str` or :func:`unicode` instances from the items of
+        ``content``, depending on the instance's ``out_encoding``.
+
+        :param content: The list of texts.
+        :returns: A list of :func:`str` or :func:`unicode` instances.
+        '''
+        imported = []
+        for content_item in content:
+            content_item = self._prepare(content_item)
+            imported.append(self._xml_string(content_item))
+        if len(imported) == 1:
+            return imported[0]
+        return imported
+
 
 class _XMLStr(str): pass
 

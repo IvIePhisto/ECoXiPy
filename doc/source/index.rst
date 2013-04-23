@@ -9,19 +9,27 @@ APIs.
 
 See this example of how to create a simple HTML5 document template function::
 
+    # Import decorator to create HTML5 using "ecoxipy.MarkupBuilder" with
+    # "ecoxipy.string_output.StringOutput":
     from ecoxipy.decorators import html5
 
     @html5
-    def create_testdoc(_title, _content):
+    def create_testdoc(_title, _subtitle, *_content):
+        # The MarkupBuilder instance is available as "_b". Calling it embeds the
+        # arguments, strings are regarded as raw XML:
         return _b(
-            '<!DOCTYPE html>',
+            '<!DOCTYPE html>',                            # raw XML
             html(
                 head(
                     title(_title)
                 ),
                 body(
-                    h1(_title),
-                    p(_content)
+                    # Some objects are unpacked automatically:
+                    [h1(_title), h2(_subtitle)],          # Iterable, e.g. a List
+                    (p(_item) for _item in _content),     # Generator
+                    hr,                                   # Callable
+
+                    _b('<footer>Copyright 2013</footer>') # raw XML
                 ),
                 xmlns='http://www.w3.org/1999/xhtml/'
             )
@@ -30,8 +38,26 @@ See this example of how to create a simple HTML5 document template function::
 
 It could be used like this:
 
->>> create_testdoc('A Test', 'Hello World & Universe!')
-'<!DOCTYPE html><html xmlns="http://www.w3.org/1999/xhtml/"><head><title>A Test</title></head><body><h1>A Test</h1><p>Hello World &amp; Universe!</p></body></html>'
+>>> create_testdoc('Test', 'A Simple Test Document', 'Hello World & Universe!', 'How are you?')
+'<!DOCTYPE html><html xmlns="http://www.w3.org/1999/xhtml/"><head><title>Test</title></head><body><h1>Test</h1><h2>A Simple Test Document</h2><p>Hello World &amp; Universe!</p><p>How are you?</p><hr/><footer>Copyright 2013</footer></body></html>'
+
+
+Pretty-printing the result yields the following HTML::
+
+    <!DOCTYPE html>
+    <html xmlns="http://www.w3.org/1999/xhtml/">
+        <head>
+            <title>Test</title>
+        </head>
+        <body>
+            <h1>Test</h1>
+            <h2>A Simple Test Document</h2>
+            <p>Hello World &amp; Universe!</p>
+            <p>How are you?</p>
+            <hr/>
+            <footer>Copyright 2013</footer>
+        </body>
+    </html>
 
 
 Contents

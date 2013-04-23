@@ -8,19 +8,27 @@ is much shorter than using SAX, DOM or similar APIs.
 Here's a simple HTML5 document template function:
 
 ```python
+# Import decorator to create HTML5 using "ecoxipy.MarkupBuilder" with
+# "ecoxipy.string_output.StringOutput":
 from ecoxipy.decorators import html5
 
 @html5
-def create_testdoc(_title, _content):
+def create_testdoc(_title, _subtitle, *_content):
+    # The MarkupBuilder instance is available as "_b". Calling it embeds the
+    # arguments, strings are regarded as raw XML:
     return _b(
-        '<!DOCTYPE html>',
+        '<!DOCTYPE html>',                            # raw XML
         html(
             head(
                 title(_title)
             ),
             body(
-                h1(_title),
-                p(_content)
+                # Some objects are unpacked automatically:
+                [h1(_title), h2(_subtitle)],          # Iterable, e.g. a List
+                (p(_item) for _item in _content),     # Generator
+                hr,                                   # Callable
+
+                _b('<footer>Copyright 2013</footer>') # raw XML
             ),
             xmlns='http://www.w3.org/1999/xhtml/'
         )
@@ -30,9 +38,29 @@ def create_testdoc(_title, _content):
 It could be used like this:
 
 ```python
->>> create_testdoc('A Test', 'Hello World & Universe!')
-'<!DOCTYPE html><html xmlns="http://www.w3.org/1999/xhtml/"><head><title>A Test</title></head><body><h1>A Test</h1><p>Hello World &amp; Universe!</p></body></html>'
+>>> create_testdoc('Test', 'A Simple Test Document', 'Hello World & Universe!', 'How are you?')
+'<!DOCTYPE html><html xmlns="http://www.w3.org/1999/xhtml/"><head><title>Test</title></head><body><h1>Test</h1><h2>A Simple Test Document</h2><p>Hello World &amp; Universe!</p><p>How are you?</p><hr/><footer>Copyright 2013</footer></body></html>'
 ```
+
+Pretty-printing the result yields the following HTML:
+
+```HTML
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml/">
+    <head>
+        <title>Test</title>
+    </head>
+    <body>
+        <h1>Test</h1>
+        <h2>A Simple Test Document</h2>
+        <p>Hello World &amp; Universe!</p>
+        <p>How are you?</p>
+        <hr/>
+        <footer>Copyright 2013</footer>
+    </body>
+</html>
+```
+
 
 ## Getting Started
 
@@ -45,6 +73,17 @@ You might also be interested in:
 
 * [ECoXiPy on PyPi](https://pypi.python.org/pypi/ECoXiPy)
 * [ECoXiPy Documentation](http://pythonhosted.org/ECoXiPy/)
+
+
+## Release History
+
+0.2.0
+: **Added:** Use `+` on `ecoxipy.MarkupBuilder` to create text nodes.
+: **Improvement:** Better performance of `ecoxipy.string_output.StringOutput`.
+
+
+0.1.0
+: **Initial release.**
 
 
 ## Development
@@ -84,6 +123,12 @@ Run [timeit](http://docs.python.org/2/library/timeit.html) tests (linear
 increase of `data_count` yields exponential test document size increase):
 
     python tests/performance/timeit_tests.py [<repetitions> <data count> [<CSV output path>]]
+
+
+To create a CSV file from a series of tests in Bash as I did for my
+performance test results:
+
+    for ((i = 2; i <= 20; i += 2)); do python tests/performance/timeit_tests.py 400 $i timeit.csv; done
 
 
 Run [cProfile](http://docs.python.org/2/library/profile.html) tests:

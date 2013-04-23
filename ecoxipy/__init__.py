@@ -76,7 +76,6 @@ class MarkupBuilder(object):
     encoded or kept the same, depending on their type and the
     :class:`Output` implementation.
     '''
-
     def __init__(self, output=None):
         if output is None:
             from element_output import ElementOutput
@@ -125,6 +124,11 @@ class MarkupBuilder(object):
 
     __getattr__ = __getitem__
 
+    def __and__(self, content):
+        processed_content = []
+        self._preprocess(content, processed_content)
+        return self._output.text(processed_content)
+
 
 class Output(object):
     '''\
@@ -145,18 +149,31 @@ class Output(object):
         :type name: :func:`str` or :func:`unicode`
         :param children: The list of children to add to the element to
             create.
+        :type children: :func:`list`
         :param attributes: The mapping of attributes of the element to create.
+        :type attributes: :class:`dict`
         :returns: The element representation created.
         '''
 
     @abstractmethod
     def embed(self, content):
-        '''Imports the elements of ``content`` as data in the output
+        '''\
+        Imports the elements of ``content`` as data in the output
         representation.
 
         :param content: The list of data to parse.
-        :type content: a list, handling of elements depends on
-            :class:`Output` implementation
+        :type content: :func:`list`
         :returns:
-            a list of children or a single child in output representation
+            A list of child representations or a single child representation.
+        '''
+
+    @abstractmethod
+    def text(self, content):
+        '''\
+        Creates text node representations.
+
+        :param content: The list of texts.
+        :type content: :func:`list`
+        :returns:
+            A list of text representations or a single text representation.
         '''

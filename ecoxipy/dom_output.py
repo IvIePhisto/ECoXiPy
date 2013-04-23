@@ -19,7 +19,7 @@ Usage Example:
 >>> from ecoxipy import MarkupBuilder
 >>> b = MarkupBuilder(dom_output)
 >>> element = b.section(
-...     b.p('Hello World!'),
+...     b.p(b & 'Hello World!'),
 ...     None,
 ...     b(u'<p>äöüß</p>'),
 ...     b.p('<&>'),
@@ -37,7 +37,8 @@ from . import Output
 
 
 class DOMOutput(Output):
-    '''An :class:`Output` implementation which creates :mod:`xml.dom` nodes.
+    '''\
+    An :class:`Output` implementation which creates :mod:`xml.dom` nodes.
 
     :param document: The document to create DOM nodes with and to add those
         to.
@@ -60,10 +61,10 @@ class DOMOutput(Output):
         return self._document
 
     def element(self, name, children, attributes):
-        '''Returns a DOM element representing the created element.
+        '''\
+        Returns a DOM element representing the created element.
 
         :param name: The name of the element to create.
-        :type name: :func:`str`
         :param children: The iterable of children to add to the element to
             create.
         :param attributes: The mapping of arguments of the element to create.
@@ -73,19 +74,20 @@ class DOMOutput(Output):
         return _dom_create_element(self._document, name, attributes, children)
 
     def embed(self, content):
-        '''Imports the elements of ``content`` as XML and returns DOM nodes.
+        '''\
+        Imports the elements of ``content`` as XML and returns DOM nodes.
 
-        :param content: the XML to import
-        :type content: The content to be embedded
+        :param content: The content to be embedded.
         :raises xml.parsers.expat.ExpatError: If a ``content`` element cannot
             be parsed.
-        :rtype: a list of class:`xml.dom.Node` instances or a single instance
+        :returns:
+            a list of :class:`xml.dom.Node` instances or a single instance
 
         ``content`` items will be treated as follows:
 
-        * func:`str`, :func:`unicode` will be parsed as XML.
-        * :class:`xml.dom.Node` instances will be embedded.
-        * Others objects will be converted to :func:`unicode` and create
+        *   :func:`str` and :func:`unicode` will be parsed as XML.
+        *   :class:`xml.dom.Node` instances will be embedded.
+        *   Other objects will be converted to :func:`unicode` and create
             text nodes.
         '''
         imported = self._document.childNodes.__class__()
@@ -101,17 +103,34 @@ class DOMOutput(Output):
                 current_node = next_node
             document.unlink()
 
-        for content_element in content:
-            if isinstance(content_element, dom.Node):
-                imported.append(content_element)
+        for content_item in content:
+            if isinstance(content_item, dom.Node):
+                imported.append(content_item)
             else:
-                if isinstance(content_element, unicode):
-                    content_element = content_element.encode('UTF-8')
-                if isinstance(content_element, str):
-                    import_xml(content_element)
+                if isinstance(content_item, unicode):
+                    content_item = content_item.encode('UTF-8')
+                if isinstance(content_item, str):
+                    import_xml(content_item)
                 else:
                     imported.append(self._document.createTextNode(
-                        unicode(content_element)))
+                        unicode(content_item)))
+        if len(imported) == 1:
+            return imported[0]
+        return imported
+
+    def text(self, content):
+        '''\
+        Creates DOM text nodes from the items of ``content``.
+
+        :param content: The list of texts.
+        :type content: :func:`list`
+        :returns:
+            A list of or a single DOM text node.
+        '''
+        imported = self._document.childNodes.__class__()
+        for content_item in content:
+            imported.append(self._document.createTextNode(unicode(
+                content_item)))
         if len(imported) == 1:
             return imported[0]
         return imported

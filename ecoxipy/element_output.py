@@ -20,7 +20,10 @@ Basic Usage:
 >>> b = MarkupBuilder()
 >>> element = b.article(
 ...     {'umlaut-attribute': u'äöüß', 'lang': 'de'},
-...     b.h1('<Example>', data='to quote: <&>"\''),
+...     b.h1(
+...         b & '<Example>', # Explicitly insert text
+...         data='to quote: <&>"\''
+...     ),
 ...     b.p('Hello', b.em(' World'), '!'),
 ...     None,
 ...     b.div(
@@ -135,7 +138,8 @@ from string_output import StringOutput as _StringOutput
 class ElementOutput(Output):
     '''\
     An :class:`Output` implementation which creates :class:`Element`
-    instances and strings.
+    instances and :func:`str` instances. :func:`unicode` instances are
+    encoded as UTF-8.
     '''
 
     def element(self, name, children, attributes):
@@ -143,7 +147,6 @@ class ElementOutput(Output):
         Returns a :class:`Element`.
 
         :param name: The name of the element to create.
-        :type name: :func:`str`
         :param children: The iterable of children to add to the element to
             create.
         :param attributes: The mapping of arguments of the element to create.
@@ -159,10 +162,9 @@ class ElementOutput(Output):
         instances or a single instance.
 
         :param content: XML strings and/or elements.
-        :type content: :class:`Element`, :func:`str` or :func:`unicode`
         :returns: The elements parsed or a single element.
         :raises xml.parsers.expat.ExpatError: If XML is not well-formed.
-        :rtype:
+        :returns:
             :class:`Element` or a :func:`list` of :class:`Element` instances
         '''
         imported_content = []
@@ -177,7 +179,7 @@ class ElementOutput(Output):
                 children_list.append(imported_element)
 
             def import_text(children_list, text):
-                children_list.append(text.data)
+                children_list.append(text.data.encode('UTF-8'))
 
             def import_attributes(element):
                 attributes = dict()
@@ -197,19 +199,37 @@ class ElementOutput(Output):
             import_nodes(imported_content,
                 document.documentElement.childNodes)
 
-        for content_element in content:
-            if isinstance(content_element, Element):
-                imported_content.append(content_element)
+        for content_item in content:
+            if isinstance(content_item, Element):
+                imported_content.append(content_item)
             else:
-                if not isinstance(content_element, (str, unicode)):
-                    content_element = unicode(content_element)
-                if isinstance(content_element, unicode):
-                    content_element = content_element.encode('utf-8')
-                if isinstance(content_element, str):
-                    import_xml(content_element)
+                if not isinstance(content_item, (str, unicode)):
+                    content_item = unicode(content_item)
+                if isinstance(content_item, unicode):
+                    content_item = content_item.encode('utf-8')
+                if isinstance(content_item, str):
+                    import_xml(content_item)
         if len(imported_content) == 1:
             return imported_content[0]
         return imported_content
+
+    def text(self, content):
+        '''\
+        Creates :func:`str` instances from the items of ``content``.
+
+        :param content: The list of texts.
+        :returns: A list of :func:`unicode` instances.
+        '''
+        imported = []
+        for content_item in content:
+            if not isinstance(content_item, (str, unicode)):
+                content_item = unicode(content_item)
+            if isinstance(content_item, unicode):
+                content_item = content_item.encode('UTF-8')
+            imported.append(content_item)
+        if len(imported) == 1:
+            return imported[0]
+        return imported
 
 
 class Element(object):
@@ -220,9 +240,8 @@ class Element(object):
     :class:`Element` instance, a XML document encoded as a UTF-8 :func:`str`
     instance or :func:`unicode` instance respectively is returned.
 
-    :param name:
-        The name of the element to create. It's unicode value will be used.
-
+    :param name: The name of the element to create. It's :func:`unicode` value
+        will be used.
     :param children: The children of the element.
     :type children: iterable of items
     :param attributes: The attributes of the element.
