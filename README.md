@@ -78,11 +78,14 @@ You might also be interested in:
 ## Release History
 
 0.2.0
+
 : **Added:** Use `+` on `ecoxipy.MarkupBuilder` to create text nodes.
+
 : **Improvement:** Better performance of `ecoxipy.string_output.StringOutput`.
 
 
 0.1.0
+
 : **Initial release.**
 
 
