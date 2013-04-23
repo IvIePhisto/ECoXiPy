@@ -26,10 +26,12 @@ def create_testdoc(_title, _subtitle, *_content):
                 )
             ),
             body(
-                # Some objects are unpacked automatically:
+                # Iterables and generators are unpacked automatically:
                 [h1(_title), h2(_subtitle)],          # Iterable, e.g. a List
                 (p(_item) for _item in _content),     # Generator
-                hr,                                   # Callable
+
+                # Callables are executed:
+                hr,
 
                 _b('<footer>Copyright 2013</footer>') # raw XML
             ),
