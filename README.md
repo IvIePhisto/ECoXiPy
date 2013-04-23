@@ -20,7 +20,10 @@ def create_testdoc(_title, _subtitle, *_content):
         '<!DOCTYPE html>',                            # raw XML
         html(
             head(
-                title(_title)
+                title(
+                    # Explicitly create text node:
+                    _b & _title
+                )
             ),
             body(
                 # Some objects are unpacked automatically:

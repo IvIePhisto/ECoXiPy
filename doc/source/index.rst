@@ -21,7 +21,10 @@ See this example of how to create a simple HTML5 document template function::
             '<!DOCTYPE html>',                            # raw XML
             html(
                 head(
-                    title(_title)
+                    title(
+                        # Explicitly create text node:
+                        _b & _title
+                    )
                 ),
                 body(
                     # Some objects are unpacked automatically:
