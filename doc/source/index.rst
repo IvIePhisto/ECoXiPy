@@ -1,7 +1,7 @@
 ECoXiPy - Easy Creation of XML in Python
 ========================================
 
-This Python project allows for easy creation of `XML
+This Python 2 project allows for easy creation of `XML
 <http://www.w3.org/XML/>`_. The hierarchical structure of XML is easy to spot
 and the code to create XML is much shorter than using SAX, DOM or similar
 APIs.
@@ -9,33 +9,53 @@ APIs.
 
 See this example of how to create a simple HTML5 document template function::
 
-    # Import decorator to create HTML5 using "ecoxipy.MarkupBuilder" with
-    # "ecoxipy.string_output.StringOutput":
+    # In the function it is applied to the "html5" decorator creates the variable
+    # "_b" being an instance of "ecoxipy.MarkupBuilder" with
+    # "ecoxipy.string_output.StringOutput" for XML creation. It also creates for
+    # each HTML5 element a variable being a method of "_b", with the name of
+    # element, variable and method all being equal.
+
     from ecoxipy.decorators import html5
 
     @html5
-    def create_testdoc(_title, _subtitle, *_content):
-        # The MarkupBuilder instance is available as "_b". Calling it embeds the
-        # arguments, strings are regarded as raw XML:
+    def create_testdoc(title, subtitle, *content):
+        # Calling a MarkupBuilder creates a XML fragment from the arguments, here
+        # strings are regarded as raw XML.
         return _b(
-            '<!DOCTYPE html>',                            # raw XML
+            '<!DOCTYPE html>',                                  # raw XML
+            # Method calls on a MarkupBuilder instance create elements with the
+            # name equal to the method name.
             html(
+                # Child dictionary entries become attributes, especially useful
+                # for non-identifier attribute names:
+                {'data-info': 'Created by Ecoxipy'},
                 head(
-                    title(
-                        # Explicitly create text node:
-                        _b & _title
+                    _b.title(
+                        # Children which are not of the XML representation
+                        # and are either "str" or "unicode" instances or are
+                        # neither iterables, generators nor callables, become text
+                        # nodes:
+                        title
                     )
                 ),
                 body(
-                    # Iterables and generators are unpacked automatically:
-                    [h1(_title), h2(_subtitle)],          # Iterable, e.g. a List
-                    (p(_item) for _item in _content),     # Generator
+                    article(
+                        # Child iterables and generators are unpacked
+                        # automatically:
+                        [h1(title), h2(subtitle)],          # Iterable
+                        (p(item) for item in content),      # Generator
 
-                    # Callables are executed:
-                    hr,
+                        # Child callables are executed:
+                        hr,
 
-                    _b('<footer>Copyright 2013</footer>') # raw XML
+                        _b(
+                            # Explicitly create text node:
+                            _b & '<THE END>',
+                            '<footer>Copyright 2013</footer>'       # raw XML
+                        )
+                    )
                 ),
+                # Named arguments of element method-calls become attributes:
                 xmlns='http://www.w3.org/1999/xhtml/'
             )
         )
@@ -44,25 +64,29 @@ See this example of how to create a simple HTML5 document template function::
 It could be used like this:
 
 >>> create_testdoc('Test', 'A Simple Test Document', 'Hello World & Universe!', 'How are you?')
-'<!DOCTYPE html><html xmlns="http://www.w3.org/1999/xhtml/"><head><title>Test</title></head><body><h1>Test</h1><h2>A Simple Test Document</h2><p>Hello World &amp; Universe!</p><p>How are you?</p><hr/><footer>Copyright 2013</footer></body></html>'
+'<!DOCTYPE html><html data-info="Created by Ecoxipy" xmlns="http://www.w3.org/1999/xhtml/"><head><title>Test</title></head><body><article><h1>Test</h1><h2>A Simple Test Document</h2><p>Hello World &amp; Universe!</p><p>How are you?</p><hr/>&lt;THE END&gt;<footer>Copyright 2013</footer></article></body></html>'
 
 
 Pretty-printing the result yields the following HTML::
 
     <!DOCTYPE html>
-    <html xmlns="http://www.w3.org/1999/xhtml/">
+    <html data-info="Created by Ecoxipy" xmlns="http://www.w3.org/1999/xhtml/">
         <head>
             <title>Test</title>
         </head>
         <body>
-            <h1>Test</h1>
-            <h2>A Simple Test Document</h2>
-            <p>Hello World &amp; Universe!</p>
-            <p>How are you?</p>
-            <hr/>
-            <footer>Copyright 2013</footer>
+            <article>
+                <h1>Test</h1>
+                <h2>A Simple Test Document</h2>
+                <p>Hello World &amp; Universe!</p>
+                <p>How are you?</p>
+                <hr/>
+                &lt;THE END&gt;
+                <footer>Copyright 2013</footer>
+            </article>
         </body>
     </html>
+
 
 
 Contents
