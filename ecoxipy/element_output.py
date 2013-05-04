@@ -4,7 +4,7 @@ ur'''\
 :mod:`ecoxipy.element_output` - Low-Footprint XML Structures
 ============================================================
 
-:class:`ElementOutput` creates structures consisting of :class:`Element`
+:class:`ElementOutput` creates structures consisting of :class:`XMLNode`
 instances, which are an immutable low-footprint alternative to what
 :class:`ecoxipy.dom_output.DOMOutput`.
 
@@ -38,41 +38,44 @@ Basic Usage:
 ...         ),
 ...         (i for i in range(3, 6))
 ...     ),
+...     b | '<This is a comment!>',
+...     b['pi-target':'<PI content>'],
+...     b['pi-without-content':],
 ...     lang='en', count=1
 ... )
 
 
-Getting the :func:`unicode` value of an :class:`Element` creates a
+Getting the :func:`unicode` value of an :class:`XMLNode` creates a
 XML Unicode string:
 
->>> document_string = u"""<article lang="en" count="1" umlaut-attribute="äöüß"><h1 data="to quote: &lt;&amp;&gt;&quot;'">&lt;Example&gt;</h1><p>Hello<em> World</em>!</p><div><data-element>äöüß &lt;&amp;&gt;</data-element><p attr="value">raw content</p>Some Text<br/>012345</div></article>"""
+>>> document_string = u"""<article lang="en" count="1" umlaut-attribute="äöüß"><h1 data="to quote: &lt;&amp;&gt;&quot;'">&lt;Example&gt;</h1><p>Hello<em> World</em>!</p><div><data-element>äöüß &lt;&amp;&gt;</data-element><p attr="value">raw content</p>Some Text<br/>012345</div><!--<This is a comment!>--><?pi-target <PI content>?><?pi-without-content?></article>"""
 >>> unicode(element) == document_string
 True
 
 
-Getting the :func:`str` value of an :class:`Element` creates an `UTF-8`
+Getting the :func:`str` value of an :class:`XMLNode` creates an `UTF-8`
 encoded XML string:
 
 >>> str(element) == document_string.encode('utf-8')
 True
 
 
-:class:`Element` instances can also generate SAX events (with
-:meth:`Element.create_sax_events`):
-
-You can also create indented XML when calling the
-:meth:`Element.__unicode__` and :meth:`Element.__str__` by supplying the
-``indent_incr`` argument:
+:class:`XMLNode` instances can also generate SAX events, see
+:meth:`XMLNode.create_sax_events` (note that the default
+:class:`xml.sax.ContentHandler` is :class:`xml.sax.saxutils.ContentHandler`,
+which does not support comments):
 
 >>> from StringIO import StringIO
 >>> string_out = StringIO()
 >>> content_handler = element.create_sax_events(out=string_out)
->>> string_out.getvalue() == u"""<article lang="en" count="1" umlaut-attribute="äöüß"><h1 data="to quote: &lt;&amp;&gt;&quot;'">&lt;Example&gt;</h1><p>Hello<em> World</em>!</p><div><data-element>äöüß &lt;&amp;&gt;</data-element><p attr="value">raw content</p>Some Text<br></br>012345</div></article>""".encode('utf-8')
+>>> string_out.getvalue() == u"""<article lang="en" count="1" umlaut-attribute="äöüß"><h1 data="to quote: &lt;&amp;&gt;&quot;'">&lt;Example&gt;</h1><p>Hello<em> World</em>!</p><div><data-element>äöüß &lt;&amp;&gt;</data-element><p attr="value">raw content</p>Some Text<br></br>012345</div><?pi-target <PI content>?><?pi-without-content ?></article>""".encode('utf-8')
 True
 >>> string_out.close()
 
 
-Using SAX you can also create indented XML:
+You can also create indented XML when calling the
+:meth:`XMLNode.__unicode__` and :meth:`XMLNode.__str__` by supplying the
+``indent_incr`` argument:
 
 >>> indented_document_string = u"""\
 ... <article lang="en" count="1" umlaut-attribute="äöüß">
@@ -97,6 +100,8 @@ Using SAX you can also create indented XML:
 ...         <br></br>
 ...         012345
 ...     </div>
+...     <?pi-target <PI content>?>
+...     <?pi-without-content ?>
 ... </article>
 ... """
 >>> string_out = StringIO()
@@ -116,12 +121,19 @@ True
 Representation
 --------------
 
-.. autoclass:: ecoxipy.element_output.Element
+.. autoclass:: ecoxipy.element_output.XMLNode
     :special-members: __str__, __unicode__
 
+.. autoclass:: ecoxipy.element_output.Element
+
 .. autoclass:: ecoxipy.element_output.Attributes
+
+.. autoclass:: ecoxipy.element_output.Comment
+
+.. autoclass:: ecoxipy.element_output.ProcessingInstruction
 '''
 
+from abc import ABCMeta, abstractmethod
 from xml import dom
 from xml.dom import minidom
 from xml.sax.saxutils import XMLGenerator
@@ -187,6 +199,13 @@ class ElementOutput(Output):
                     attributes[attr.name] = attr.value
                 return attributes
 
+            def import_comment(children_list, node):
+                children_list.append(Comment(node.data))
+
+            def import_processing_instruction(children_list, node):
+                pi = ProcessingInstruction(node.target, node.data)
+                children_list.append(pi)
+
             def import_nodes(children_list, nodes):
                 for node in nodes:
                     if node.nodeType == dom.Node.ELEMENT_NODE:
@@ -194,6 +213,11 @@ class ElementOutput(Output):
                     elif node.nodeType in [dom.Node.TEXT_NODE,
                             dom.Node.CDATA_SECTION_NODE]:
                         import_text(children_list, node)
+                    elif (node.nodeType ==
+                            dom.Node.PROCESSING_INSTRUCTION_NODE):
+                        import_processing_instruction(children_list, node)
+                    elif (node.nodeType == dom.Node.COMMENT_NODE):
+                        import_comment(children_list, node)
 
             document = minidom.parseString('<ROOT>' + text + '</ROOT>')
             import_nodes(imported_content,
@@ -231,8 +255,115 @@ class ElementOutput(Output):
             return imported[0]
         return imported
 
+    def comment(self, content):
+        '''\
+        Creates a :class:`Comment`.
 
-class Element(object):
+        :param content: The content of the comment.
+        :type content: :func:`str` or :func:`unicode`
+        :returns:
+            The created comment.
+        '''
+        return Comment(content)
+
+    def processing_instruction(self, target, content):
+        '''\
+        Creates a :class:`ProcessingInstruction`.
+
+        :param target: The target of the processing instruction.
+        :type target: :func:`str` or :func:`unicode`
+        :param content: The content of the processing instruction.
+        :type content: :func:`str` or :func:`unicode`
+        :returns:
+            The created processing instruction.
+        '''
+        return ProcessingInstruction(target, content)
+
+
+class XMLNode(object):
+    '''\
+    Base class for XML node objects.
+    '''
+    __metaclass__ = ABCMeta
+
+    def __str__(self):
+        '''\
+        Creates a string containing the XML representation of the node.
+
+        :returns: The XML representation of the node as a :func:`str`
+            instance with encoding `UTF-8`.
+        '''
+        return self.create_str(encoding='UTF-8')
+
+    def __unicode__(self):
+        '''\
+        Creates a string containing the XML representation of the node.
+
+        :returns: The XML representation of the node as an :func:`unicode`
+            instance.
+        '''
+        return self.create_str()
+
+    def create_str(self, out=None, encoding=None):
+        '''\
+        Creates a string containing the XML representation of the node.
+
+        :param out: A :class:`ecoxipy.string_output.StringOutput` instance or
+            :const:`None`. If it is the latter, a new
+            :class:`ecoxipy.string_output.StringOutput` instance is created.
+        :param encoding: The output encoding or :const:`None` for
+            :func:`unicode` output.
+        '''
+        if out is None:
+            out = _StringOutput(out_encoding=encoding)
+        return self._create_str(out, encoding)
+
+    @abstractmethod
+    def _create_str(self, out, encoding):
+        '''\
+        Creates a string containing the XML representation of the node.
+
+        :param out: A :class:`ecoxipy.string_output.StringOutput` instance.
+        :param encoding: The output encoding or :const:`None` for
+            :func:`unicode` output.
+        '''
+        pass
+
+    def create_sax_events(self, content_handler=None, out=None,
+            out_encoding=None, indent_incr=None):
+        '''\
+        Creates SAX events.
+
+        :param content_handler: If this is :const:`None` a
+            ``xml.sax.saxutils.XMLGenerator`` is created and used as the
+            content handler. If in this case ``out`` is not :const:`None`,
+            it is used for output.
+        :type content_handler: :class:`xml.sax.ContentHandler`
+        :param out: The output to write to if no ``content_handler`` is given.
+            It should have a ``write`` method like files.
+        :param out_encoding: The output encoding if no ``content_handler``
+            is given and ``out`` is not :const:`None`.
+        :param indent_incr: If this is not :const:`None` this activates
+            pretty printing. In this case it should be a string and it is used
+            for indenting.
+        :type indent_incr: :func:`str`
+        :returns: The content handler used.
+        '''
+        if content_handler is None:
+            content_handler = XMLGenerator(out, out_encoding)
+        if indent_incr is None:
+            indent = False
+        else:
+            indent = (indent_incr, 0)
+        self._create_sax_events(content_handler, indent)
+        return content_handler
+
+    @abstractmethod
+    def _create_sax_events(self, content_handler, indent):
+        pass
+
+
+class Element(XMLNode):
     '''\
     Represents a XML element and is immutable.
 
@@ -277,32 +408,12 @@ class Element(object):
         '''
         return self._attributes
 
-    def _create_str(self, out=None, encoding=None):
-        if out is None:
-            out = _StringOutput(out_encoding=encoding)
+    def _create_str(self, out, encoding):
         return out.element(self.name, [
-                    child._create_str(out)
-                    if isinstance(child, Element) else child
+                    child._create_str(out, encoding)
+                    if isinstance(child, XMLNode) else child
                 for child in self.children
             ], self.attributes)
-
-    def __str__(self):
-        '''\
-        Creates a string containing the XML representation of the element.
-
-        :returns: The XML representation of the element as a :func:`str`
-            instance with encoding `UTF-8`.
-        '''
-        return self._create_str(encoding='UTF-8')
-
-    def __unicode__(self):
-        '''\
-        Creates a string containing the XML representation of the element.
-
-        :returns: The XML representation of the element as an :func:`unicode`
-            instance.
-        '''
-        return self._create_str()
 
     def _create_dom_children(self, document):
         '''\
@@ -367,7 +478,7 @@ class Element(object):
         content_handler.startElement(self.name, attributes)
         last_event_characters = False
         for child in self.children:
-            if isinstance(child, Element):
+            if isinstance(child, XMLNode):
                 child._create_sax_events(
                     content_handler, child_indent)
                 last_event_characters = False
@@ -382,34 +493,6 @@ class Element(object):
         content_handler.endElement(self.name)
         if indent and indent_count == 0:
             content_handler.characters('\n')
-
-    def create_sax_events(self, content_handler=None, out=None,
-            out_encoding=None, indent_incr=None):
-        '''Creates SAX events.
-
-        :param content_handler: If this is :const:`None` a
-            ``xml.sax.saxutils.XMLGenerator`` is created and used as the
-            content handler. If in this case ``out`` is not :const:`None`,
-            it is used for output.
-        :type content_handler: :class:`xml.sax.ContentHandler`
-        :param out: The output to write to if no ``content_handler`` is given.
-            It should have a ``write`` method like files.
-        :param out_encoding: The output encoding if no ``content_handler``
-            is given and ``out`` is not :const:`None`.
-        :param indent_incr: If this is not :const:`None` this activates
-            pretty printing. In this case it should be a string and it is used
-            for indenting.
-        :type indent_incr: :func:`str`
-        :returns: The content handler used.
-        '''
-        if content_handler is None:
-            content_handler = XMLGenerator(out, out_encoding)
-        if indent_incr is None:
-            indent = False
-        else:
-            indent = (indent_incr, 0)
-        self._create_sax_events(content_handler, indent)
-        return content_handler
 
 
 class Attributes(ImmutableDict):
@@ -447,3 +530,63 @@ class Attributes(ImmutableDict):
 
     def __getitem__(self, name):
         return ImmutableDict.__getitem__(self, unicode(name))
+
+
+class Comment(XMLNode):
+    __slots__ = ('_content')
+
+    def __init__(self, content):
+        if not isinstance(content, (str, unicode)):
+            content = unicode(content)
+        self._content = content
+
+    @property
+    def content(self):
+        return self._content
+
+    def _create_str(self, out, encoding):
+        return out.comment(self._content)
+
+    def _create_sax_events(self, content_handler, indent):
+        try:
+            comment = content_handler.comment
+        except AttributeError:
+            return
+        else:
+            if indent:
+                indent_incr, indent_count = indent
+                content_handler.characters('\n')
+                for i in range(indent_count):
+                        content_handler.characters(indent_incr)
+            comment(self._content)
+
+
+class ProcessingInstruction(XMLNode):
+    __slots__ = ('_target', '_content')
+
+    def __init__(self, target, content):
+        if not isinstance(target, (str, unicode)):
+            target = unicode(target)
+        if not isinstance(content, (str, unicode)):
+            content = unicode(content)
+        self._target = target
+        self._content = content
+
+    @property
+    def target(self):
+        return self._target
+
+    @property
+    def content(self):
+        return self._content
+
+    def _create_str(self, out, encoding):
+        return out.processing_instruction(self._target, self._content)
+
+    def _create_sax_events(self, content_handler, indent):
+        if indent:
+            indent_incr, indent_count = indent
+            content_handler.characters('\n')
+            for i in range(indent_count):
+                    content_handler.characters(indent_incr)
+        content_handler.processingInstruction(self.target, self._content)

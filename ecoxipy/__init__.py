@@ -112,6 +112,14 @@ class MarkupBuilder(object):
         return self._output.embed(processed_content)
 
     def __getitem__(self, name):
+        if isinstance(name, slice):
+            if name.start is not None and name.step is None:
+                target = name.start
+                content = name.stop
+                if content is None:
+                    content = ''
+                return self._output.processing_instruction(target, content)
+            raise KeyError(name)
         def build(*children, **attributes):
             new_children = []
             new_attributes = {}
@@ -128,6 +136,9 @@ class MarkupBuilder(object):
         processed_content = []
         self._preprocess(content, processed_content)
         return self._output.text(processed_content)
+
+    def __or__(self, content):
+        return self._output.comment(content)
 
 
 class Output(object):
@@ -176,4 +187,28 @@ class Output(object):
         :type content: :func:`list`
         :returns:
             A list of text representations or a single text representation.
+        '''
+
+    @abstractmethod
+    def comment(self, content):
+        '''\
+        Creates a comment node representation.
+
+        :param content: The content of the comment.
+        :type content: :func:`str` or :func:`unicode`
+        :returns:
+            The created comment representation.
+        '''
+
+    @abstractmethod
+    def processing_instruction(self, target, content):
+        '''\
+        Creates a processing instruction node representation.
+
+        :param target: The target of the processing instruction.
+        :type target: :func:`str` or :func:`unicode`
+        :param content: The content of the processing instruction.
+        :type content: :func:`str`, :func:`unicode` or const:`None`
+        :returns:
+            The created processing instruction representation.
         '''

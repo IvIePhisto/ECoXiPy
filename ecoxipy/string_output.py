@@ -15,8 +15,21 @@ Usage Example:
 >>> xml_output = StringOutput(out_encoding=None)
 >>> from ecoxipy import MarkupBuilder
 >>> b = MarkupBuilder(xml_output)
->>> xml = b.section(b.p('Hello World!'), None, b.p(u'äöüß'), b.p(b & '<&>'), b('<raw/>text', b.br, (str(i) for i in range(3)), (str(i) for i in range(3, 6))), attr='\'"<&>')
->>> xml == u"""<section attr="'&quot;&lt;&amp;&gt;"><p>Hello World!</p><p>äöüß</p><p>&lt;&amp;&gt;</p><raw/>text<br/>012345</section>"""
+>>> xml = b.section(
+...     b.p('Hello World!'),
+...     None,
+...     b.p(u'äöüß'),
+...     b.p(b & '<&>'),
+...     b(
+...         '<raw/>text', b.br,
+...         (str(i) for i in range(3)), (str(i) for i in range(3, 6))
+...     ),
+...     b | '<This is a comment!>',
+...     b['pi-target':'<PI content>'],
+...     b['pi-without-content':],
+...     attr='\'"<&>'
+... )
+>>> xml == u"""<section attr="'&quot;&lt;&amp;&gt;"><p>Hello World!</p><p>äöüß</p><p>&lt;&amp;&gt;</p><raw/>text<br/>012345<!--<This is a comment!>--><?pi-target <PI content>?><?pi-without-content?></section>"""
 True
 '''
 
@@ -103,12 +116,16 @@ class StringOutput(Output):
             self._format_element = u'<{0}{1}>{2}</{0}>'
             self._format_element_empty = u'<{0}{1}/>'
             self._format_attribute = u' {}={}'
+            self._format_comment = u'<!--{0}-->'
+            self._format_pi = u'<?{0}{1}{2}?>'
         else:
             self._xml_string = _XMLStr
             self._join = ''.join
             self._format_element = '<{0}{1}>{2}</{0}>'
             self._format_element_empty = '<{0}{1}/>'
             self._format_attribute = ' {}={}'
+            self._format_comment = '<!--{0}-->'
+            self._format_pi = '<?{0}{1}{2}?>'
         if entities is None:
             entities = {}
         self._entities = entities
@@ -187,6 +204,36 @@ class StringOutput(Output):
         if len(imported) == 1:
             return imported[0]
         return imported
+
+    def comment(self, content):
+        '''\
+        Creates a comment string.
+
+        :param content: The content of the comment.
+        :type content: :func:`str` or :func:`unicode`
+        :returns:
+            The created comment.
+        '''
+        return self._xml_string(self._format_comment.format(content))
+
+
+    def processing_instruction(self, target, content):
+        '''\
+        Creates a processing instruction string.
+
+        :param target: The target of the processing instruction.
+        :type target: :func:`str` or :func:`unicode`
+        :param content: The content of the processing instruction.
+        :type content: :func:`str` or :func:`unicode`
+        :returns:
+            The created processing instruction.
+        '''
+        if len(content) == 0:
+            spacer = ''
+        else:
+            spacer = ' '
+        return self._xml_string(self._format_pi.format(
+            target, spacer, content))
 
 
 class _XMLStr(str): pass

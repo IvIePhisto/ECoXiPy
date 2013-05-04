@@ -23,10 +23,16 @@ Usage Example:
 ...     None,
 ...     b(u'<p>äöüß</p>'),
 ...     b.p('<&>'),
-...     b('<raw/>text', b.br, (i for i in range(3)), (i for i in range(3, 6)), dom_br),
+...     b(
+...         '<raw/>text', b.br,
+...         (i for i in range(3)), (i for i in range(3, 6)), dom_br
+...     ),
+...     b | '<This is a comment!>',
+...     b['pi-target':'<PI content>'],
+...     b['pi-without-content':],
 ...     attr='\'"<&>'
 ...  )
->>> element.toxml() == u"""<section attr="'&quot;&lt;&amp;&gt;"><p>Hello World!</p><p>äöüß</p><p>&lt;&amp;&gt;</p><raw/>text<br/>012345<br/></section>"""
+>>> element.toxml() == u"""<section attr="'&quot;&lt;&amp;&gt;"><p>Hello World!</p><p>äöüß</p><p>&lt;&amp;&gt;</p><raw/>text<br/>012345<br/><!--<This is a comment!>--><?pi-target <PI content>?><?pi-without-content ?></section>"""
 True
 '''
 
@@ -125,7 +131,7 @@ class DOMOutput(Output):
         :param content: The list of texts.
         :type content: :func:`list`
         :returns:
-            A list of or a single DOM text node.
+            A list of or a single text node.
         '''
         imported = self._document.childNodes.__class__()
         for content_item in content:
@@ -134,6 +140,30 @@ class DOMOutput(Output):
         if len(imported) == 1:
             return imported[0]
         return imported
+
+    def comment(self, content):
+        '''\
+        Creates a DOM comment node.
+
+        :param content: The content of the comment.
+        :type content: :func:`str` or :func:`unicode`
+        :returns:
+            The created comment node.
+        '''
+        return self._document.createComment(content)
+
+    def processing_instruction(self, target, content):
+        '''\
+        Creates a DOM processing instruction node.
+
+        :param target: The target of the processing instruction.
+        :type target: :func:`str` or :func:`unicode`
+        :param content: The content of the processing instruction.
+        :type content: :func:`str` or :func:`unicode`
+        :returns:
+            The created processing instruction node.
+        '''
+        return self._document.createProcessingInstruction(target, content)
 
 
 def _dom_create_element(document, name, attributes, children):
