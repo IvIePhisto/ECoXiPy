@@ -75,6 +75,20 @@ class MarkupBuilder(object):
     of arguments. In this process the arguments are parsed, converted,
     encoded or kept the same, depending on their type and the
     :class:`Output` implementation.
+
+    You can create processing instructions using the slicing operator with
+    a start argument, which becomes the target. If the end argument is
+    specified it becomes the content. So the slice
+    `['xml-stylesheet', 'href="style.css"']` becomes a processing instruction
+    with target `xml-stylesheet` and content `href="style.css"`.
+
+    The following operators create special nodes from their argument:
+
+    `&`
+        Creates a text node.
+
+    `|`
+        Creates a comment.
     '''
     def __init__(self, output=None):
         if output is None:
@@ -113,7 +127,7 @@ class MarkupBuilder(object):
 
     def __getitem__(self, name):
         if isinstance(name, slice):
-            if name.start is not None and name.step is None:
+            if name.start is not None:
                 target = name.start
                 content = name.stop
                 if content is None:

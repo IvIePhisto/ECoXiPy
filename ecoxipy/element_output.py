@@ -111,7 +111,6 @@ True
 >>> string_out.close()
 
 
-
 :class:`Output` Implementation
 ------------------------------
 
@@ -414,51 +413,6 @@ class Element(XMLNode):
                     if isinstance(child, XMLNode) else child
                 for child in self.children
             ], self.attributes)
-
-    def _create_dom_children(self, document):
-        '''\
-        Creates DOM children using the supplied ``document``.
-
-        :param document: The DOM document to use as the node factory.
-        :returns: The created children list.
-        '''
-        children = [
-            child.create_dom_element(document)
-            if isinstance(child, Element)
-            else document.createTextNode(unicode(child))
-            for child in self.children
-        ]
-        return children
-
-    def create_dom_element(self, document):
-        '''\
-        Creates a DOM element representing the element.
-
-        :param document: The document to create DOM nodes with.
-        :type document: :class:`xml.dom.Document`
-        :returns: The created DOM element.
-        '''
-        children = self._create_dom_children(document)
-        element = _dom_create_element(document, self.name, self.attributes,
-            children)
-        return element
-
-    def create_dom_document(self, dom_implementation=None):
-        '''\
-        Creates a DOM document with the document element
-        representing the element.
-
-        :param dom_implementation: The DOM implementation to use to create a
-            document. If this is :const:`None`, one is created using
-            :func:`xml.dom.minidom.getDOMImplementation()`.
-        :type dom_implementation: :class:`xml.dom.DOMImplementation`
-        :returns: The created DOM document.
-        '''
-        if dom_implementation is None:
-            dom_implementation = minidom.getDOMImplementation()
-        document = dom_implementation.createDocument(None, None, None)
-        element = self.create_dom_element(document)
-        return document
 
     def _create_sax_events(self, content_handler, indent):
         '''Creates SAX events for the element.'''
