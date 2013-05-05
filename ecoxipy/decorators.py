@@ -110,7 +110,7 @@ HTML5
 
 .. py:data:: HTML5_ELEMENT_NAMES
 
-    An immutable set of all HTML5 element names as defined in
+    An :class:`sets.ImmutableSet` of all HTML5 element names as defined in
     :data:`HTML5_ELEMENTS`.
 
 '''
