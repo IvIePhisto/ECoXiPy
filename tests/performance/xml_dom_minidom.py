@@ -5,7 +5,8 @@ from xml.dom.minidom import getDOMImplementation
 def create_testdoc(_title, _content, _data_count, _data_text):
     dom_impl = getDOMImplementation()
     #html_doctype = dom_impl.createDocumentType('html', '', '')
-    html_doc = dom_impl.createDocument(XHTML_NAMESPACE, 'html', None)
+    html_doctype = dom_impl.createDocumentType('html', None, None)
+    html_doc = dom_impl.createDocument(XHTML_NAMESPACE, 'html', html_doctype)
     element = lambda name: html_doc.createElementNS(XHTML_NAMESPACE, name)
     text = lambda value: html_doc.createTextNode(value)
     html_element = html_doc.documentElement

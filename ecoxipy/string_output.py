@@ -290,6 +290,8 @@ class StringOutput(Output):
         else:
             if self._out_encoding is None:
                 out_encoding = 'UTF-16'
+            else:
+                out_encoding = self._out_encoding
             xml_declaration_string = self._format_xml_declaration(
                 out_encoding)
         if doctype_name is None:

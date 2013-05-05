@@ -1,11 +1,12 @@
 from xml.dom import XHTML_NAMESPACE
 
 from ecoxipy.string_output import StringOutput
-from ecoxipy.decorators import markup_builder_namespace
+from ecoxipy.decorators import markup_builder_namespace, HTML5_ELEMENT_LIST
 
-@markup_builder_namespace(StringOutput, '_b', 'html', 'head', 'title', 'body', 'h1', 'p')
+@markup_builder_namespace(StringOutput, '_b', *HTML5_ELEMENT_LIST)
 def create_testdoc(_title, _content, _data_count, _data_text):
-    return html(
+    return _b[:'html'] (
+        html(
             head(
                 title(_title)
             ),
@@ -19,4 +20,5 @@ def create_testdoc(_title, _content, _data_count, _data_text):
             ),
             xmlns=XHTML_NAMESPACE
         )
+    )
 

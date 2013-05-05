@@ -140,7 +140,7 @@ def markup_builder_namespace(output, builder_name, *element_names, **kargs):
 
 
 xml_string_namespace = lambda builder_name, vocabulary: markup_builder_namespace(
-        string_output.StringOutput, builder_name, *tinkerpy.flatten(vocabulary))
+        string_output.StringOutput, builder_name, *vocabulary)
 ur'''\
 Uses :func:`markup_builder_namespace` to decorate the target
 function with the given ``vocabulary``.
@@ -185,9 +185,9 @@ def HTML5_ELEMENTS():
 
 
 HTML5_ELEMENTS = HTML5_ELEMENTS()
-
+HTML5_ELEMENT_LIST = tuple(tinkerpy.flatten(HTML5_ELEMENTS))
 
 def html5():
-    return xml_string_namespace('_b', HTML5_ELEMENTS)
+    return xml_string_namespace('_b', HTML5_ELEMENT_LIST)
 
 html5 = html5()
