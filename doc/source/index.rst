@@ -6,6 +6,42 @@ This Python 2 project allows for easy creation of `XML
 and the code to create XML is much shorter than using SAX, DOM or similar
 APIs.
 
+Modules
+--------
+
+.. toctree::
+
+    base
+    decorators
+    string_output
+    dom_output
+    element_output
+
+TL;DR [#f1]_
+------------
+
+If you want to jump right in, have a look at the examples...
+
+
+The most convenient usage - if you can live with defining allowed element
+names beforehand, want to define a vocabulary anyway or just want to create
+HTML5:
+
+    :ref:`ecoxipy.decorators <ecoxipy.decorators.examples>`
+
+XML as Strings
+
+    :ref:`ecoxipy.string_output <ecoxipy.string_output.examples>`
+
+DOM Creation
+
+    :ref:`ecoxipy.dom_output <ecoxipy.dom_output.examples>`
+
+Create low-footprint XML structures
+
+    :ref:`ecoxipy.element_output <ecoxipy.element_output.examples>`
+
+
 
 See this example of how to create a simple HTML5 document template function::
 
@@ -96,44 +132,6 @@ Pretty-printing the result yields the following HTML::
         <!--This is a comment.-->
         <?pi-target PI content.?>
     </html>
-
-
-
-Contents
---------
-
-.. toctree::
-
-    base
-    decorators
-    string_output
-    dom_output
-    element_output
-
-
-TL;DR [#f1]_
-------------
-
-If you want to jump right in, have a look at the examples...
-
-
-The most convenient usage - if you can live with defining allowed element
-names beforehand, want to define a vocabulary anyway or just want to create
-HTML5:
-
-    :ref:`ecoxipy.decorators <ecoxipy.decorators.examples>`
-
-XML as Strings
-
-    :ref:`ecoxipy.string_output <ecoxipy.string_output.examples>`
-
-DOM Creation
-
-    :ref:`ecoxipy.dom_output <ecoxipy.dom_output.examples>`
-
-Create low-footprint XML structures
-
-    :ref:`ecoxipy.element_output <ecoxipy.element_output.examples>`
 
 
 .. [#f1] "*Too long; didn't read*"
