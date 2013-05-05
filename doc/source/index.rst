@@ -19,10 +19,9 @@ See this example of how to create a simple HTML5 document template function::
 
     @html5
     def create_testdoc(title, subtitle, *content):
-        # Calling a MarkupBuilder creates a XML fragment from the arguments, here
-        # strings are regarded as raw XML.
-        return _b(
-            '<!DOCTYPE html>',                                  # raw XML
+        # Slicing on the builder creates a document, the step argument
+        # defines if the XML declaration should be omitted.
+        return _b[:'html':True](
             # Method calls on a MarkupBuilder instance create elements with the
             # name equal to the method name.
             html(
@@ -48,6 +47,8 @@ See this example of how to create a simple HTML5 document template function::
                         # Child callables are executed:
                         hr,
 
+                        # Calling a MarkupBuilder creates a XML fragment from the
+                        # arguments, here strings are regarded as raw XML.
                         _b(
                             # Explicitly create text node:
                             _b & '<THE END>',
