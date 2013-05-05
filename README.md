@@ -19,8 +19,8 @@ from ecoxipy.decorators import html5
 
 @html5
 def create_testdoc(title, subtitle, *content):
-    # Slicing on the builder creates a document, the step argument
-    # defines if the XML declaration should be omitted.
+    # Slicing without start argument on the builder creates a document, the
+    # step argument defines if the XML declaration should be omitted.
     return _b[:'html':True](
         # Method calls on a MarkupBuilder instance create elements with the
         # name equal to the method name.
@@ -56,6 +56,13 @@ def create_testdoc(title, subtitle, *content):
                     )
                 )
             ),
+
+            # You can also create comments:
+            _b | "This is a comment.",
+
+            # Slicing with a start argument creates a processing instruction:
+            _b['pi-target':'PI content.'],
+
             # Named arguments of element method-calls become attributes:
             xmlns='http://www.w3.org/1999/xhtml/'
         )
@@ -67,7 +74,7 @@ It could be used like this:
 
 ```python
 >>> create_testdoc('Test', 'A Simple Test Document', 'Hello World & Universe!', 'How are you?')
-'<!DOCTYPE html><html data-info="Created by Ecoxipy" xmlns="http://www.w3.org/1999/xhtml/"><head><title>Test</title></head><body><article><h1>Test</h1><h2>A Simple Test Document</h2><p>Hello World &amp; Universe!</p><p>How are you?</p><hr/>&lt;THE END&gt;<footer>Copyright 2013</footer></article></body></html>'
+'<!DOCTYPE html><html data-info="Created by Ecoxipy" xmlns="http://www.w3.org/1999/xhtml/"><head><title>Test</title></head><body><article><h1>Test</h1><h2>A Simple Test Document</h2><p>Hello World &amp; Universe!</p><p>How are you?</p><hr/>&lt;THE END&gt;<footer>Copyright 2013</footer><!--This is a comment.--><?pi-target PI content.?></article></body></html>'
 ```
 
 Pretty-printing the result yields the following HTML:
@@ -89,6 +96,8 @@ Pretty-printing the result yields the following HTML:
             <footer>Copyright 2013</footer>
         </article>
     </body>
+    <!--This is a comment.-->
+    <?pi-target PI content.?>
 </html>
 ```
 
