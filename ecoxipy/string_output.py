@@ -15,21 +15,23 @@ Usage Example:
 >>> xml_output = StringOutput(out_encoding=None)
 >>> from ecoxipy import MarkupBuilder
 >>> b = MarkupBuilder(xml_output)
->>> xml = b.section(
-...     b.p('Hello World!'),
-...     None,
-...     b.p(u'äöüß'),
-...     b.p(b & '<&>'),
-...     b(
-...         '<raw/>text', b.br,
-...         (str(i) for i in range(3)), (str(i) for i in range(3, 6))
-...     ),
-...     b | '<This is a comment!>',
-...     b['pi-target':'<PI content>'],
-...     b['pi-without-content':],
-...     attr='\'"<&>'
+>>> xml = b[:'section':False] (
+...     b.section(
+...         b.p('Hello World!'),
+...         None,
+...         b.p(u'äöüß'),
+...         b.p(b & '<&>'),
+...         b(
+...             '<raw/>text', b.br,
+...             (str(i) for i in range(3)), (str(i) for i in range(3, 6))
+...         ),
+...         b | '<This is a comment!>',
+...         b['pi-target':'<PI content>'],
+...         b['pi-without-content':],
+...         attr='\'"<&>'
+...     )
 ... )
->>> xml == u"""<section attr="'&quot;&lt;&amp;&gt;"><p>Hello World!</p><p>äöüß</p><p>&lt;&amp;&gt;</p><raw/>text<br/>012345<!--<This is a comment!>--><?pi-target <PI content>?><?pi-without-content?></section>"""
+>>> xml == u"""<?xml version="1.0" encoding="UTF-16"?><!DOCTYPE section><section attr="'&quot;&lt;&amp;&gt;"><p>Hello World!</p><p>äöüß</p><p>&lt;&amp;&gt;</p><raw/>text<br/>012345<!--<This is a comment!>--><?pi-target <PI content>?><?pi-without-content?></section>"""
 True
 '''
 
@@ -94,6 +96,7 @@ class StringOutput(Output):
     '''
     def __init__(self, in_encoding='utf-8', out_encoding='utf-8',
             entities=None):
+        self._out_encoding = out_encoding
         if in_encoding != out_encoding and in_encoding is not None:
             self._decode = lambda value: (
                 value.decode(in_encoding)
@@ -110,22 +113,49 @@ class StringOutput(Output):
                 value.encode(out_encoding)
                 if isinstance(value, unicode) else value
             )
+        self._format_element = '<{0}{1}>{2}</{0}>'
+        self._format_element_empty = '<{0}{1}/>'
+        self._format_attribute = ' {}={}'
+        self._format_comment = '<!--{0}-->'
+        self._format_pi = '<?{0}{1}{2}?>'
+        self._format_xml_declaration = '<?xml version="1.0" encoding="{}"?>'
+        self._format_doctype_empty = '<!DOCTYPE {}>'
+        self._format_doctype_public = '<!DOCTYPE {} PUBLIC "{}">'
+        self._format_doctype_public_system = '<!DOCTYPE {} PUBLIC "{}" "{}">'
+        self._format_doctype_system = '<!DOCTYPE {} SYSTEM "{}">'
+        self._document_format = '{}{}{}'
         if out_encoding is None:
+            def unicode_attribute(name):
+                setattr(self, name, unicode(getattr(self, name)))
             self._xml_string = _XMLUnicode
             self._join = u''.join
-            self._format_element = u'<{0}{1}>{2}</{0}>'
-            self._format_element_empty = u'<{0}{1}/>'
-            self._format_attribute = u' {}={}'
-            self._format_comment = u'<!--{0}-->'
-            self._format_pi = u'<?{0}{1}{2}?>'
+            unicode_attribute('_format_element')
+            unicode_attribute('_format_element_empty')
+            unicode_attribute('_format_attribute')
+            unicode_attribute('_format_comment')
+            unicode_attribute('_format_pi')
+            unicode_attribute('_format_xml_declaration')
+            unicode_attribute('_format_doctype_empty')
+            unicode_attribute('_format_doctype_public')
+            unicode_attribute('_format_doctype_public_system')
+            unicode_attribute('_format_doctype_system')
+            unicode_attribute('_document_format')
         else:
             self._xml_string = _XMLStr
             self._join = ''.join
-            self._format_element = '<{0}{1}>{2}</{0}>'
-            self._format_element_empty = '<{0}{1}/>'
-            self._format_attribute = ' {}={}'
-            self._format_comment = '<!--{0}-->'
-            self._format_pi = '<?{0}{1}{2}?>'
+        def format_attribute(name):
+            setattr(self, name, getattr(self, name).format)
+        format_attribute('_format_element')
+        format_attribute('_format_element_empty')
+        format_attribute('_format_attribute')
+        format_attribute('_format_comment')
+        format_attribute('_format_pi')
+        format_attribute('_format_xml_declaration')
+        format_attribute('_format_doctype_empty')
+        format_attribute('_format_doctype_public')
+        format_attribute('_format_doctype_public_system')
+        format_attribute('_format_doctype_system')
+        format_attribute('_document_format')
         if entities is None:
             entities = {}
         self._entities = entities
@@ -151,7 +181,7 @@ class StringOutput(Output):
         '''
         element_name = self._prepare(name)
         attributes_string = self._join([
-            self._format_attribute.format(
+            self._format_attribute(
                 self._prepare(attribute_name),
                 self._quoteattr(self._encode(self._decode(
                     attributes[attribute_name])))
@@ -159,7 +189,7 @@ class StringOutput(Output):
             for attribute_name in attributes
         ])
         if len(children) == 0:
-            element_string = self._format_element_empty.format(
+            element_string = self._format_element_empty(
                 element_name, attributes_string)
         else:
             children_string = self._join([
@@ -167,7 +197,7 @@ class StringOutput(Output):
                     else self._prepare(child)
                 for child in children
             ])
-            element_string = self._format_element.format(
+            element_string = self._format_element(
                 element_name, attributes_string, children_string)
         return self._xml_string(element_string)
 
@@ -214,7 +244,7 @@ class StringOutput(Output):
         :returns:
             The created comment.
         '''
-        return self._xml_string(self._format_comment.format(content))
+        return self._xml_string(self._format_comment(content))
 
 
     def processing_instruction(self, target, content):
@@ -232,8 +262,58 @@ class StringOutput(Output):
             spacer = ''
         else:
             spacer = ' '
-        return self._xml_string(self._format_pi.format(
+        return self._xml_string(self._format_pi(
             target, spacer, content))
+
+    def document(self, doctype_name, doctype_publicid, doctype_systemid,
+            children, omit_xml_declaration):
+        '''\
+        Creates a XML document.
+
+        :param doctype_name:  The document element name.
+        :type doctype_name: :func:`str`, :func:`unicode`, :const:`None`
+        :param doctype_publicid:  The document type system ID.
+        :type doctype_publicid: :func:`str`, :func:`unicode`, :const:`None`
+        :param doctype_systemid:  The document type system ID.
+        :type doctype_systemid: :func:`str`, :func:`unicode`, :const:`None`
+        :param children: The list of children to add to the document to
+            create.
+        :type children: :func:`list`
+        :param omit_xml_declaration: If :const:`True` the XML declaration is
+            omitted.
+        :type omit_xml_declaration: :func:`bool`
+        :returns:
+            The created document representation.
+        '''
+        if omit_xml_declaration:
+            xml_declaration_string = ''
+        else:
+            if self._out_encoding is None:
+                out_encoding = 'UTF-16'
+            xml_declaration_string = self._format_xml_declaration(
+                out_encoding)
+        if doctype_name is None:
+            doctype_string = ''
+        else:
+            if doctype_publicid is None:
+                if doctype_systemid is None:
+                    doctype_string = self._format_doctype_empty(doctype_name)
+                else:
+                    doctype_string = self._format_doctype_system(doctype_name,
+                        doctype_systemid)
+            elif doctype_systemid is None:
+                doctype_string = self._format_doctype_public_system(
+                    doctype_name, doctype_publicid, doctype_systemid)
+            else:
+                doctype_string = self._format_doctype_public(doctype_name,
+                    doctype_publicid)
+        children_string = self._join([
+            child if isinstance(child, self._xml_string)
+                else self._prepare(child)
+            for child in children
+        ])
+        return self._xml_string(self._document_format(
+            xml_declaration_string, doctype_string, children_string))
 
 
 class _XMLStr(str): pass

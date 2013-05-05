@@ -18,37 +18,39 @@ Basic Usage:
 
 >>> from ecoxipy import MarkupBuilder
 >>> b = MarkupBuilder()
->>> element = b.article(
-...     {'umlaut-attribute': u'äöüß', 'lang': 'de'},
-...     b.h1(
-...         b & '<Example>', # Explicitly insert text
-...         data='to quote: <&>"\''
-...     ),
-...     b.p('Hello', b.em(' World'), '!'),
-...     None,
-...     b.div(
-...         # Insert elements with special names using subscripts:
-...         b['data-element'](u'äöüß <&>'),
-...         # Import content by calling the builder:
-...         b(
-...             '<p attr="value">raw content</p>Some Text',
-...             # Create an element without calling the creating method:
-...             b.br,
-...             (i for i in range(3))
+>>> element = b[:'section':True] (
+...     b.article(
+...         {'umlaut-attribute': u'äöüß', 'lang': 'de'},
+...         b.h1(
+...             b & '<Example>', # Explicitly insert text
+...             data='to quote: <&>"\''
 ...         ),
-...         (i for i in range(3, 6))
-...     ),
-...     b | '<This is a comment!>',
-...     b['pi-target':'<PI content>'],
-...     b['pi-without-content':],
-...     lang='en', count=1
+...         b.p('Hello', b.em(' World'), '!'),
+...         None,
+...         b.div(
+...             # Insert elements with special names using subscripts:
+...             b['data-element'](u'äöüß <&>'),
+...             # Import content by calling the builder:
+...             b(
+...                 '<p attr="value">raw content</p>Some Text',
+...                 # Create an element without calling the creating method:
+...                 b.br,
+...                 (i for i in range(3))
+...             ),
+...             (i for i in range(3, 6))
+...         ),
+...         b | '<This is a comment!>',
+...         b['pi-target':'<PI content>'],
+...         b['pi-without-content':],
+...         lang='en', count=1
+...     )
 ... )
 
 
 Getting the :func:`unicode` value of an :class:`XMLNode` creates a
 XML Unicode string:
 
->>> document_string = u"""<article lang="en" count="1" umlaut-attribute="äöüß"><h1 data="to quote: &lt;&amp;&gt;&quot;'">&lt;Example&gt;</h1><p>Hello<em> World</em>!</p><div><data-element>äöüß &lt;&amp;&gt;</data-element><p attr="value">raw content</p>Some Text<br/>012345</div><!--<This is a comment!>--><?pi-target <PI content>?><?pi-without-content?></article>"""
+>>> document_string = u"""<!DOCTYPE section><article lang="en" count="1" umlaut-attribute="äöüß"><h1 data="to quote: &lt;&amp;&gt;&quot;'">&lt;Example&gt;</h1><p>Hello<em> World</em>!</p><div><data-element>äöüß &lt;&amp;&gt;</data-element><p attr="value">raw content</p>Some Text<br/>012345</div><!--<This is a comment!>--><?pi-target <PI content>?><?pi-without-content?></article>"""
 >>> unicode(element) == document_string
 True
 
@@ -56,7 +58,7 @@ True
 Getting the :func:`str` value of an :class:`XMLNode` creates an `UTF-8`
 encoded XML string:
 
->>> str(element) == document_string.encode('utf-8')
+>>> str(element) == document_string.encode('UTF-8')
 True
 
 
@@ -67,8 +69,8 @@ which does not support comments):
 
 >>> from StringIO import StringIO
 >>> string_out = StringIO()
->>> content_handler = element.create_sax_events(out=string_out)
->>> string_out.getvalue() == u"""<article lang="en" count="1" umlaut-attribute="äöüß"><h1 data="to quote: &lt;&amp;&gt;&quot;'">&lt;Example&gt;</h1><p>Hello<em> World</em>!</p><div><data-element>äöüß &lt;&amp;&gt;</data-element><p attr="value">raw content</p>Some Text<br></br>012345</div><?pi-target <PI content>?><?pi-without-content ?></article>""".encode('utf-8')
+>>> content_handler = element.create_sax_events(out=string_out, out_encoding='UTF-8')
+>>> string_out.getvalue() == u"""<?xml version="1.0" encoding="UTF-8"?>\n<article lang="en" count="1" umlaut-attribute="äöüß"><h1 data="to quote: &lt;&amp;&gt;&quot;'">&lt;Example&gt;</h1><p>Hello<em> World</em>!</p><div><data-element>äöüß &lt;&amp;&gt;</data-element><p attr="value">raw content</p>Some Text<br></br>012345</div><?pi-target <PI content>?><?pi-without-content ?></article>""".encode('UTF-8')
 True
 >>> string_out.close()
 
@@ -78,6 +80,7 @@ You can also create indented XML when calling the
 ``indent_incr`` argument:
 
 >>> indented_document_string = u"""\
+... <?xml version="1.0" encoding="UTF-8"?>
 ... <article lang="en" count="1" umlaut-attribute="äöüß">
 ...     <h1 data="to quote: &lt;&amp;&gt;&quot;'">
 ...         &lt;Example&gt;
@@ -105,8 +108,8 @@ You can also create indented XML when calling the
 ... </article>
 ... """
 >>> string_out = StringIO()
->>> content_handler = element.create_sax_events(indent_incr='    ', out=string_out)
->>> string_out.getvalue() == indented_document_string.encode('utf-8')
+>>> content_handler = element.create_sax_events(indent_incr='    ', out=string_out, out_encoding="UTF-8")
+>>> string_out.getvalue() == indented_document_string.encode('UTF-8')
 True
 >>> string_out.close()
 
@@ -123,6 +126,10 @@ Representation
 .. autoclass:: ecoxipy.element_output.XMLNode
     :special-members: __str__, __unicode__
 
+.. autoclass:: ecoxipy.element_output.Document
+
+.. autoclass:: ecoxipy.element_output.DocumentType
+
 .. autoclass:: ecoxipy.element_output.Element
 
 .. autoclass:: ecoxipy.element_output.Attributes
@@ -138,6 +145,7 @@ from xml.dom import minidom
 from xml.sax.saxutils import XMLGenerator
 from xml.sax.xmlreader import AttributesImpl
 from StringIO import StringIO
+from collections import namedtuple
 
 from tinkerpy import ImmutableDict
 
@@ -278,6 +286,29 @@ class ElementOutput(Output):
         '''
         return ProcessingInstruction(target, content)
 
+    def document(self, doctype_name, doctype_publicid, doctype_systemid,
+            children, omit_xml_declaration):
+        '''\
+        Creates a :class:`Document` instance.
+
+        :param doctype_name:  The document element name.
+        :type doctype_name: :func:`str`, :func:`unicode`, :const:`None`
+        :param doctype_publicid:  The document type system ID.
+        :type doctype_publicid: :func:`str`, :func:`unicode`, :const:`None`
+        :param doctype_systemid:  The document type system ID.
+        :type doctype_systemid: :func:`str`, :func:`unicode`, :const:`None`
+        :param children: The list of children to add to the document to
+            create.
+        :type children: :func:`list`
+        :param omit_xml_declaration: If :const:`True` the XML declaration is
+            omitted.
+        :type omit_xml_declaration: :func:`bool`
+        :returns:
+            The created document representation.
+        '''
+        return Document(doctype_name, doctype_publicid, doctype_systemid,
+            children, omit_xml_declaration)
+
 
 class XMLNode(object):
     '''\
@@ -393,8 +424,8 @@ class Element(XMLNode):
     @property
     def children(self):
         '''\
-        A :func:`tuple` of the contained content (:class:`Element`
-        instances or :func:`unicode` instances).
+        A :func:`tuple` of the contained content (:class:`XMLNode`
+        or :func:`unicode` instances).
         '''
         return self._children
 
@@ -487,6 +518,11 @@ class Attributes(ImmutableDict):
 
 
 class Comment(XMLNode):
+    '''\
+    Represent a comment.
+
+    :param content: The comment content.
+    '''
     __slots__ = ('_content')
 
     def __init__(self, content):
@@ -516,6 +552,12 @@ class Comment(XMLNode):
 
 
 class ProcessingInstruction(XMLNode):
+    '''\
+    Represent a processing instruction.
+
+    :param target: The processing instruction target.
+    :param content: The processing instruction content or :const:`None`.
+    '''
     __slots__ = ('_target', '_content')
 
     def __init__(self, target, content):
@@ -544,3 +586,79 @@ class ProcessingInstruction(XMLNode):
             for i in range(indent_count):
                     content_handler.characters(indent_incr)
         content_handler.processingInstruction(self.target, self._content)
+
+
+'''\
+Represents a document type declaration.
+'''
+DocumentType = namedtuple('DocumentType', 'name publicid systemid')
+
+
+class Document(XMLNode):
+    '''\
+    Represents a XML document.
+
+    :param doctype_name: The document type root element name or :const:`None`
+        if the document should not have document type declaration.
+    :param doctype_publicid: The public ID of the document type declaration.
+    :param doctype_publicid: The system ID of the document type declaration.
+    :param children: The document root nodes.
+    :param omit_xml_declaration: If :const:`True` the XML declaration is
+        omitted.
+    '''
+    __slots__ = ('_doctype', '_children', '_omit_xml_declaration')
+
+    def __init__(self, doctype_name, doctype_publicid, doctype_systemid,
+            children, omit_xml_declaration):
+        if doctype_name is None:
+            self._doctype = None
+        else:
+            self._doctype = DocumentType(doctype_name, doctype_publicid,
+                doctype_systemid)
+        self._children = children
+        self._omit_xml_declaration = omit_xml_declaration
+
+    @property
+    def doctype(self):
+        '''\
+        The :class:`Doctype` instance of the document or :const:`None`.
+        '''
+        return self._doctype
+
+    @property
+    def omit_xml_declaration(self):
+        '''\
+        If :const:`True` the XML declaration is omitted.
+        '''
+        return self._omit_xml_declaration
+
+    @property
+    def children(self):
+        '''\
+        A :func:`tuple` of the document content nodes.
+        '''
+        return self._children
+
+    def _create_str(self, out, encoding):
+        return out.document(self._doctype.name, self._doctype.publicid,
+            self._doctype.systemid, [
+                    child._create_str(out, encoding)
+                    if isinstance(child, XMLNode) else child
+                for child in self.children
+            ], self._omit_xml_declaration)
+
+    def _create_sax_events(self, content_handler, indent):
+        content_handler.startDocument()
+        try:
+            notationDecl = content_handler.notationDecl
+        except AttributeError:
+            pass
+        else:
+            notationDecl(self._doctype.name, self._doctype.publicid,
+                self._doctype.systemid)
+        for child in self._children:
+            if isinstance(child, XMLNode):
+                child._create_sax_events(content_handler, indent)
+            else:
+                content_handler.characters(child)
+        content_handler.endDocument()

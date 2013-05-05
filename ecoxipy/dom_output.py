@@ -18,26 +18,28 @@ Usage Example:
 >>> doc = dom_output.document
 >>> from ecoxipy import MarkupBuilder
 >>> b = MarkupBuilder(dom_output)
->>> element = b.section(
-...     b.p(b & 'Hello World!'),
-...     None,
-...     b(u'<p>äöüß</p>'),
-...     b.p('<&>'),
-...     b(
-...         '<raw/>text', b.br,
-...         (i for i in range(3)), (i for i in range(3, 6)), dom_br
-...     ),
-...     b | '<This is a comment!>',
-...     b['pi-target':'<PI content>'],
-...     b['pi-without-content':],
-...     attr='\'"<&>'
-...  )
->>> element.toxml() == u"""<section attr="'&quot;&lt;&amp;&gt;"><p>Hello World!</p><p>äöüß</p><p>&lt;&amp;&gt;</p><raw/>text<br/>012345<br/><!--<This is a comment!>--><?pi-target <PI content>?><?pi-without-content ?></section>"""
+>>> xml = b[:'section':True] (
+...     b.section(
+...         b.p(b & 'Hello World!'),
+...         None,
+...         b(u'<p>äöüß</p>'),
+...         b.p('<&>'),
+...         b(
+...             '<raw/>text', b.br,
+...             (i for i in range(3)), (i for i in range(3, 6)), dom_br
+...         ),
+...         b | '<This is a comment!>',
+...         b['pi-target':'<PI content>'],
+...         b['pi-without-content':],
+...         attr='\'"<&>'
+...     )
+... )
+>>> xml.toxml() == u"""<?xml version="1.0" ?><!DOCTYPE section><section attr="'&quot;&lt;&amp;&gt;"><p>Hello World!</p><p>äöüß</p><p>&lt;&amp;&gt;</p><raw/>text<br/>012345<br/><!--<This is a comment!>--><?pi-target <PI content>?><?pi-without-content ?></section>"""
 True
 '''
 
 from xml import dom
-from xml.dom import minidom
+from xml.dom import minidom, Node
 
 from . import Output
 
@@ -55,10 +57,12 @@ class DOMOutput(Output):
     :type dom_implementation: :class:`xml.dom.DOMImplementation`
     '''
     def __init__(self, document=None, dom_implementation=None):
+        if dom_implementation is None:
+            dom_implementation = minidom.getDOMImplementation()
+        self._dom_implementation = dom_implementation
         if document is None:
-            if dom_implementation is None:
-                dom_implementation = minidom.getDOMImplementation()
-            document = dom_implementation.createDocument(None, None, None)
+            document = self._dom_implementation.createDocument(None, None,
+                None)
         self._document = document
 
     @property
@@ -164,6 +168,41 @@ class DOMOutput(Output):
             The created processing instruction node.
         '''
         return self._document.createProcessingInstruction(target, content)
+
+    def document(self, doctype_name, doctype_publicid, doctype_systemid,
+            children, omit_xml_declaration):
+        '''\
+        Creates a DOM document node.
+
+        :param doctype_name:  The document element name.
+        :type doctype_name: :func:`str`, :func:`unicode`, :const:`None`
+        :param doctype_publicid:  The document type system ID.
+        :type doctype_publicid: :func:`str`, :func:`unicode`, :const:`None`
+        :param doctype_systemid:  The document type system ID.
+        :type doctype_systemid: :func:`str`, :func:`unicode`, :const:`None`
+        :param children: The list of children to add to the document to
+            create.
+        :type children: :func:`list`
+        :param omit_xml_declaration: This is not honoured by this
+            :class:`Output` implementation.
+        :type omit_xml_declaration: :func:`bool`
+        :returns:
+            The created document node.
+        '''
+        if doctype_name is None:
+            document = self._dom_implementation.createDocument(None,
+                None, None)
+        else:
+            doctype = self._dom_implementation.createDocumentType(
+                doctype_name, doctype_publicid, doctype_systemid)
+            document = self._dom_implementation.createDocument(None,
+                doctype_name, doctype)
+        document.removeChild(document.documentElement)
+        for child in children:
+            document.appendChild(child)
+            if child.nodeType == Node.ELEMENT_NODE:
+                document.documentElement = child
+        return document
 
 
 def _dom_create_element(document, name, attributes, children):

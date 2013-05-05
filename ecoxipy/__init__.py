@@ -76,11 +76,21 @@ class MarkupBuilder(object):
     encoded or kept the same, depending on their type and the
     :class:`Output` implementation.
 
-    You can create processing instructions using the slicing operator with
-    a start argument, which becomes the target. If the end argument is
-    specified it becomes the content. So the slice
-    `['xml-stylesheet', 'href="style.css"']` becomes a processing instruction
-    with target `xml-stylesheet` and content `href="style.css"`.
+    You can create processing instructions using the slicing operator with a
+    start argument, which becomes the target. If the end argument is specified
+    it becomes the content. So the slice `['xml-stylesheet',
+    'href="style.css"']` becomes a processing instruction with target
+    `xml-stylesheet` and content `href="style.css"`.
+
+    If the slicing start argument is not specified, a function creating a XML
+    document is returned. The arguments of that function become the document
+    root nodes. The slicing end argument (if specified) denotes the document
+    type declaration content. It can either be the document element name as a
+    :func:`str` or :func:`unicode` or a 3-:func:`tuple` containing the
+    document element name, the public ID and the system ID. The slicing step
+    argument (if specified) defines if the XML declaration should be omitted,
+    it defaults to :const:`False` (this may not be honoured by :class:`Output`
+    implementations).
 
     The following operators create special nodes from their argument:
 
@@ -127,13 +137,31 @@ class MarkupBuilder(object):
 
     def __getitem__(self, name):
         if isinstance(name, slice):
-            if name.start is not None:
+            if name.start is None:
+                doctype = name.stop
+                if isinstance(doctype, tuple):
+                    doctype_name, doctype_publicid, doctype_systemid = doctype
+                else:
+                    doctype_name = doctype
+                    doctype_publicid = None
+                    doctype_systemid = None
+                omit_xml_declaration = name.step
+                if omit_xml_declaration is None:
+                    omit_xml_declaration = False
+                def create_document(*children):
+                    new_children = []
+                    for child in children:
+                        self._preprocess(child, new_children)
+                    return self._output.document(doctype_name,
+                        doctype_publicid, doctype_systemid, new_children,
+                        omit_xml_declaration)
+                return create_document
+            else:
                 target = name.start
                 content = name.stop
                 if content is None:
                     content = ''
                 return self._output.processing_instruction(target, content)
-            raise KeyError(name)
         def build(*children, **attributes):
             new_children = []
             new_attributes = {}
@@ -225,4 +253,26 @@ class Output(object):
         :type content: :func:`str`, :func:`unicode` or const:`None`
         :returns:
             The created processing instruction representation.
+        '''
+
+    @abstractmethod
+    def document(self, doctype_name, doctype_publicid, doctype_systemid,
+            children, omit_xml_declaration):
+        '''\
+        Creates a XML document representation.
+
+        :param doctype_name:  The document element name.
+        :type doctype_name: :func:`str`, :func:`unicode`, :const:`None`
+        :param doctype_publicid:  The document type system ID.
+        :type doctype_publicid: :func:`str`, :func:`unicode`, :const:`None`
+        :param doctype_systemid:  The document type system ID.
+        :type doctype_systemid: :func:`str`, :func:`unicode`, :const:`None`
+        :param children: The list of children to add to the document to
+            create.
+        :type children: :func:`list`
+        :param omit_xml_declaration: If :const:`True` the XML declaration is
+            omitted.
+        :type omit_xml_declaration: :func:`bool`
+        :returns:
+            The created document representation.
         '''
