@@ -107,6 +107,10 @@ HTML5
     <http://www.w3.org/TR/html5/semantics.html#semantics>`_. Each set contains
     for each element contained in the respective category a :func:`str` equal
     to the element's name.
+
+.. py:data:: HTML5_ELEMENT_LIST
+
+    A tuple of all HTML5 element names as defined in :data:`HTML5_ELEMENTS`.
 '''
 
 import tinkerpy
