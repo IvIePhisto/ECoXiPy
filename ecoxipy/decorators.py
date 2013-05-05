@@ -108,10 +108,14 @@ HTML5
     for each element contained in the respective category a :func:`str` equal
     to the element's name.
 
-.. py:data:: HTML5_ELEMENT_LIST
+.. py:data:: HTML5_ELEMENT_NAMES
 
-    A tuple of all HTML5 element names as defined in :data:`HTML5_ELEMENTS`.
+    An immutable set of all HTML5 element names as defined in
+    :data:`HTML5_ELEMENTS`.
+
 '''
+
+from sets import ImmutableSet
 
 import tinkerpy
 
@@ -189,9 +193,9 @@ def HTML5_ELEMENTS():
 
 
 HTML5_ELEMENTS = HTML5_ELEMENTS()
-HTML5_ELEMENT_LIST = tuple(tinkerpy.flatten(HTML5_ELEMENTS))
+HTML5_ELEMENT_NAMES = ImmutableSet(tinkerpy.flatten(HTML5_ELEMENTS))
 
 def html5():
-    return xml_string_namespace('_b', HTML5_ELEMENT_LIST)
+    return xml_string_namespace('_b', HTML5_ELEMENT_NAMES)
 
 html5 = html5()

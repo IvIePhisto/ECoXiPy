@@ -1,10 +1,10 @@
 from xml.dom import XHTML_NAMESPACE
 
 from ecoxipy.element_output import ElementOutput
-from ecoxipy.decorators import markup_builder_namespace, HTML5_ELEMENT_LIST
+from ecoxipy.decorators import markup_builder_namespace, HTML5_ELEMENT_NAMES
 
 
-@markup_builder_namespace(ElementOutput, '_b', *HTML5_ELEMENT_LIST)
+@markup_builder_namespace(ElementOutput, '_b', *HTML5_ELEMENT_NAMES)
 def create_testdoc(_title, _content, _data_count, _data_text):
     str(
         _b[:'html'] (
