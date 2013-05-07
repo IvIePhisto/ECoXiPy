@@ -16,7 +16,7 @@ if __name__ == '__main__':
         print 'arguments: [<string output> <repetitions> <data_count> [<file path>]]'
         sys.exit(1)
     else:
-        string_output = sys.arv[1].lower() == 'true'
+        string_output = sys.argv[1].lower() == 'true'
         repetitions = int(sys.argv[2])
         data_count = int(sys.argv[3])
     if string_output:
@@ -40,7 +40,7 @@ if __name__ == '__main__':
     element_out_time = timeit_run(ecoxipy_element_output)
     string_out_time = timeit_run(ecoxipy_string_output)
     dom_out_time = timeit_run(ecoxipy_dom_output)
-    if len(sys.argv) < 4:
+    if len(sys.argv) < 5:
         min_time = min(sax_time, dom_time, element_out_time, string_out_time, dom_out_time)
         max_time = max(sax_time, dom_time, element_out_time, string_out_time, dom_out_time)
         create_percent = lambda t: '| {: >6.3f} secs | {: >6.3f} secs ({: >6.2f} %) |'.format(
