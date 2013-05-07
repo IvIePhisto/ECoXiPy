@@ -151,24 +151,26 @@ Execute unit tests:
 
 ### Performance Tests
 
-The performance tests create (nearly) the same HTML document in form of an
-UTF-8 encoded string using different APIs. The output as an UTF-8 encoded
-string was chosen as most XML will ultimately be serialised in this form. All
-supplied `ecoxipy.Output` implementations (in `ecoxipy.string_output`,
-`ecoxipy.dom_output` and `ecoxipy.element_output`) are tested as well as
-`xml.sax` and `xml.dom.minidom` for comparison.
+The performance tests create (nearly) the same HTML document using different
+APIs. When executing the module `tests.performance.performance_tests` the
+first argument specifies if the document should be rendered as an UTF-8
+encoded string after creating the data structures. The output as an UTF-8
+encoded string was chosen as most XML will ultimately be serialised in this
+form. All supplied `ecoxipy.Output` implementations (in
+`ecoxipy.string_output`, `ecoxipy.dom_output` and `ecoxipy.element_output`)
+are tested as well as `xml.sax` and `xml.dom.minidom` for comparison.
 
 
 Run [timeit](http://docs.python.org/2/library/timeit.html) tests (linear
 increase of `data_count` yields exponential test document size increase):
 
-    python tests/performance/timeit_tests.py [<repetitions> <data count> [<CSV output path>]]
+    python tests/performance/timeit_tests.py [<string output> <repetitions> <data count> [<CSV output path>]]
 
 
 To create a CSV file from a series of tests in Bash as I did for my
-performance test results:
+performance test results (here using string output):
 
-    for ((i = 2; i <= 20; i += 2)); do python tests/performance/timeit_tests.py 400 $i timeit.csv; done
+    for ((i = 2; i <= 20; i += 2)); do python tests/performance/timeit_tests.py true 400 $i timeit.csv; done
 
 
 Run [cProfile](http://docs.python.org/2/library/profile.html) tests:
@@ -176,10 +178,14 @@ Run [cProfile](http://docs.python.org/2/library/profile.html) tests:
     python tests/performance/profiling_tests.py
 
 
-These tests show that `ecoxipy.string_output` is faster than all others,
-followed by `xml.sax`, `ecoxipy.element_output`, `xml.dom.minidom` with
-`ecoxipy.dom_output` at the end. Run the tests on your own or see my testing
-results in the repository under
+These tests show that if string output is wanted, `ecoxipy.string_output` is
+faster than all others, followed by `xml.sax`, `ecoxipy.element_output`,
+`xml.dom.minidom` with `ecoxipy.dom_output` at the end. If the data structures
+should not be converted to a string, `ecoxipy.element_output` is the fastest,
+closely followed by `xml.dom.minidom`; `ecoxipy.string_output` is quite a bit
+slower, followed by `ecoxipy.dom_output` and `xml.sax`.
+
+Run the tests on your own or see my testing results in the repository under
 [doc/perf_test_results/timeit.pdf](https://raw.github.com/IvIePhisto/ECoXiPy/master/doc/perf_test_results/timeit.pdf).
 
 ![Performance Testing Results Graph](https://raw.github.com/IvIePhisto/ECoXiPy/master/doc/perf_test_results/timeit.png)

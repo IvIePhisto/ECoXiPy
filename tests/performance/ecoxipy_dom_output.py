@@ -6,7 +6,7 @@ from ecoxipy.decorators import markup_builder_namespace, HTML5_ELEMENT_NAMES
 
 @markup_builder_namespace(DOMOutput, '_b', *HTML5_ELEMENT_NAMES)
 def create_testdoc(_title, _content, _data_count, _data_text):
-    doc = _b[:'html'] (
+    return _b[:'html'] (
         html(
             head(
                 title(_title)
@@ -22,8 +22,11 @@ def create_testdoc(_title, _content, _data_count, _data_text):
             xmlns=XHTML_NAMESPACE
         )
     )
-    try:
-        doc.toxml('UTF-8')
-    finally:
-        doc.unlink()
 
+
+def create_testdoc_string(*args):
+    html_doc = create_testdoc(*args)
+    try:
+        return html_doc.toxml('UTF-8')
+    finally:
+        html_doc.unlink()

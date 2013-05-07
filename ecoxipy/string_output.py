@@ -36,7 +36,7 @@ True
 '''
 
 
-from xml.sax.saxutils import escape, quoteattr
+import xml.sax.saxutils
 
 from . import Output
 
@@ -161,10 +161,10 @@ class StringOutput(Output):
         self._entities = entities
 
     def _escape(self, value):
-        return escape(value, self._entities)
+        return xml.sax.saxutils.escape(value, self._entities)
 
     def _quoteattr(self, value):
-        return quoteattr(value, self._entities)
+        return xml.sax.saxutils.quoteattr(value, self._entities)
 
     def _prepare(self, value):
         return self._escape(self._encode(self._decode(value)))
@@ -322,3 +322,5 @@ class _XMLStr(str): pass
 
 class _XMLUnicode(unicode): pass
 
+
+del Output

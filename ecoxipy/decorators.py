@@ -199,3 +199,6 @@ def html5():
     return xml_string_namespace('_b', HTML5_ELEMENT_NAMES)
 
 html5 = html5()
+
+
+del ImmutableSet

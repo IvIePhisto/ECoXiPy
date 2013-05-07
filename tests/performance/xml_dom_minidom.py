@@ -4,7 +4,6 @@ from xml.dom.minidom import getDOMImplementation
 
 def create_testdoc(_title, _content, _data_count, _data_text):
     dom_impl = getDOMImplementation()
-    #html_doctype = dom_impl.createDocumentType('html', '', '')
     html_doctype = dom_impl.createDocumentType('html', None, None)
     html_doc = dom_impl.createDocument(XHTML_NAMESPACE, 'html', html_doctype)
     element = lambda name: html_doc.createElementNS(XHTML_NAMESPACE, name)
@@ -37,8 +36,12 @@ def create_testdoc(_title, _content, _data_count, _data_text):
             div_element.appendChild(p_element)
             p_text = text(_data_text)
             p_element.appendChild(p_text)
+    return html_doc
+
+
+def create_testdoc_string(*args):
+    html_doc = create_testdoc(*args)
     try:
         return html_doc.toxml('UTF-8')
     finally:
         html_doc.unlink()
-

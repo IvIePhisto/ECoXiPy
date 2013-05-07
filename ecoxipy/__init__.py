@@ -9,9 +9,7 @@ The package :mod:`ecoxipy` provides the basic API, consisting of
 '''
 
 import collections
-from xml import dom
 from abc import ABCMeta, abstractmethod
-
 
 
 class MarkupBuilder(object):
@@ -276,3 +274,6 @@ class Output(object):
         :returns:
             The created document representation.
         '''
+
+del ABCMeta
+del abstractmethod

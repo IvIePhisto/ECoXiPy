@@ -22,3 +22,4 @@ def create_testdoc(_title, _content, _data_count, _data_text):
         )
     )
 
+create_testdoc_string = create_testdoc

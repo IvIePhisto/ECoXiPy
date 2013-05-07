@@ -38,8 +38,8 @@ Usage Example:
 True
 '''
 
-from xml import dom
-from xml.dom import minidom, Node
+import xml.dom
+import xml.dom.minidom
 
 from . import Output
 
@@ -58,7 +58,7 @@ class DOMOutput(Output):
     '''
     def __init__(self, document=None, dom_implementation=None):
         if dom_implementation is None:
-            dom_implementation = minidom.getDOMImplementation()
+            dom_implementation = xml.dom.minidom.getDOMImplementation()
         self._dom_implementation = dom_implementation
         if document is None:
             document = self._dom_implementation.createDocument(None, None,
@@ -103,7 +103,8 @@ class DOMOutput(Output):
         imported = self._document.childNodes.__class__()
 
         def import_xml(text):
-            document = minidom.parseString('<ROOT>{}</ROOT>'.format(text))
+            document = xml.dom.minidom.parseString(
+                '<ROOT>{}</ROOT>'.format(text))
             doc_element = document.documentElement
             current_node = doc_element.firstChild
             while current_node is not None:
@@ -114,7 +115,7 @@ class DOMOutput(Output):
             document.unlink()
 
         for content_item in content:
-            if isinstance(content_item, dom.Node):
+            if isinstance(content_item, xml.dom.Node):
                 imported.append(content_item)
             else:
                 if isinstance(content_item, unicode):
@@ -200,7 +201,7 @@ class DOMOutput(Output):
         document.removeChild(document.documentElement)
         for child in children:
             document.appendChild(child)
-            if child.nodeType == Node.ELEMENT_NODE:
+            if child.nodeType == xml.dom.Node.ELEMENT_NODE:
                 document.documentElement = child
         return document
 
@@ -210,9 +211,12 @@ def _dom_create_element(document, name, attributes, children):
     for name in attributes:
         element.setAttribute(unicode(name), unicode(attributes[name]))
     for child in children:
-        if isinstance(child, dom.Node):
+        if isinstance(child, xml.dom.Node):
             element.appendChild(child)
         else:
             element.appendChild(document.createTextNode(unicode(child)))
     document.documentElement = element
     return element
+
+
+del Output

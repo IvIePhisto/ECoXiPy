@@ -40,3 +40,6 @@ def create_testdoc(_title, _content, _data_count, _data_text):
         return xml_doc.getvalue()
     finally:
         xml_doc.close()
+
+
+create_testdoc_string = create_testdoc

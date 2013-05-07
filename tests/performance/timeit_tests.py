@@ -12,17 +12,25 @@ TIMEIT_NUMBER = 100
 TIMEIT_DATA_COUNT = 10
 
 if __name__ == '__main__':
-    if len(sys.argv) == 1:
-        repetitions = TIMEIT_NUMBER
-        data_count = TIMEIT_DATA_COUNT
-    elif 3 > len(sys.argv) > 4:
-        print 'arguments: [<repetitions> <data_count> [<file path>]]'
+    if 4 > len(sys.argv) > 5:
+        print 'arguments: [<string output> <repetitions> <data_count> [<file path>]]'
         sys.exit(1)
     else:
-        repetitions = int(sys.argv[1])
-        data_count = int(sys.argv[2])
-    create_test_run = lambda module: "{}.create_testdoc('Test Page', 'Hello World!', {}, 'Lorem Ipsum')".format(module.__name__, data_count)
-    create_test_setup = lambda module: "from __main__ import {0}; {0}.create_testdoc('startup', 'startup', {1}, 'Lorem Ipsum')".format(module.__name__, data_count)
+        string_output = sys.arv[1].lower() == 'true'
+        repetitions = int(sys.argv[2])
+        data_count = int(sys.argv[3])
+    if string_output:
+        method_postfix = '_string'
+    else:
+        method_postfix = ''
+    create_test_run = lambda module: (
+        "{0}.create_testdoc{2}('Test Page', 'Hello World!', {1}, 'Lorem Ipsum')".format(
+            module.__name__, data_count, method_postfix)
+    )
+    create_test_setup = lambda module: (
+        "from __main__ import {0}; {0}.create_testdoc{2}('startup', 'startup', {1}, 'Lorem Ipsum')".format(
+            module.__name__, data_count, method_postfix)
+    )
     timeit_run = lambda module: timeit.timeit(
         create_test_run(module),
         setup=create_test_setup(module),
@@ -40,6 +48,7 @@ if __name__ == '__main__':
         print '''\
 # ECoXiPy Performance Tests
 
+String output:           {}
 Number of repetitions:   {}
 Number of data elements: {}
 
@@ -59,7 +68,8 @@ Running Times:
 | ecoxipy.element_output {}
 | ecoxipy.string_output  {}\
 '''.format(
-            repetitions, data_count, min_time, max_time, max_time - min_time,
+            string_output, repetitions, data_count,
+            min_time, max_time, max_time - min_time,
             create_percent(sax_time),
             create_percent(dom_time),
             create_percent(dom_out_time),

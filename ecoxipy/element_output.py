@@ -140,18 +140,15 @@ Representation
 '''
 
 from abc import ABCMeta, abstractmethod
-from xml import dom
-from xml.dom import minidom
-from xml.sax.saxutils import XMLGenerator
-from xml.sax.xmlreader import AttributesImpl
-from StringIO import StringIO
 from collections import namedtuple
+import xml.dom.minidom
+import xml.sax.saxutils
+import xml.sax.xmlreader
 
-from tinkerpy import ImmutableDict
+import tinkerpy
 
 from . import Output
-from dom_output import _dom_create_element
-from string_output import StringOutput as _StringOutput
+import ecoxipy.string_output
 
 
 class ElementOutput(Output):
@@ -215,18 +212,19 @@ class ElementOutput(Output):
 
             def import_nodes(children_list, nodes):
                 for node in nodes:
-                    if node.nodeType == dom.Node.ELEMENT_NODE:
+                    if node.nodeType == xml.dom.Node.ELEMENT_NODE:
                         import_element(children_list, node)
-                    elif node.nodeType in [dom.Node.TEXT_NODE,
-                            dom.Node.CDATA_SECTION_NODE]:
+                    elif node.nodeType in (xml.dom.Node.TEXT_NODE,
+                            xml.dom.Node.CDATA_SECTION_NODE):
                         import_text(children_list, node)
                     elif (node.nodeType ==
-                            dom.Node.PROCESSING_INSTRUCTION_NODE):
+                            xml.dom.Node.PROCESSING_INSTRUCTION_NODE):
                         import_processing_instruction(children_list, node)
-                    elif (node.nodeType == dom.Node.COMMENT_NODE):
+                    elif (node.nodeType == xml.dom.Node.COMMENT_NODE):
                         import_comment(children_list, node)
 
-            document = minidom.parseString('<ROOT>' + text + '</ROOT>')
+            document = xml.dom.minidom.parseString(
+                '<ROOT>' + text + '</ROOT>')
             import_nodes(imported_content,
                 document.documentElement.childNodes)
 
@@ -345,7 +343,7 @@ class XMLNode(object):
             :func:`unicode` output.
         '''
         if out is None:
-            out = _StringOutput(out_encoding=encoding)
+            out = ecoxipy.string_output.StringOutput(out_encoding=encoding)
         return self._create_str(out, encoding)
 
     @abstractmethod
@@ -380,7 +378,7 @@ class XMLNode(object):
         :returns: The content handler used.
         '''
         if content_handler is None:
-            content_handler = XMLGenerator(out, out_encoding)
+            content_handler = xml.sax.saxutils.XMLGenerator(out, out_encoding)
         if indent_incr is None:
             indent = False
         else:
@@ -459,7 +457,7 @@ class Element(XMLNode):
                 for i in range(indent_count):
                     content_handler.characters(indent_incr)
         do_indent(True)
-        attributes = AttributesImpl(self.attributes)
+        attributes = xml.sax.xmlreader.AttributesImpl(self.attributes)
         content_handler.startElement(self.name, attributes)
         last_event_characters = False
         for child in self.children:
@@ -480,7 +478,7 @@ class Element(XMLNode):
             content_handler.characters('\n')
 
 
-class Attributes(ImmutableDict):
+class Attributes(tinkerpy.ImmutableDict):
     u'''\
     An immutable dictionary representing XML attributes. For attribute names
     (keys) and values their :func:`unicode` representation is used in all
@@ -514,7 +512,7 @@ class Attributes(ImmutableDict):
                 self._dict[unicode_name] = unicode_value
 
     def __getitem__(self, name):
-        return ImmutableDict.__getitem__(self, unicode(name))
+        return tinkerpy.ImmutableDict.__getitem__(self, unicode(name))
 
 
 class Comment(XMLNode):
@@ -662,3 +660,9 @@ class Document(XMLNode):
             else:
                 content_handler.characters(child)
         content_handler.endDocument()
+
+
+del ABCMeta
+del abstractmethod
+del namedtuple
+del Output
