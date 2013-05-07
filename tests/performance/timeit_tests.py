@@ -77,7 +77,7 @@ Running Times:
             create_percent(string_out_time),
         )
     else:
-        path = sys.argv[3]
+        path = sys.argv[4]
         import os.path
         if not os.path.isfile(path):
             with open(path, 'w') as f:
