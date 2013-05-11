@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-ur'''\
+u'''\
 
 :mod:`ecoxipy.decorators` - Decorators for Shorter XML-Creation Code
 ====================================================================
@@ -31,7 +31,7 @@ available and a list of allowed element names:
 ...         _b('<raw/>text'),
 ...         _b(br, (str(i) for i in range(3))),
 ...         (str(i) for i in range(3, 6)),
-...         attr='\'"<&>'
+...         attr='\\'"<&>'
 ...     )
 ...
 >>> view('Hello World!') == u"""<section attr="'&quot;&lt;&amp;&gt;"><p>Hello World!</p><p>äöüß</p><p>&lt;&amp;&gt;</p><raw/>text<br/>012345</section>""".encode('utf-8')
@@ -52,14 +52,14 @@ using :class:`ecoxipy.string_output.StringOutput` as the
 ...         p('<&>'),
 ...         _b('<raw/>text', br, (str(i) for i in range(3))),
 ...         (str(i) for i in range(3, 6)),
-...         attr='\'"<&>'
+...         attr='\\'"<&>'
 ...     )
 ...
 >>> view('Hello World!') == u"""<section attr="'&quot;&lt;&amp;&gt;"><p>Hello World!</p><p>äöüß</p><p>&lt;&amp;&gt;</p><raw/>text<br/>012345</section>""".encode('utf-8')
 True
 
 
-To create UTF-8 encoded `HTML5 <http://www.w3.org/TR/html5/>`_ strings
+To create UTF-8 encoded `HTML5 <http://www.w3.org/TR/html5/>`_ byte strings
 use the :func:`html5` decorator:
 
 >>> @html5
@@ -74,8 +74,8 @@ use the :func:`html5` decorator:
 ...             _b('<footer>Copyright</footer>')
 ...         ),
 ...     )
->>> print page('Test', 'Hello World & Universe!')
-<html><head><title>Test</title></head><body><h1>Test</h1><p>Hello World &amp; Universe!</p><footer>Copyright</footer></body></html>
+>>> page('Test', 'Hello World & Universe!') == b'<html><head><title>Test</title></head><body><h1>Test</h1><p>Hello World &amp; Universe!</p><footer>Copyright</footer></body></html>'
+True
 
 
 Decorator Creation
@@ -110,21 +110,19 @@ HTML5
 
 .. py:data:: HTML5_ELEMENT_NAMES
 
-    An :class:`sets.ImmutableSet` of all HTML5 element names as defined in
+    An :func:`frozenset` of all HTML5 element names as defined in
     :data:`HTML5_ELEMENTS`.
 
 '''
 
-from sets import ImmutableSet
-
 import tinkerpy
 
 import ecoxipy
-import string_output
+import ecoxipy.string_output
 
 
 def markup_builder_namespace(output, builder_name, *element_names, **kargs):
-    ur'''\
+    '''\
     A function creating a :func:`tinkerpy.namespace` decorator. It has all in
     ``element_names`` defined names bound to the appropriate `virtual` methods
     of a new :class:`ecoxipy.MarkupBuilder` instance, which uses a new
@@ -148,8 +146,8 @@ def markup_builder_namespace(output, builder_name, *element_names, **kargs):
 
 
 xml_string_namespace = lambda builder_name, vocabulary: markup_builder_namespace(
-        string_output.StringOutput, builder_name, *vocabulary)
-ur'''\
+        ecoxipy.string_output.StringOutput, builder_name, *vocabulary)
+'''\
 Uses :func:`markup_builder_namespace` to decorate the target
 function with the given ``vocabulary``.
 
@@ -193,12 +191,9 @@ def HTML5_ELEMENTS():
 
 
 HTML5_ELEMENTS = HTML5_ELEMENTS()
-HTML5_ELEMENT_NAMES = ImmutableSet(tinkerpy.flatten(HTML5_ELEMENTS))
+HTML5_ELEMENT_NAMES = frozenset(tinkerpy.flatten(HTML5_ELEMENTS))
 
 def html5():
     return xml_string_namespace('_b', HTML5_ELEMENT_NAMES)
 
 html5 = html5()
-
-
-del ImmutableSet

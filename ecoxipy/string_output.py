@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-ur'''\
+u'''\
 
 :mod:`ecoxipy.string_output` - XML as Strings
 =============================================
@@ -12,7 +12,7 @@ using string concatenation.
 
 Usage Example:
 
->>> xml_output = StringOutput(out_encoding=None)
+>>> xml_output = StringOutput()
 >>> from ecoxipy import MarkupBuilder
 >>> b = MarkupBuilder(xml_output)
 >>> xml = b[:'section':False] (
@@ -28,27 +28,63 @@ Usage Example:
 ...         b | '<This is a comment!>',
 ...         b['pi-target':'<PI content>'],
 ...         b['pi-without-content':],
-...         attr='\'"<&>'
+...         attr='\\'"<&>'
 ...     )
 ... )
->>> xml == u"""<?xml version="1.0" encoding="UTF-16"?><!DOCTYPE section><section attr="'&quot;&lt;&amp;&gt;"><p>Hello World!</p><p>äöüß</p><p>&lt;&amp;&gt;</p><raw/>text<br/>012345<!--<This is a comment!>--><?pi-target <PI content>?><?pi-without-content?></section>"""
+>>> xml.decode('utf-8') == u"""<?xml version="1.0"?>\\n<!DOCTYPE section><section attr="'&quot;&lt;&amp;&gt;"><p>Hello World!</p><p>äöüß</p><p>&lt;&amp;&gt;</p><raw/>text<br/>012345<!--<This is a comment!>--><?pi-target <PI content>?><?pi-without-content?></section>"""
 True
 '''
 
-
 import xml.sax.saxutils
 
-from . import Output
+from tinkerpy import AttributeDict
+
+from ecoxipy import Output, _python3, _unicode
+
+
+_xml_strings_unicode = AttributeDict(
+    lt=u'<',
+    gt=u'>',
+    equals=u'=',
+    space=u' ',
+    quot=u'"',
+    element_empty_end=u'/>',
+    element_close_start=u'</',
+    comment_start=u'<!--',
+    comment_end=u'-->',
+    pi_start=u'<?',
+    pi_end=u'?>',
+    doctype_start=u'<!DOCTYPE ',
+    doctype_public=u' PUBLIC "',
+    doctype_system=u' SYSTEM "',
+    doctype_id_divider=u'" "',
+    xml_decl_start=u'<?xml version="1.0"',
+    xml_decl_encoding=u' encoding="',
+    xml_decl_end=u'?>\n',
+)
+
+_xml_strings_bytes = AttributeDict({
+    key: value.encode() for key, value in _xml_strings_unicode.items()
+})
+
+
+class _XMLBytes(bytes): pass
+
+
+if _python3:
+    class _XMLUnicode(str): pass
+else:
+    class _XMLUnicode(unicode): pass
 
 
 class StringOutput(Output):
     '''An :class:`ecoxipy.Output` implementation which creates XML as strings of the
     specified encoding.
 
-    :param in_encoding: The name of the encoding to decode :func:`str`
+    :param in_encoding: The name of the encoding to decode byte strings
         instances if neccessary.
     :param out_encoding: The name of the encoding to encode
-        :func:`unicode` instances or :const:`None`.
+        Unicode instances or :const:`None`.
     :param entities: A mapping of characters to text to replace them with
         when escaping.
 
@@ -59,268 +95,195 @@ class StringOutput(Output):
     Element and attribute names, attribute values and text content data which
     are processed as follows:
 
-        * Instances which are neither :func:`str` or :func:`unicode`
-          instances converted using :func:`unicode`.
+        1.  Objects which are neither byte nor unicode strings are converted
+            to Unicode.
 
-        * If ``in_encoding`` and ``out_encoding`` differ, :func:`str`
-          instances are decoded to :func:`unicode` using ``in_encoding`` as
-          the encoding.
+        2.  If ``in_encoding`` and ``out_encoding`` differ, byte string
+            instances are decoded to Unicode using ``in_encoding`` as the
+            encoding.
 
-        * :func:`unicode` instances are left untouched.
+        3.  Element and attribute names as well as attribute values are
+            escaped using :func:`xml.sax.saxutils.escape`:
 
-    ``encoding`` is :const:`None`
-        :func:`unicode` instances are not processed. Non-:func:`str`
-        instances are
+                * ``&``, ``<``, ``>`` are replaced by ``&amp;``, ``&lt;`` and
+                  ``&gt;``
 
-    Element and attribute names as well as attribute values are escaped using
-    :func:`xml.sax.saxutils.escape`:
+                * keys of ``entitites`` are replaced by the corresponding
+                  value
 
-        * ``&``, ``<``, ``>`` are replaced by ``&amp;``, ``&lt;`` and ``&gt;``
+            Attribute values are additionally quoted using
+            :func:`xml.sax.saxutils.quoteattr`, which means ``'`` and ``"``
+            are replaced by ``&apos;`` and ``&quot;``.
 
-        * keys of ``entitites`` are replaced by the corresponding value
-
-    Attribute values are additionally quoted using
-    :func:`xml.sax.saxutils.quoteattr`, which means ``'`` and ``"`` are
-    replaced by ``&apos;`` and ``&quot;``.
-
-    The possibly converted, decoded, escaped and/or quoted element and
-    attribute names, attribute values and text content data is then
-    processed as follows depending on the type:
-
-        * :func:`str` instances are left untouched. There are none if
-          ``out_encoding`` differs from ``in_encoding``.
-
-        * :func:`unicode` instances are left untouched if ``out_encoding`` is
-          :const:`None`, otherwise they are encoded using ``out_encoding`` as
-          the encoding.
+        4.  If ``out_encoding`` is not :const:`None` Unicode instances are
+            encoded to byte strings.
     '''
-    def __init__(self, in_encoding='utf-8', out_encoding='utf-8',
+    def __init__(self, in_encoding=u'utf-8', out_encoding=u'utf-8',
             entities=None):
-        self._out_encoding = out_encoding
-        if in_encoding != out_encoding and in_encoding is not None:
-            self._decode = lambda value: (
-                value.decode(in_encoding)
-                if isinstance(value, str) else unicode(value)
-            )
-        else:
-            self._decode = lambda value: (
-                value if isinstance(value, str) else unicode(value)
-            )
-        if out_encoding is None:
-            self._encode = lambda value: value
-        else:
-            self._encode = lambda value: (
-                value.encode(out_encoding)
-                if isinstance(value, unicode) else value
-            )
-        self._format_element = '<{0}{1}>{2}</{0}>'
-        self._format_element_empty = '<{0}{1}/>'
-        self._format_attribute = ' {}={}'
-        self._format_comment = '<!--{0}-->'
-        self._format_pi = '<?{0}{1}{2}?>'
-        self._format_xml_declaration = '<?xml version="1.0" encoding="{}"?>'
-        self._format_doctype_empty = '<!DOCTYPE {}>'
-        self._format_doctype_public = '<!DOCTYPE {} PUBLIC "{}">'
-        self._format_doctype_public_system = '<!DOCTYPE {} PUBLIC "{}" "{}">'
-        self._format_doctype_system = '<!DOCTYPE {} SYSTEM "{}">'
-        self._document_format = '{}{}{}'
-        if out_encoding is None:
-            def unicode_attribute(name):
-                setattr(self, name, unicode(getattr(self, name)))
-            self._xml_string = _XMLUnicode
-            self._join = u''.join
-            unicode_attribute('_format_element')
-            unicode_attribute('_format_element_empty')
-            unicode_attribute('_format_attribute')
-            unicode_attribute('_format_comment')
-            unicode_attribute('_format_pi')
-            unicode_attribute('_format_xml_declaration')
-            unicode_attribute('_format_doctype_empty')
-            unicode_attribute('_format_doctype_public')
-            unicode_attribute('_format_doctype_public_system')
-            unicode_attribute('_format_doctype_system')
-            unicode_attribute('_document_format')
-        else:
-            self._xml_string = _XMLStr
-            self._join = ''.join
-        def format_attribute(name):
-            setattr(self, name, getattr(self, name).format)
-        format_attribute('_format_element')
-        format_attribute('_format_element_empty')
-        format_attribute('_format_attribute')
-        format_attribute('_format_comment')
-        format_attribute('_format_pi')
-        format_attribute('_format_xml_declaration')
-        format_attribute('_format_doctype_empty')
-        format_attribute('_format_doctype_public')
-        format_attribute('_format_doctype_public_system')
-        format_attribute('_format_doctype_system')
-        format_attribute('_document_format')
         if entities is None:
             entities = {}
         self._entities = entities
+        in_encoding = _unicode(in_encoding).lower()
+        if out_encoding is not None:
+            out_encoding = _unicode(out_encoding).lower()
+        if in_encoding != out_encoding:
+            self._decode = lambda value: (
+                value.decode(in_encoding) if isinstance(value, bytes)
+                else _unicode(value)
+            )
+        else:
+            self._decode = lambda value: (
+                value if isinstance(value, bytes) else _unicode(value))
+        self._out_encoding = out_encoding
+        if out_encoding is None:
+            self._encode = lambda value: value
+            self._xml_string = _XMLUnicode
+            self._join = u''.join
+            self._strings = _xml_strings_unicode
+        else:
+            self._encode = lambda value: (
+                value.encode(out_encoding) if isinstance(value, _unicode)
+                else value)
+            self._xml_string = _XMLBytes
+            self._join = b''.join
+            self._strings = _xml_strings_bytes
 
-    def _escape(self, value):
-        return xml.sax.saxutils.escape(value, self._entities)
+    def _prepare_attr_value(self, value):
+        return self._encode(
+            xml.sax.saxutils.quoteattr(
+                self._decode(value), self._entities))
 
-    def _quoteattr(self, value):
-        return xml.sax.saxutils.quoteattr(value, self._entities)
+    def _prepare_text(self, value):
+        return self._encode(xml.sax.saxutils.escape(
+            self._decode(value), self._entities))
 
-    def _prepare(self, value):
-        return self._escape(self._encode(self._decode(value)))
+    def _create_xml_string(self, generator):
+        return self._xml_string(self._join([item for item in generator]))
 
     def element(self, name, children, attributes):
-        '''Returns a XML element string with the encoding given on
-        initialization.
+        '''\
+        Creates an element string.
 
-        :param name: The name of the element to create.
-        :param children: The iterable of children.
-        :param attributes: The mapping of arguments.
-        :returns: The XML string created.
-        :rtype: :func:`str` or :func:`unicode`
+        :returns: The element created.
         '''
-        element_name = self._prepare(name)
-        attributes_string = self._join([
-            self._format_attribute(
-                self._prepare(attribute_name),
-                self._quoteattr(self._encode(self._decode(
-                    attributes[attribute_name])))
-            )
-            for attribute_name in attributes
-        ])
-        if len(children) == 0:
-            element_string = self._format_element_empty(
-                element_name, attributes_string)
-        else:
-            children_string = self._join([
-                child if isinstance(child, self._xml_string)
-                    else self._prepare(child)
-                for child in children
-            ])
-            element_string = self._format_element(
-                element_name, attributes_string, children_string)
-        return self._xml_string(element_string)
+        def element_creator():
+            element_name = self._prepare_text(name)
+            yield self._strings.lt
+            yield element_name
+            for attr_name, attr_value in attributes.items():
+                yield self._strings.space
+                yield self._prepare_text(attr_name)
+                yield self._strings.equals
+                yield self._prepare_attr_value(attr_value)
+            if len(children) == 0:
+                yield self._strings.element_empty_end
+            else:
+                yield self._strings.gt
+                for child in children:
+                    if isinstance(child, self._xml_string):
+                        yield child
+                    else:
+                        yield self._prepare_text(child)
+                yield self._strings.element_close_start
+                yield element_name
+                yield self._strings.gt
+        return self._create_xml_string(element_creator())
 
     def embed(self, content):
-        '''Encodes the elements of ``content`` if they are not :func:`str`
-        or :func:`unicode` instances.
+        '''\
+        Treats the content items as XML fragments.
 
-        :param content: The content to encode.
-        :returns: a :func:`list` of :func:`str` instances or a single
-            instance
+        :returns: A string.
         '''
-        def handle_content(value):
-            if isinstance(value, self._xml_string):
-                return value
-            return self._encode(self._decode(value))
         if len(content) == 1:
-            return self._xml_string(handle_content(content[0]))
-        return self._xml_string(self._join([
-            handle_content(content_item) for content_item in content
-        ]))
+            content = content[0]
+            return (
+                content if isinstance(content, self._xml_string)
+                else self._xml_string(self._encode(self._decode(content)))
+            )
+        else:
+            return self._create_xml_string(
+                    item if isinstance(item, self._xml_string)
+                    else self._encode(self._decode(item))
+                for item in content
+            )
 
     def text(self, content):
         '''\
-        Creates :func:`str` or :func:`unicode` instances from the items of
-        ``content``, depending on the instance's ``out_encoding``.
+        Creates text string.
 
-        :param content: The list of texts.
-        :returns: A list of :func:`str` or :func:`unicode` instances.
+        :returns: The created text.
         '''
-        imported = []
-        for content_item in content:
-            content_item = self._prepare(content_item)
-            imported.append(self._xml_string(content_item))
-        if len(imported) == 1:
-            return imported[0]
-        return imported
+        return self._xml_string(self._prepare_text(content))
 
     def comment(self, content):
         '''\
         Creates a comment string.
 
-        :param content: The content of the comment.
-        :type content: :func:`str` or :func:`unicode`
-        :returns:
-            The created comment.
+        :returns: The created comment.
         '''
-        return self._xml_string(self._format_comment(content))
+        def comment_creator():
+            yield self._strings.comment_start
+            yield self._encode(self._decode(content))
+            yield self._strings.comment_end
+        return self._create_xml_string(comment_creator())
 
 
     def processing_instruction(self, target, content):
         '''\
         Creates a processing instruction string.
 
-        :param target: The target of the processing instruction.
-        :type target: :func:`str` or :func:`unicode`
-        :param content: The content of the processing instruction.
-        :type content: :func:`str` or :func:`unicode`
-        :returns:
-            The created processing instruction.
+        :returns: The created processing instruction.
         '''
-        if len(content) == 0:
-            spacer = ''
-        else:
-            spacer = ' '
-        return self._xml_string(self._format_pi(
-            target, spacer, content))
+        def pi_creator():
+            yield self._strings.pi_start
+            yield self._encode(self._decode(target))
+            if content is not None:
+                yield self._strings.space
+                yield self._encode(self._decode(content))
+            yield self._strings.pi_end
+        return self._create_xml_string(pi_creator())
 
     def document(self, doctype_name, doctype_publicid, doctype_systemid,
             children, omit_xml_declaration):
         '''\
         Creates a XML document.
 
-        :param doctype_name:  The document element name.
-        :type doctype_name: :func:`str`, :func:`unicode`, :const:`None`
-        :param doctype_publicid:  The document type system ID.
-        :type doctype_publicid: :func:`str`, :func:`unicode`, :const:`None`
-        :param doctype_systemid:  The document type system ID.
-        :type doctype_systemid: :func:`str`, :func:`unicode`, :const:`None`
-        :param children: The list of children to add to the document to
-            create.
-        :type children: :func:`list`
-        :param omit_xml_declaration: If :const:`True` the XML declaration is
-            omitted.
-        :type omit_xml_declaration: :func:`bool`
-        :returns:
-            The created document representation.
+        :returns: The created document.
         '''
-        if omit_xml_declaration:
-            xml_declaration_string = ''
-        else:
-            if self._out_encoding is None:
-                out_encoding = 'UTF-16'
-            else:
-                out_encoding = self._out_encoding
-            xml_declaration_string = self._format_xml_declaration(
-                out_encoding)
-        if doctype_name is None:
-            doctype_string = ''
-        else:
-            if doctype_publicid is None:
-                if doctype_systemid is None:
-                    doctype_string = self._format_doctype_empty(doctype_name)
+        def document_creator():
+            if not omit_xml_declaration:
+                if self._out_encoding is None:
+                    raise ValueError(
+                        'Neither output encoding given nor XML declaration omitted.')
+                yield self._strings.xml_decl_start
+                if self._out_encoding != u'utf-8':
+                    yield self._strings.xml_decl_encoding
+                    yield self._encode(self._decode(self._out_encoding))
+                    yield self._strings.quot
+                yield self._strings.xml_decl_end
+            if doctype_name is not None:
+                yield self._strings.doctype_start
+                yield self._encode(self._decode(doctype_name))
+                if doctype_publicid is None:
+                    if doctype_systemid is not None:
+                        yield self._strings.doctype_system
+                        yield self._encode(self._decode(doctype_system))
+                        yield self._strings.quot
                 else:
-                    doctype_string = self._format_doctype_system(doctype_name,
-                        doctype_systemid)
-            elif doctype_systemid is None:
-                doctype_string = self._format_doctype_public_system(
-                    doctype_name, doctype_publicid, doctype_systemid)
-            else:
-                doctype_string = self._format_doctype_public(doctype_name,
-                    doctype_publicid)
-        children_string = self._join([
-            child if isinstance(child, self._xml_string)
-                else self._prepare(child)
-            for child in children
-        ])
-        return self._xml_string(self._document_format(
-            xml_declaration_string, doctype_string, children_string))
+                    yield self._strings.doctype_public
+                    yield self._encode(self._decode(doctype_public))
+                    if doctype_systemid is not None:
+                        yield self._strings.doctype_id_divider
+                        yield self._encode(self._decode(doctype_system))
+                    yield self._strings.quot
+                yield self._strings.gt
+            for child in children:
+                if isinstance(child, self._xml_string):
+                    yield child
+                else:
+                    yield self._prepare_text(child)
+        return self._create_xml_string(document_creator())
 
 
-class _XMLStr(str): pass
-
-class _XMLUnicode(unicode): pass
-
-
-del Output
+del Output, AttributeDict

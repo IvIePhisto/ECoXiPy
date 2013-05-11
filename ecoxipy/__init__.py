@@ -10,10 +10,15 @@ The package :mod:`ecoxipy` provides the basic API, consisting of
 
 import collections
 from abc import ABCMeta, abstractmethod
+import sys
+
+_python3 = sys.version_info[0] >= 3
+_unicode = str if _python3 else unicode
+_string_types = (bytes, str) if _python3 else (str, unicode)
 
 
 class MarkupBuilder(object):
-    ur'''\
+    u'''\
     A builder for creating XML in a pythonic way.
 
     :param output:
@@ -47,8 +52,8 @@ class MarkupBuilder(object):
 
             Each entry of this mapping defines an attribute of the created
             element, the name being the key and the value being the value
-            identified by the key. The keys and values should be :func:`str`
-            or :func:`unicode` instances.
+            identified by the key. The keys and values should be byte or
+            Unicode string instances.
 
         Those items of ``children``, which are iterable mapping types
         (``child[name] for name in child``) define attributes. The entries of
@@ -84,10 +89,10 @@ class MarkupBuilder(object):
     document is returned. The arguments of that function become the document
     root nodes. The slicing end argument (if specified) denotes the document
     type declaration content. It can either be the document element name as a
-    :func:`str` or :func:`unicode` or a 3-:func:`tuple` containing the
-    document element name, the public ID and the system ID. The slicing step
-    argument (if specified) defines if the XML declaration should be omitted,
-    it defaults to :const:`False` (this may not be honoured by :class:`Output`
+    byte or Unicode string or a 3-:func:`tuple` containing the document
+    element name, the public ID and the system ID. The slicing step argument
+    (if specified) defines if the XML declaration should be omitted, it
+    defaults to :const:`False` (this may not be honoured by :class:`Output`
     implementations).
 
     The following operators create special nodes from their argument:
@@ -100,7 +105,7 @@ class MarkupBuilder(object):
     '''
     def __init__(self, output=None):
         if output is None:
-            from element_output import ElementOutput
+            from ecoxipy.element_output import ElementOutput
             output = ElementOutput()
         self._output = output
 
@@ -108,7 +113,7 @@ class MarkupBuilder(object):
     def _preprocess(cls, content, target_list, target_attributes=None):
         if content is None:
             return
-        if isinstance(content, (str, unicode)):
+        if isinstance(content, _string_types):
             target_list.append(content)
         elif (target_attributes is not None
                 and isinstance(content, collections.Mapping)):
@@ -135,7 +140,7 @@ class MarkupBuilder(object):
 
     def __getitem__(self, name):
         if isinstance(name, slice):
-            if name.start is None:
+            if name.start is None: # Document
                 doctype = name.stop
                 if isinstance(doctype, tuple):
                     doctype_name, doctype_publicid, doctype_systemid = doctype
@@ -154,11 +159,9 @@ class MarkupBuilder(object):
                         doctype_publicid, doctype_systemid, new_children,
                         omit_xml_declaration)
                 return create_document
-            else:
+            else: # Processing Instruction
                 target = name.start
                 content = name.stop
-                if content is None:
-                    content = ''
                 return self._output.processing_instruction(target, content)
         def build(*children, **attributes):
             new_children = []
@@ -173,9 +176,7 @@ class MarkupBuilder(object):
     __getattr__ = __getitem__
 
     def __and__(self, content):
-        processed_content = []
-        self._preprocess(content, processed_content)
-        return self._output.text(processed_content)
+        return self._output.text(content)
 
     def __or__(self, content):
         return self._output.comment(content)
@@ -197,7 +198,7 @@ class Output(object):
         :class:`MarkupBuilder` instances.
 
         :param name: The name of the element to create.
-        :type name: :func:`str` or :func:`unicode`
+        :type name: byte or Unicode string
         :param children: The list of children to add to the element to
             create.
         :type children: :func:`list`
@@ -210,7 +211,9 @@ class Output(object):
     def embed(self, content):
         '''\
         Imports the elements of ``content`` as data in the output
-        representation.
+        representation. Strings are to be parsed as XML, output representation
+        instances should be left untouched. Other types must be converted to
+        a unicode string and then parsed as XML.
 
         :param content: The list of data to parse.
         :type content: :func:`list`
@@ -221,12 +224,10 @@ class Output(object):
     @abstractmethod
     def text(self, content):
         '''\
-        Creates text node representations.
+        Creates a text node representation.
 
-        :param content: The list of texts.
-        :type content: :func:`list`
-        :returns:
-            A list of text representations or a single text representation.
+        :param content: The text.
+        :returns: The created text representation.
         '''
 
     @abstractmethod
@@ -235,7 +236,7 @@ class Output(object):
         Creates a comment node representation.
 
         :param content: The content of the comment.
-        :type content: :func:`str` or :func:`unicode`
+        :type content: byte or Unicode string
         :returns:
             The created comment representation.
         '''
@@ -246,9 +247,9 @@ class Output(object):
         Creates a processing instruction node representation.
 
         :param target: The target of the processing instruction.
-        :type target: :func:`str` or :func:`unicode`
+        :type target: byte or Unicode string
         :param content: The content of the processing instruction.
-        :type content: :func:`str`, :func:`unicode` or const:`None`
+        :type content: byte or Unicode string or :const:`None`
         :returns:
             The created processing instruction representation.
         '''
@@ -260,11 +261,11 @@ class Output(object):
         Creates a XML document representation.
 
         :param doctype_name:  The document element name.
-        :type doctype_name: :func:`str`, :func:`unicode`, :const:`None`
+        :type doctype_name: byte or Unicode string or :const:`None`
         :param doctype_publicid:  The document type system ID.
-        :type doctype_publicid: :func:`str`, :func:`unicode`, :const:`None`
+        :type doctype_publicid: byte or Unicode string or :const:`None`
         :param doctype_systemid:  The document type system ID.
-        :type doctype_systemid: :func:`str`, :func:`unicode`, :const:`None`
+        :type doctype_systemid: byte or Unicode string or :const:`None`
         :param children: The list of children to add to the document to
             create.
         :type children: :func:`list`
@@ -275,5 +276,36 @@ class Output(object):
             The created document representation.
         '''
 
-del ABCMeta
-del abstractmethod
+
+class InputEncodingMixin(object):
+    '''\
+    A mixin class to be used by :class:`Output` implementations for easier
+    input encoding handling.
+    '''
+    __metaclass__ = ABCMeta
+
+    _in_encoding = 'UTF-8'
+
+    @property
+    def in_encoding(self):
+        '''\
+        The input encoding to be used to decode byte strings to Unicode. It
+        uses the attribute ``_in_encoding``, on the class this is defined
+        as ``UTF-8`` which is thus the default.
+        '''
+        return self._in_encoding
+
+    decode = lambda self, value: (
+        value.decode(self._in_encoding)
+        if isinstance(value, bytes) else _unicode(value)
+    )
+    '''\
+    Decodes byte strings with :property:`in_encoding`, otherwise returns
+    the Unicode value.
+
+    :param value: The value to decode.
+    :returns: A Unicode string.
+    '''
+
+
+del ABCMeta, abstractmethod, sys

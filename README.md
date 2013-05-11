@@ -1,10 +1,15 @@
-ECoXiPy - Easy Creation of XML in Python
-========================================
+# ECoXiPy - Easy Creation of XML in Python
 
-This Python 2 project allows for easy creation of
+This Python 2 project (tested with 2.7.4) allows for easy creation of
 [XML](http://www.w3.org/XML/).
 The hierarchical structure of XML is easy to spot and the code to create XML
 is much shorter than using SAX, DOM or similar APIs.
+
+This project uses the MIT License, so you may freely use, distribute and
+modify it, provided you include the content of `License.txt`.
+
+
+## Example
 
 Here's a simple HTML5 document template function:
 
@@ -117,13 +122,21 @@ You might also be interested in:
 
 ## Release History
 
+**0.3.0**
+*   *Added:* Use `|` on `ecoxipy.MarkupBuilder` to create comments.
+*   *Added:* Use slicing on `ecoxipy.MarkupBuilder` to create documents
+    or processing instructions.
+*   *Removed:* Removed DOM creation from
+    `ecoxipy.element_output.ElementOutput`.
+
+
 **0.2.0**
-* *Added:* Use `&` on `ecoxipy.MarkupBuilder` to create text nodes.
-* *Improvement:* Better performance of `ecoxipy.string_output.StringOutput`.
+*   *Added:* Use `&` on `ecoxipy.MarkupBuilder` to create text nodes.
+*   *Improvement:* Better performance of `ecoxipy.string_output.StringOutput`.
 
 
 **0.1.0**
-* *Initial release.*
+*   *Initial release.*
 
 
 ## Development

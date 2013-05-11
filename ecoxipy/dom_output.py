@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-ur'''\
+u'''\
 
 :mod:`ecoxipy.dom_output` - DOM Creation
 ========================================
@@ -15,10 +15,9 @@ Usage Example:
 >>> from xml.dom.minidom import getDOMImplementation
 >>> dom_br = getDOMImplementation().createDocument(None, 'br', None).documentElement
 >>> dom_output = DOMOutput()
->>> doc = dom_output.document
 >>> from ecoxipy import MarkupBuilder
 >>> b = MarkupBuilder(dom_output)
->>> xml = b[:'section':True] (
+>>> xml_doc = b[:'section':True] (
 ...     b.section(
 ...         b.p(b & 'Hello World!'),
 ...         None,
@@ -31,20 +30,35 @@ Usage Example:
 ...         b | '<This is a comment!>',
 ...         b['pi-target':'<PI content>'],
 ...         b['pi-without-content':],
-...         attr='\'"<&>'
+...         attr='\\'"<&>'
 ...     )
 ... )
->>> xml.toxml() == u"""<?xml version="1.0" ?><!DOCTYPE section><section attr="'&quot;&lt;&amp;&gt;"><p>Hello World!</p><p>äöüß</p><p>&lt;&amp;&gt;</p><raw/>text<br/>012345<br/><!--<This is a comment!>--><?pi-target <PI content>?><?pi-without-content ?></section>"""
+>>> val = xml_doc.toxml()
+>>> document_string = u"""<?xml version="1.0" ?><!DOCTYPE section><section attr="'&quot;&lt;&amp;&gt;"><p>Hello World!</p><p>äöüß</p><p>&lt;&amp;&gt;</p><raw/>text<br/>012345<br/><!--<This is a comment!>--><?pi-target <PI content>?><?pi-without-content ?></section>"""
+>>> for i in range(len(val)):
+...     if val[i] != document_string[i]:
+...         print(val[i:])
+...         print()
+...         print(document_string[i:])
+...         break
+>>> xml_doc.toxml() == document_string
 True
 '''
 
 import xml.dom
 import xml.dom.minidom
 
-from . import Output
+from ecoxipy import Output, InputEncodingMixin, _python3
+
+if _python3:
+    _prepare_xml_text = lambda text, in_encoding: (
+        text.decode(in_encoding) if isinstance(text, bytes) else str(text))
+else:
+    _prepare_xml_text = lambda text, in_encoding: (
+        text if isinstance(text, str) else unicode(text).encode('UTF-8'))
 
 
-class DOMOutput(Output):
+class DOMOutput(Output, InputEncodingMixin):
     '''\
     An :class:`Output` implementation which creates :mod:`xml.dom` nodes.
 
@@ -55,8 +69,10 @@ class DOMOutput(Output):
         document, if ``document`` is :const:`None`. If this is :const:`None`,
         :func:`xml.dom.minidom.getDOMImplementation` is used.
     :type dom_implementation: :class:`xml.dom.DOMImplementation`
+    :param in_encoding: Which encoding to use to decode byte strings.
     '''
-    def __init__(self, document=None, dom_implementation=None):
+    def __init__(self, document=None, dom_implementation=None,
+            in_encoding='UTF-8'):
         if dom_implementation is None:
             dom_implementation = xml.dom.minidom.getDOMImplementation()
         self._dom_implementation = dom_implementation
@@ -64,6 +80,7 @@ class DOMOutput(Output):
             document = self._dom_implementation.createDocument(None, None,
                 None)
         self._document = document
+        self._in_encoding = in_encoding
 
     @property
     def document(self):
@@ -74,37 +91,40 @@ class DOMOutput(Output):
         '''\
         Returns a DOM element representing the created element.
 
-        :param name: The name of the element to create.
-        :param children: The iterable of children to add to the element to
-            create.
-        :param attributes: The mapping of arguments of the element to create.
         :returns: The DOM element created.
         :rtype: :class:`xml.dom.Element`
         '''
-        return _dom_create_element(self._document, name, attributes, children)
+        element = self._document.createElement(name)
+        for name in attributes:
+            element.setAttribute(self.decode(name),
+                self.decode(attributes[name]))
+        for child in children:
+            if isinstance(child, xml.dom.Node):
+                element.appendChild(child)
+            else:
+                element.appendChild(self._document.createTextNode(
+                    self.decode(child)))
+        try:
+            self._document.removeChild(self._document.documentElement)
+        except xml.dom.NotFoundErr:
+            pass
+        self._document.appendChild(element)
+        return element
 
     def embed(self, content):
         '''\
         Imports the elements of ``content`` as XML and returns DOM nodes.
 
-        :param content: The content to be embedded.
         :raises xml.parsers.expat.ExpatError: If a ``content`` element cannot
             be parsed.
         :returns:
             a list of :class:`xml.dom.Node` instances or a single instance
-
-        ``content`` items will be treated as follows:
-
-        *   :func:`str` and :func:`unicode` will be parsed as XML.
-        *   :class:`xml.dom.Node` instances will be embedded.
-        *   Other objects will be converted to :func:`unicode` and create
-            text nodes.
+        :rtype: :class:`xml.dom.NodeList`
         '''
         imported = self._document.childNodes.__class__()
-
         def import_xml(text):
             document = xml.dom.minidom.parseString(
-                '<ROOT>{}</ROOT>'.format(text))
+                '<ROOT>' + text + '</ROOT>')
             doc_element = document.documentElement
             current_node = doc_element.firstChild
             while current_node is not None:
@@ -113,87 +133,60 @@ class DOMOutput(Output):
                 imported.append(current_node)
                 current_node = next_node
             document.unlink()
-
         for content_item in content:
             if isinstance(content_item, xml.dom.Node):
                 imported.append(content_item)
             else:
-                if isinstance(content_item, unicode):
-                    content_item = content_item.encode('UTF-8')
-                if isinstance(content_item, str):
-                    import_xml(content_item)
-                else:
-                    imported.append(self._document.createTextNode(
-                        unicode(content_item)))
+                import_xml(_prepare_xml_text(content_item, self.in_encoding))
         if len(imported) == 1:
             return imported[0]
         return imported
 
     def text(self, content):
         '''\
-        Creates DOM text nodes from the items of ``content``.
+        Creates a DOM text node.
 
-        :param content: The list of texts.
-        :type content: :func:`list`
-        :returns:
-            A list of or a single text node.
+        :returns: The created text node.
+        :rtype: :class:`xml.dom.Text`
         '''
-        imported = self._document.childNodes.__class__()
-        for content_item in content:
-            imported.append(self._document.createTextNode(unicode(
-                content_item)))
-        if len(imported) == 1:
-            return imported[0]
-        return imported
+        return self._document.createTextNode(self.decode(content))
 
     def comment(self, content):
         '''\
         Creates a DOM comment node.
 
-        :param content: The content of the comment.
-        :type content: :func:`str` or :func:`unicode`
-        :returns:
-            The created comment node.
+        :returns: The created comment node.
+        :rtype: :class:`xml.dom.Comment`
         '''
-        return self._document.createComment(content)
+        return self._document.createComment(self.decode(content))
 
     def processing_instruction(self, target, content):
         '''\
         Creates a DOM processing instruction node.
 
-        :param target: The target of the processing instruction.
-        :type target: :func:`str` or :func:`unicode`
-        :param content: The content of the processing instruction.
-        :type content: :func:`str` or :func:`unicode`
-        :returns:
-            The created processing instruction node.
+        :returns: The created processing instruction node.
+        :rtype: :class:`xml.dom.ProcessingInstruction`
         '''
-        return self._document.createProcessingInstruction(target, content)
+        if content is None:
+            content = u''
+        else:
+            content = self.decode(content)
+        return self._document.createProcessingInstruction(
+            self.decode(target), content)
 
     def document(self, doctype_name, doctype_publicid, doctype_systemid,
             children, omit_xml_declaration):
         '''\
         Creates a DOM document node.
 
-        :param doctype_name:  The document element name.
-        :type doctype_name: :func:`str`, :func:`unicode`, :const:`None`
-        :param doctype_publicid:  The document type system ID.
-        :type doctype_publicid: :func:`str`, :func:`unicode`, :const:`None`
-        :param doctype_systemid:  The document type system ID.
-        :type doctype_systemid: :func:`str`, :func:`unicode`, :const:`None`
-        :param children: The list of children to add to the document to
-            create.
-        :type children: :func:`list`
-        :param omit_xml_declaration: This is not honoured by this
-            :class:`Output` implementation.
-        :type omit_xml_declaration: :func:`bool`
-        :returns:
-            The created document node.
+        :returns: The created document node.
+        :rtype: :class:`xml.dom.Document`
         '''
         if doctype_name is None:
             document = self._dom_implementation.createDocument(None,
                 None, None)
         else:
+            doctype_name = self.decode(doctype_name)
             doctype = self._dom_implementation.createDocumentType(
                 doctype_name, doctype_publicid, doctype_systemid)
             document = self._dom_implementation.createDocument(None,
@@ -201,22 +194,7 @@ class DOMOutput(Output):
         document.removeChild(document.documentElement)
         for child in children:
             document.appendChild(child)
-            if child.nodeType == xml.dom.Node.ELEMENT_NODE:
-                document.documentElement = child
         return document
 
 
-def _dom_create_element(document, name, attributes, children):
-    element = document.createElement(name)
-    for name in attributes:
-        element.setAttribute(unicode(name), unicode(attributes[name]))
-    for child in children:
-        if isinstance(child, xml.dom.Node):
-            element.appendChild(child)
-        else:
-            element.appendChild(document.createTextNode(unicode(child)))
-    document.documentElement = element
-    return element
-
-
-del Output
+del Output, InputEncodingMixin
