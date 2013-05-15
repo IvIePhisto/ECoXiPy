@@ -105,7 +105,40 @@ html_theme = 'default'
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
-#html_theme_options = {}
+bg_color = 'rgb(251, 255, 253)'
+link_color = 'rgb(100, 110, 160)'
+visted_link_color = 'rgb(50, 60, 120)'
+text_color = 'rgb(10, 10, 15)'
+html_theme_options = {
+    'externalrefs': True,
+
+    'footerbgcolor': None,
+    'footertextcolor': text_color,
+
+    'sidebarbgcolor': 'rgb(235, 240, 247)',
+    #'sidebarbtncolor': None,
+    'sidebartextcolor': text_color,
+    'sidebarlinkcolor': visted_link_color,
+
+    'relbarbgcolor': visted_link_color,
+    'relbartextcolor': bg_color,
+    'relbarlinkcolor': bg_color,
+
+    'bgcolor': bg_color,
+    'textcolor': text_color,
+    'linkcolor': link_color,
+    'visitedlinkcolor': visted_link_color,
+
+    'headbgcolor': 'inherit',
+    'headtextcolor': 'inherit',
+    'headlinkcolor': 'inherit',
+
+    #'codebgcolor': None,
+    #'codetextcolor': None,
+
+    'bodyfont': "'Helvetica', Arial, sans-serif",
+    'headfont': "'Lucida Grande', Arial, sans-serif",
+}
 
 # Add any paths that contain custom themes here, relative to this directory.
 #html_theme_path = []
@@ -156,7 +189,7 @@ html_static_path = ['_static']
 #html_split_index = False
 
 # If true, links to the reST sources are added to the pages.
-#html_show_sourcelink = True
+html_show_sourcelink = False
 
 # If true, "Created using Sphinx" is shown in the HTML footer. Default is True.
 #html_show_sphinx = True

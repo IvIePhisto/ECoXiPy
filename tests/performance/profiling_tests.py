@@ -1,8 +1,8 @@
 import cProfile
 
-import ecoxipy_element_output
-import ecoxipy_string_output
-import ecoxipy_dom_output
+from tests.performance import ecoxipy_element_output
+from tests.performance import ecoxipy_string_output
+from tests.performance import ecoxipy_dom_output
 
 from timeit_tests import TIMEIT_NUMBER, TIMEIT_DATA_COUNT
 

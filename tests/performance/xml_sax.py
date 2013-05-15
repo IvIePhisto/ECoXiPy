@@ -1,11 +1,18 @@
+from __future__ import unicode_literals
+import sys
+if sys.version_info[0] > 2:
+    unicode = str
+
 from xml.dom import XHTML_NAMESPACE
 
 from xml.sax.saxutils import XMLGenerator
 from xml.sax.xmlreader import AttributesImpl
-from StringIO import StringIO
+
+from io import BytesIO
+
 
 def create_testdoc(_title, _content, _data_count, _data_text):
-    xml_doc = StringIO()
+    xml_doc = BytesIO()
     try:
         xml_generator = XMLGenerator(xml_doc, 'UTF-8')
         start_element = lambda name, attrs: xml_generator.startElement(name, attrs)

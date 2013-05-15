@@ -34,7 +34,7 @@ available and a list of allowed element names:
 ...         attr='\\'"<&>'
 ...     )
 ...
->>> view('Hello World!') == u"""<section attr="'&quot;&lt;&amp;&gt;"><p>Hello World!</p><p>äöüß</p><p>&lt;&amp;&gt;</p><raw/>text<br/>012345</section>""".encode('utf-8')
+>>> view('Hello World!') == u"""<section attr="'&quot;&lt;&amp;&gt;"><p>Hello World!</p><p>äöüß</p><p>&lt;&amp;&gt;</p><raw/>text<br/>012345</section>"""
 True
 
 
@@ -55,12 +55,12 @@ using :class:`ecoxipy.string_output.StringOutput` as the
 ...         attr='\\'"<&>'
 ...     )
 ...
->>> view('Hello World!') == u"""<section attr="'&quot;&lt;&amp;&gt;"><p>Hello World!</p><p>äöüß</p><p>&lt;&amp;&gt;</p><raw/>text<br/>012345</section>""".encode('utf-8')
+>>> view('Hello World!') == u"""<section attr="'&quot;&lt;&amp;&gt;"><p>Hello World!</p><p>äöüß</p><p>&lt;&amp;&gt;</p><raw/>text<br/>012345</section>"""
 True
 
 
-To create UTF-8 encoded `HTML5 <http://www.w3.org/TR/html5/>`_ byte strings
-use the :func:`html5` decorator:
+To create `HTML5 <http://www.w3.org/TR/html5/>`_ XML strings use the
+:func:`html5` decorator:
 
 >>> @html5
 ... def page(page_title, page_content):
@@ -74,7 +74,7 @@ use the :func:`html5` decorator:
 ...             _b('<footer>Copyright</footer>')
 ...         ),
 ...     )
->>> page('Test', 'Hello World & Universe!') == b'<html><head><title>Test</title></head><body><h1>Test</h1><p>Hello World &amp; Universe!</p><footer>Copyright</footer></body></html>'
+>>> page('Test', 'Hello World & Universe!') == u'<html><head><title>Test</title></head><body><h1>Test</h1><p>Hello World &amp; Universe!</p><footer>Copyright</footer></body></html>'
 True
 
 

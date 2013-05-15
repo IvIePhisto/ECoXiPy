@@ -45,20 +45,22 @@ Usage Example:
 True
 '''
 
+import io
 import xml.dom
 import xml.dom.minidom
 
-from ecoxipy import Output, InputEncodingMixin, _python3
+from ecoxipy import Output, _python3
+
 
 if _python3:
-    _prepare_xml_text = lambda text, in_encoding: (
-        text.decode(in_encoding) if isinstance(text, bytes) else str(text))
+    _create_xml_fragment_doc = lambda text: xml.dom.minidom.parseString(
+        '<ROOT>{}</ROOT>'.format(text))
 else:
-    _prepare_xml_text = lambda text, in_encoding: (
-        text if isinstance(text, str) else unicode(text).encode('UTF-8'))
+    _create_xml_fragment_doc = lambda text: xml.dom.minidom.parseString(
+        '<ROOT>{}</ROOT>'.format(text.encode('UTF-8')))
 
 
-class DOMOutput(Output, InputEncodingMixin):
+class DOMOutput(Output):
     '''\
     An :class:`Output` implementation which creates :mod:`xml.dom` nodes.
 
@@ -69,10 +71,8 @@ class DOMOutput(Output, InputEncodingMixin):
         document, if ``document`` is :const:`None`. If this is :const:`None`,
         :func:`xml.dom.minidom.getDOMImplementation` is used.
     :type dom_implementation: :class:`xml.dom.DOMImplementation`
-    :param in_encoding: Which encoding to use to decode byte strings.
     '''
-    def __init__(self, document=None, dom_implementation=None,
-            in_encoding='UTF-8'):
+    def __init__(self, document=None, dom_implementation=None):
         if dom_implementation is None:
             dom_implementation = xml.dom.minidom.getDOMImplementation()
         self._dom_implementation = dom_implementation
@@ -80,12 +80,23 @@ class DOMOutput(Output, InputEncodingMixin):
             document = self._dom_implementation.createDocument(None, None,
                 None)
         self._document = document
-        self._in_encoding = in_encoding
 
     @property
-    def document(self):
+    def doc(self):
         '''The current :class:`xml.dom.Document`.'''
         return self._document
+
+    @classmethod
+    def is_native_type(self, content):
+        '''\
+        Tests if an object of an type is to be decoded or converted to unicode
+        or not.
+
+        :param content: The object to test.
+        :returns: :const:`True` for :`xml.dom.Node` instances, :const:`False`
+            otherwise.
+        '''
+        return isinstance(content, xml.dom.Node)
 
     def element(self, name, children, attributes):
         '''\
@@ -96,51 +107,20 @@ class DOMOutput(Output, InputEncodingMixin):
         '''
         element = self._document.createElement(name)
         for name in attributes:
-            element.setAttribute(self.decode(name),
-                self.decode(attributes[name]))
+            element.setAttribute(name,
+                attributes[name])
         for child in children:
             if isinstance(child, xml.dom.Node):
                 element.appendChild(child)
             else:
                 element.appendChild(self._document.createTextNode(
-                    self.decode(child)))
+                    child))
         try:
             self._document.removeChild(self._document.documentElement)
         except xml.dom.NotFoundErr:
             pass
         self._document.appendChild(element)
         return element
-
-    def embed(self, content):
-        '''\
-        Imports the elements of ``content`` as XML and returns DOM nodes.
-
-        :raises xml.parsers.expat.ExpatError: If a ``content`` element cannot
-            be parsed.
-        :returns:
-            a list of :class:`xml.dom.Node` instances or a single instance
-        :rtype: :class:`xml.dom.NodeList`
-        '''
-        imported = self._document.childNodes.__class__()
-        def import_xml(text):
-            document = xml.dom.minidom.parseString(
-                '<ROOT>' + text + '</ROOT>')
-            doc_element = document.documentElement
-            current_node = doc_element.firstChild
-            while current_node is not None:
-                next_node = current_node.nextSibling
-                doc_element.removeChild(current_node)
-                imported.append(current_node)
-                current_node = next_node
-            document.unlink()
-        for content_item in content:
-            if isinstance(content_item, xml.dom.Node):
-                imported.append(content_item)
-            else:
-                import_xml(_prepare_xml_text(content_item, self.in_encoding))
-        if len(imported) == 1:
-            return imported[0]
-        return imported
 
     def text(self, content):
         '''\
@@ -149,7 +129,7 @@ class DOMOutput(Output, InputEncodingMixin):
         :returns: The created text node.
         :rtype: :class:`xml.dom.Text`
         '''
-        return self._document.createTextNode(self.decode(content))
+        return self._document.createTextNode(content)
 
     def comment(self, content):
         '''\
@@ -158,7 +138,7 @@ class DOMOutput(Output, InputEncodingMixin):
         :returns: The created comment node.
         :rtype: :class:`xml.dom.Comment`
         '''
-        return self._document.createComment(self.decode(content))
+        return self._document.createComment(content)
 
     def processing_instruction(self, target, content):
         '''\
@@ -170,12 +150,11 @@ class DOMOutput(Output, InputEncodingMixin):
         if content is None:
             content = u''
         else:
-            content = self.decode(content)
-        return self._document.createProcessingInstruction(
-            self.decode(target), content)
+            content = content
+        return self._document.createProcessingInstruction(target, content)
 
     def document(self, doctype_name, doctype_publicid, doctype_systemid,
-            children, omit_xml_declaration):
+            children, omit_xml_declaration, encoding):
         '''\
         Creates a DOM document node.
 
@@ -186,7 +165,7 @@ class DOMOutput(Output, InputEncodingMixin):
             document = self._dom_implementation.createDocument(None,
                 None, None)
         else:
-            doctype_name = self.decode(doctype_name)
+            doctype_name = doctype_name
             doctype = self._dom_implementation.createDocumentType(
                 doctype_name, doctype_publicid, doctype_systemid)
             document = self._dom_implementation.createDocument(None,
@@ -197,4 +176,4 @@ class DOMOutput(Output, InputEncodingMixin):
         return document
 
 
-del Output, InputEncodingMixin
+del Output

@@ -61,17 +61,17 @@ True
 to quote: <&>"'
 
 
-Getting the :func:`unicode` value in Python 2 or the :func:`str` value in
-Python 3 of an :class:`XMLNode` creates a XML Unicode string:
+Getting the :func:`bytes` value of an document yields an encoded byte string:
 
 >>> document_string = u"""<!DOCTYPE section><article lang="en"><h1 data="to quote: &lt;&amp;&gt;&quot;'">&lt;Example&gt;</h1><p umlaut-attribute="äöüß">Hello<em count="1"> World</em>!</p><div><data-element>äöüß &lt;&amp;&gt;</data-element><p attr="value">raw content</p>Some Text<br/>012345</div><!--<This is a comment!>--><?pi-target <PI content>?><?pi-without-content?></article>"""
 >>> import sys
->>> (str(doc) if sys.version_info[0] > 2 else unicode(doc)) == document_string
+>>> (unicode(doc) if sys.version_info[0] < 3 else str(doc)) == document_string
 True
 
 
-Getting the :func:`bytes` value of an :class:`XMLNode` creates an `UTF-8`
-encoded XML string:
+Getting the :func:`bytes` value of an :class:`Document` creates a byte string
+with the encoding specified on creation of the instance, it defaults
+to "UTF-8":
 
 >>> bytes(doc) == document_string.encode('UTF-8')
 True
@@ -147,7 +147,6 @@ Representation
 --------------
 
 .. autoclass:: ecoxipy.element_output.XMLNode
-    :special-members: __str__, __unicode__
 
 .. autoclass:: ecoxipy.element_output.Document
     :special-members: __getitem__
@@ -156,8 +155,6 @@ Representation
 
 .. autoclass:: ecoxipy.element_output.Element
     :special-members: __getitem__
-
-.. autoclass:: ecoxipy.element_output.Attributes
 
 .. autoclass:: ecoxipy.element_output.Comment
 
@@ -172,19 +169,26 @@ import xml.sax.xmlreader
 
 import tinkerpy
 
-from ecoxipy import Output, InputEncodingMixin, _python3, _unicode, _string_types
+from ecoxipy import Output, _python3, _unicode
 import ecoxipy.string_output
 
 
-class ElementOutput(Output, InputEncodingMixin):
+class ElementOutput(Output):
     '''\
     An :class:`Output` implementation which creates :class:`Element`
     instances and Unicode string instances.
-
-    :param input_encoding: Which encoding to use to decode byte strings.
     '''
-    def __init__(self, input_encoding='UTF-8'):
-        self._input_encoding = input_encoding
+    @classmethod
+    def is_native_type(self, content):
+        '''\
+        Tests if an object of an type is to be decoded or converted to Unicode
+        or not.
+
+        :param content: The object to test.
+        :returns: :const:`True` for :`XMLNode` instances, :const:`False`
+            otherwise.
+        '''
+        return isinstance(content, XMLNode)
 
     def element(self, name, children, attributes):
         '''\
@@ -193,69 +197,7 @@ class ElementOutput(Output, InputEncodingMixin):
         :returns: The element created.
         :rtype: :class:`Element`
         '''
-        return Element(self.decode(name), children, attributes)
-
-    def embed(self, content):
-        '''\
-        Parses the non-:class:`XMLNode` elements of ``content`` as XML and
-        returns an a :func:`list` of :class:`Element` and :func:`unicode`
-        instances or a single instance.
-
-        :raises xml.parsers.expat.ExpatError: If XML is not well-formed.
-        :returns:
-            :class:`Element` or a :func:`list` of :class:`Element` instances
-        :rtype: :func:`list`
-        '''
-        imported_content = []
-        def import_xml(text):
-            # TODO: use SAX for parsing
-            def import_element(children_list, element):
-                name = element.tagName
-                children = []
-                import_nodes(children, element.childNodes)
-                attributes = import_attributes(element)
-                imported_element = Element(name, children, attributes)
-                children_list.append(imported_element)
-            def import_text(children_list, text):
-                children_list.append(text.data)
-            def import_attributes(element):
-                attributes = dict()
-                for attr in element.attributes.values():
-                    attributes[attr.name] = attr.value
-                return attributes
-            def import_comment(children_list, node):
-                children_list.append(Comment(node.data))
-            def import_processing_instruction(children_list, node):
-                pi = ProcessingInstruction(node.target, node.data)
-                children_list.append(pi)
-            def import_nodes(children_list, nodes):
-                for node in nodes:
-                    if node.nodeType == xml.dom.Node.ELEMENT_NODE:
-                        import_element(children_list, node)
-                    elif node.nodeType in (xml.dom.Node.TEXT_NODE,
-                            xml.dom.Node.CDATA_SECTION_NODE):
-                        import_text(children_list, node)
-                    elif (node.nodeType ==
-                            xml.dom.Node.PROCESSING_INSTRUCTION_NODE):
-                        import_processing_instruction(children_list, node)
-                    elif (node.nodeType == xml.dom.Node.COMMENT_NODE):
-                        import_comment(children_list, node)
-            document = xml.dom.minidom.parseString(
-                u'<ROOT>{}</ROOT>'.format(text))
-            import_nodes(imported_content,
-                document.documentElement.childNodes)
-        for content_item in content:
-            if isinstance(content_item, Element):
-                imported_content.append(content_item)
-            else:
-                if isinstance(content_item, bytes):
-                    content_item = content_item.decode(self._input_encoding)
-                if not isinstance(content_item, _unicode):
-                    content_item = _unicode(content_item)
-                import_xml(content_item)
-        if len(imported_content) == 1:
-            return imported_content[0]
-        return imported_content
+        return Element(name, children, attributes)
 
     def text(self, content):
         '''\
@@ -263,7 +205,7 @@ class ElementOutput(Output, InputEncodingMixin):
 
         :returns: The created Unicode string.
         '''
-        return self.decode(content)
+        return content
 
     def comment(self, content):
         '''\
@@ -272,7 +214,7 @@ class ElementOutput(Output, InputEncodingMixin):
         :returns: The created comment.
         :rtype: :class:`Comment`
         '''
-        return Comment(self.decode(content))
+        return Comment(content)
 
     def processing_instruction(self, target, content):
         '''\
@@ -281,66 +223,48 @@ class ElementOutput(Output, InputEncodingMixin):
         :returns: The created processing instruction.
         :rtype: :class:`ProcessingInstruction`
         '''
-        return ProcessingInstruction(self.decode(target),
-            None if content is None else self.decode(content))
+        return ProcessingInstruction(target, content)
 
     def document(self, doctype_name, doctype_publicid, doctype_systemid,
-            children, omit_xml_declaration):
+            children, omit_xml_declaration, encoding):
         '''\
         Creates a :class:`Document` instance.
 
         :returns: The created document representation.
         :rtype: :class:`Document`
         '''
-        return Document(self.decode(doctype_name), doctype_publicid,
-            doctype_systemid, children, omit_xml_declaration)
+        return Document(doctype_name, doctype_publicid, doctype_systemid,
+            children, omit_xml_declaration, encoding)
 
 
 class XMLNode(object):
     '''\
     Base class for XML node objects.
+
+    Retrieving the byte string from an instance yields a byte string encoded
+    as `UTF-8`.
     '''
     __metaclass__ = ABCMeta
 
-    if _python3:
-        def __str__(self):
-            '''\
-            Creates a Unicode string containing the XML representation of
-            the node.
+    def __str__(self):
+        '''\
+        Creates a Unicode string containing the XML representation of
+        the node.
+        '''
+        return self.create_str()
 
-            :returns: The XML representation of the node as a :func:`str`
-                instance.
-            '''
-            return self.create_str()
+    def __bytes__(self):
+        '''\
+        Creates a byte string containing the XML representation of the
+        node.
+        '''
+        return self.create_str(encoding='UTF-8')
 
-        def __bytes__(self):
-            '''\
-            Creates a byte string containing the XML representation of the
-            node.
+    if not _python3:
+        __unicode__ = __str__
+        __str__ = __bytes__
+        del __bytes__
 
-            :returns: The XML representation of the node as a :func:`bytes`
-                instance with encoding `UTF-8`.
-            '''
-            return self.create_str(encoding='UTF-8')
-    else:
-        def __str__(self):
-            '''\
-            Creates a string containing the XML representation of the node.
-
-            :returns: The XML representation of the node as a :func:`str`
-                instance with encoding `UTF-8`.
-            '''
-            return self.create_str(encoding='UTF-8')
-
-        def __unicode__(self):
-            '''\
-            Creates a Unicode string containing the XML representation of the
-            node.
-
-            :returns: The XML representation of the node as an :func:`unicode`
-                instance.
-            '''
-            return self.create_str()
 
     def create_str(self, out=None, encoding=None):
         '''\
@@ -349,21 +273,22 @@ class XMLNode(object):
         :param out: A :class:`ecoxipy.string_output.StringOutput` instance or
             :const:`None`. If it is the latter, a new
             :class:`ecoxipy.string_output.StringOutput` instance is created.
-        :param encoding: The output encoding or :const:`None` for
-            Unicode output.
+        :param encoding: The output encoding or :const:`None` for Unicode
+            output. Is only taken into account if ``out`` is :const:`None`.
         '''
         if out is None:
-            out = ecoxipy.string_output.StringOutput(out_encoding=encoding)
-        return self._create_str(out, encoding)
+            out = ecoxipy.string_output.StringOutput()
+        output_string = self._create_str(out)
+        if encoding is not None and not isinstance(output_string, bytes):
+            output_string = output_string.encode(encoding)
+        return output_string
 
     @abstractmethod
-    def _create_str(self, out, encoding):
+    def _create_str(self, out):
         '''\
         Creates a string containing the XML representation of the node.
 
         :param out: A :class:`ecoxipy.string_output.StringOutput` instance.
-        :param encoding: The output encoding or :const:`None` for
-            Unicode output.
         '''
         pass
 
@@ -406,28 +331,19 @@ class Element(XMLNode):
     '''\
     Represents a XML element and is immutable.
 
-    If the :func:`str` or :func:`unicode` functions are used on a
-    :class:`Element` instance, a XML document encoded as a UTF-8 :func:`str`
-    instance or :func:`unicode` instance respectively is returned.
-
-    :param name: The name of the element to create. It's :func:`unicode` value
-        will be used.
+    :param name: The name of the element to create.
     :param children: The children of the element.
     :type children: iterable of items
     :param attributes: The attributes of the element.
     :type attributes: subscriptable iterable over keys
-    :param decode: A callable with one argument which must return a Unicode
-        string, should decode byte strings and retrieve the Unicode value
-        of other value types.
     '''
 
     __slots__ = ('_name', '_children', '_attributes')
 
-    def __init__(self, name, children, attributes,
-            decode=lambda value:_unicode(value)):
-        self._name = decode(name)
+    def __init__(self, name, children, attributes):
+        self._name = name
         self._children = tuple(children)
-        self._attributes = Attributes(decode, attributes)
+        self._attributes = tinkerpy.ImmutableDict(attributes)
 
     @property
     def name(self):
@@ -445,9 +361,9 @@ class Element(XMLNode):
     @property
     def attributes(self):
         '''\
-        An :class:`Attributes` instance containing the element's attributes.
-        The key represents an attribute's name, the value is the attribute's
-        value.
+        An :class:`tinkerpy.ImmutableDict` instance containing the element's
+        attributes. The key represents an attribute's name, the value is the
+        attribute's value.
         '''
         return self._attributes
 
@@ -467,15 +383,14 @@ class Element(XMLNode):
             return self._children[item]
         return self._attributes[item]
 
-    def _create_str(self, out, encoding):
+    def _create_str(self, out):
         return out.element(self.name, [
-                    child._create_str(out, encoding)
+                    child._create_str(out)
                     if isinstance(child, XMLNode) else child
                 for child in self.children
             ], self.attributes)
 
     def _create_sax_events(self, content_handler, indent):
-        '''Creates SAX events for the element.'''
         if indent:
             indent_incr, indent_count = indent
             child_indent = (indent_incr, indent_count + 1)
@@ -500,7 +415,7 @@ class Element(XMLNode):
                 if indent and not last_event_characters:
                     do_indent()
                     content_handler.characters(indent_incr)
-                content_handler.characters(_unicode(child))
+                content_handler.characters(child)
                 last_event_characters = True
         if len(self.children) > 0:
             do_indent()
@@ -508,47 +423,6 @@ class Element(XMLNode):
         if indent and indent_count == 0:
             content_handler.characters('\n')
 
-
-class Attributes(tinkerpy.ImmutableDict):
-    u'''\
-    An immutable dictionary representing XML attributes. For attribute names
-    (keys) and values their Unicode representation is used in all
-    places.
-
-    :param decode: A callable with one argument which must return a Unicode
-        string, should decode byte strings and retrieve the Unicode value
-        of other value types.
-    :param args: Positional arguments conforming to :func:`dict`.
-    :param kargs: Keyword arguments conforming to :func:`dict`.
-
-    Usage examples:
-
-    >>> import sys
-    >>> if sys.version_info[0] > 2:
-    ...     unicode = str
-    >>> attrs = Attributes(unicode, {
-    ...     'foo': 'bar', 'one': 1, u'äöüß': 'umlauts', 'umlauts': u'äöüß'
-    ... })
-    >>> print(attrs['umlauts'])
-    äöüß
-    >>> len(attrs)
-    4
-    >>> 'foo' in attrs
-    True
-    '''
-    def __init__(self, decode, *args, **kargs):
-        self._dict = dict(*args, **kargs)
-        for name, value in self._dict.items():
-            unicode_name = decode(name)
-            unicode_value = decode(value)
-            if not isinstance(name, _unicode):
-                del self._dict[name]
-            if value != unicode_value or unicode_name not in self._dict:
-                self._dict[unicode_name] = unicode_value
-        self._decode = decode
-
-    def __getitem__(self, name):
-        return tinkerpy.ImmutableDict.__getitem__(self, self._decode(name))
 
 
 class Comment(XMLNode):
@@ -560,13 +434,13 @@ class Comment(XMLNode):
     __slots__ = ('_content')
 
     def __init__(self, content):
-        self._content = _unicode(content)
+        self._content = content
 
     @property
     def content(self):
         return self._content
 
-    def _create_str(self, out, encoding):
+    def _create_str(self, out):
         return out.comment(self._content)
 
     def _create_sax_events(self, content_handler, indent):
@@ -593,9 +467,6 @@ class ProcessingInstruction(XMLNode):
     __slots__ = ('_target', '_content')
 
     def __init__(self, target, content):
-        target = _unicode(target)
-        if content is not None:
-            content = _unicode(content)
         self._target = target
         self._content = content
 
@@ -607,7 +478,7 @@ class ProcessingInstruction(XMLNode):
     def content(self):
         return self._content
 
-    def _create_str(self, out, encoding):
+    def _create_str(self, out):
         return out.processing_instruction(self._target, self._content)
 
     def _create_sax_events(self, content_handler, indent):
@@ -635,21 +506,26 @@ class Document(XMLNode):
     :param doctype_publicid: The public ID of the document type declaration.
     :param doctype_publicid: The system ID of the document type declaration.
     :param children: The document root nodes.
+    :param encoding: The encoding of the document. If it is :const:`None`
+        `UTF-8` is used.
     :param omit_xml_declaration: If :const:`True` the XML declaration is
         omitted.
     '''
     __slots__ = ('_doctype', '_children', '_omit_xml_declaration')
 
     def __init__(self, doctype_name, doctype_publicid, doctype_systemid,
-            children, omit_xml_declaration):
+            children, omit_xml_declaration, encoding):
         if doctype_name is None:
             self._doctype = None
         else:
-            doctype_name = _unicode(doctype_name)
+            doctype_name = doctype_name
             self._doctype = DocumentType(doctype_name, doctype_publicid,
                 doctype_systemid)
         self._children = children
         self._omit_xml_declaration = omit_xml_declaration
+        if encoding is None:
+            encoding = 'UTF-8'
+        self._encoding = encoding
 
     @property
     def doctype(self):
@@ -666,11 +542,29 @@ class Document(XMLNode):
         return self._omit_xml_declaration
 
     @property
+    def encoding(self):
+        '''\
+        The encoding of the document.
+        '''
+        return self._doctype
+
+    @property
     def children(self):
         '''\
         A :func:`tuple` of the document content nodes.
         '''
         return self._children
+
+    def __bytes__(self):
+        '''\
+        Creates a byte string containing the XML representation of the
+        node with the encoding :meth:`encoding`.
+        '''
+        return self.create_str(encoding=self._encoding)
+
+    if not _python3:
+        __str__ = __bytes__
+        del __bytes__
 
     def __getitem__(self, item):
         '''\
@@ -683,13 +577,37 @@ class Document(XMLNode):
         '''
         return self._children[item]
 
-    def _create_str(self, out, encoding):
+    def create_sax_events(self, content_handler=None, out=None,
+            out_encoding='UTF-8', indent_incr=None):
+        '''\
+        Creates SAX events.
+
+        :param content_handler: If this is :const:`None` a
+            ``xml.sax.saxutils.XMLGenerator`` is created and used as the
+            content handler. If in this case ``out`` is not :const:`None`,
+            it is used for output.
+        :type content_handler: :class:`xml.sax.ContentHandler`
+        :param out: The output to write to if no ``content_handler`` is given.
+            It should have a ``write`` method like files.
+        :param out_encoding: This is not taken into account, instead
+            :meth:`encoding` is used  if no ``content_handler``
+            is given and ``out`` is not :const:`None`.
+        :param indent_incr: If this is not :const:`None` this activates
+            pretty printing. In this case it should be a string and it is used
+            for indenting.
+        :type indent_incr: :func:`str`
+        :returns: The content handler used.
+        '''
+        return XMLNode.create_sax_events(self, content_handler, out,
+            self._encoding, indent_incr)
+
+    def _create_str(self, out):
         return out.document(self._doctype.name, self._doctype.publicid,
             self._doctype.systemid, [
-                    child._create_str(out, encoding)
+                    child._create_str(out)
                     if isinstance(child, XMLNode) else child
                 for child in self.children
-            ], self._omit_xml_declaration)
+            ], self._omit_xml_declaration, self._encoding)
 
     def _create_sax_events(self, content_handler, indent):
         content_handler.startDocument()
@@ -708,4 +626,4 @@ class Document(XMLNode):
         content_handler.endDocument()
 
 
-del ABCMeta, abstractmethod, namedtuple, Output, InputEncodingMixin
+del ABCMeta, abstractmethod, namedtuple, Output

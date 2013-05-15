@@ -1,19 +1,19 @@
 import sys
 import timeit
 
-import xml_sax
-import xml_dom_minidom
-import ecoxipy_element_output
-import ecoxipy_string_output
-import ecoxipy_dom_output
+from tests.performance import xml_sax
+from tests.performance import xml_dom_minidom
+from tests.performance import ecoxipy_element_output
+from tests.performance import ecoxipy_string_output
+from tests.performance import ecoxipy_dom_output
 
 
 TIMEIT_NUMBER = 100
 TIMEIT_DATA_COUNT = 10
 
 if __name__ == '__main__':
-    if 4 > len(sys.argv) > 5:
-        print 'arguments: [<string output> <repetitions> <data_count> [<file path>]]'
+    if len(sys.argv) not in (4, 5):
+        print('arguments: [<string output> <repetitions> <data_count> [<file path>]]')
         sys.exit(1)
     else:
         string_output = sys.argv[1].lower() == 'true'
@@ -28,7 +28,7 @@ if __name__ == '__main__':
             module.__name__, data_count, method_postfix)
     )
     create_test_setup = lambda module: (
-        "from __main__ import {0}; {0}.create_testdoc{2}('startup', 'startup', {1}, 'Lorem Ipsum')".format(
+        "import {0}; {0}.create_testdoc{2}('startup', 'startup', {1}, 'Lorem Ipsum')".format(
             module.__name__, data_count, method_postfix)
     )
     timeit_run = lambda module: timeit.timeit(
@@ -45,7 +45,7 @@ if __name__ == '__main__':
         max_time = max(sax_time, dom_time, element_out_time, string_out_time, dom_out_time)
         create_percent = lambda t: '| {: >6.3f} secs | {: >6.3f} secs ({: >6.2f} %) |'.format(
             t, t-min_time, (t-min_time)/(max_time-min_time)*100)
-        print '''\
+        print('''\
 # ECoXiPy Performance Tests
 
 String output:           {}
@@ -75,7 +75,7 @@ Running Times:
             create_percent(dom_out_time),
             create_percent(element_out_time),
             create_percent(string_out_time),
-        )
+        ))
     else:
         path = sys.argv[4]
         import os.path

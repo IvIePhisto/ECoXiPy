@@ -1,3 +1,8 @@
+from __future__ import unicode_literals
+import sys
+if sys.version_info[0] > 2:
+    unicode = str
+
 from xml.dom import XHTML_NAMESPACE
 from xml.dom.minidom import getDOMImplementation
 

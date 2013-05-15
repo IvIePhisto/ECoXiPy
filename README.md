@@ -1,12 +1,52 @@
 # ECoXiPy - Easy Creation of XML in Python
 
-This Python 2 project (tested with 2.7.4) allows for easy creation of
-[XML](http://www.w3.org/XML/).
-The hierarchical structure of XML is easy to spot and the code to create XML
-is much shorter than using SAX, DOM or similar APIs.
+This Python 2 and 3 project (tested with 2.7 and 3.3) allows for easy creation
+of [XML](http://www.w3.org/XML/). The hierarchical structure of XML is easy to
+spot and the code to create XML is much shorter than using SAX, DOM or similar
+APIs.
 
 This project uses the MIT License, so you may freely use, distribute and
 modify it, provided you include the content of `License.txt`.
+
+
+## Getting Started
+
+Install using [setuptools](https://pypi.python.org/pypi/setuptools) (only
+Python 2) or [distribute](http://pythonhosted.org/distribute/):
+
+    easy_install ecoxipy
+
+
+You might also be interested in:
+
+* [ECoXiPy on PyPi](https://pypi.python.org/pypi/ECoXiPy)
+* [ECoXiPy Documentation](http://pythonhosted.org/ECoXiPy/)
+
+
+## Release History
+
+**0.3.0**
+*   *Added:* Support for Python 3.
+*   *Added:* Use `|` on `ecoxipy.MarkupBuilder` to create comments.
+*   *Added:* Use `|` on `ecoxipy.MarkupBuilder` to create comments.
+*   *Added:* Use slicing on `ecoxipy.MarkupBuilder` to create documents
+    or processing instructions.
+*   *Changed:* All XML data is internally handled as Unicode, a
+    `ecoxipy.MarkupBuilder` instance converts byte strings from an encoding
+    given on creation (defaults to UTF-8).
+*   *Improved:* Unpacking of content while processing is done recursively on
+    iterable and callable content.
+*   *Removed:* Removed DOM creation from
+    `ecoxipy.element_output.ElementOutput`.
+
+
+**0.2.0**
+*   *Added:* Use `&` on `ecoxipy.MarkupBuilder` to create text nodes.
+*   *Improvement:* Better performance of `ecoxipy.string_output.StringOutput`.
+
+
+**0.1.0**
+*   *Initial release.*
 
 
 ## Example
@@ -25,7 +65,8 @@ from ecoxipy.decorators import html5
 @html5
 def create_testdoc(title, subtitle, *content):
     # Slicing without start argument on the builder creates a document, the
-    # step argument defines if the XML declaration should be omitted.
+    # stop argument defines the document type declaration and the step
+    # argument defines if the XML declaration should be omitted.
     return _b[:'html':True](
         # Method calls on a MarkupBuilder instance create elements with the
         # name equal to the method name.
@@ -79,7 +120,7 @@ It could be used like this:
 
 ```python
 >>> create_testdoc('Test', 'A Simple Test Document', 'Hello World & Universe!', 'How are you?')
-'<!DOCTYPE html><html data-info="Created by Ecoxipy" xmlns="http://www.w3.org/1999/xhtml/"><head><title>Test</title></head><body><article><h1>Test</h1><h2>A Simple Test Document</h2><p>Hello World &amp; Universe!</p><p>How are you?</p><hr/>&lt;THE END&gt;<footer>Copyright 2013</footer><!--This is a comment.--><?pi-target PI content.?></article></body></html>'
+b'<!DOCTYPE html><html data-info="Created by Ecoxipy" xmlns="http://www.w3.org/1999/xhtml/"><head><title>Test</title></head><body><article><h1>Test</h1><h2>A Simple Test Document</h2><p>Hello World &amp; Universe!</p><p>How are you?</p><hr/>&lt;THE END&gt;<footer>Copyright 2013</footer><!--This is a comment.--><?pi-target PI content.?></article></body></html>'
 ```
 
 Pretty-printing the result yields the following HTML:
@@ -105,38 +146,6 @@ Pretty-printing the result yields the following HTML:
     <?pi-target PI content.?>
 </html>
 ```
-
-
-## Getting Started
-
-Install using [setuptools](https://pypi.python.org/pypi/setuptools):
-
-    easy_install ecoxipy
-
-
-You might also be interested in:
-
-* [ECoXiPy on PyPi](https://pypi.python.org/pypi/ECoXiPy)
-* [ECoXiPy Documentation](http://pythonhosted.org/ECoXiPy/)
-
-
-## Release History
-
-**0.3.0**
-*   *Added:* Use `|` on `ecoxipy.MarkupBuilder` to create comments.
-*   *Added:* Use slicing on `ecoxipy.MarkupBuilder` to create documents
-    or processing instructions.
-*   *Removed:* Removed DOM creation from
-    `ecoxipy.element_output.ElementOutput`.
-
-
-**0.2.0**
-*   *Added:* Use `&` on `ecoxipy.MarkupBuilder` to create text nodes.
-*   *Improvement:* Better performance of `ecoxipy.string_output.StringOutput`.
-
-
-**0.1.0**
-*   *Initial release.*
 
 
 ## Development
@@ -177,13 +186,13 @@ are tested as well as `xml.sax` and `xml.dom.minidom` for comparison.
 Run [timeit](http://docs.python.org/2/library/timeit.html) tests (linear
 increase of `data_count` yields exponential test document size increase):
 
-    python tests/performance/timeit_tests.py [<string output> <repetitions> <data count> [<CSV output path>]]
+    python -m tests.performance.timeit_tests [<string output> <repetitions> <data count> [<CSV output path>]]
 
 
 To create a CSV file from a series of tests in Bash as I did for my
 performance test results (here using string output):
 
-    for ((i = 2; i <= 20; i += 2)); do python tests/performance/timeit_tests.py true 400 $i timeit.csv; done
+    for ((i = 2; i <= 20; i += 2)); do python -m tests.performance.timeit_tests true 400 $i timeit.csv; done
 
 
 Run [cProfile](http://docs.python.org/2/library/profile.html) tests:

@@ -1,7 +1,7 @@
 from ecoxipy.dom_output import DOMOutput
 from ecoxipy.decorators import markup_builder_namespace, HTML5_ELEMENT_NAMES
 
-from ecoxipy_base import create_testdoc
+from tests.performance.ecoxipy_base import create_testdoc
 
 
 create_testdoc = markup_builder_namespace(

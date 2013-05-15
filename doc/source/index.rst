@@ -1,10 +1,10 @@
 ECoXiPy - Easy Creation of XML in Python
 ========================================
 
-This Python 2 project allows for easy creation of `XML
-<http://www.w3.org/XML/>`_. The hierarchical structure of XML is easy to spot
-and the code to create XML is much shorter than using SAX, DOM or similar
-APIs.
+This Python 2 and 3 project (tested with 2.7 and 3.3) allows for easy creation
+of `XML <http://www.w3.org/XML/>`_. The hierarchical structure of XML is easy
+to spot and the code to create XML is much shorter than using SAX, DOM or
+similar APIs.
 
 Modules
 --------
@@ -16,6 +16,7 @@ Modules
     string_output
     dom_output
     element_output
+    parsing
 
 TL;DR [#f1]_
 ------------
@@ -56,7 +57,8 @@ See this example of how to create a simple HTML5 document template function::
     @html5
     def create_testdoc(title, subtitle, *content):
         # Slicing without start argument on the builder creates a document, the
-        # step argument defines if the XML declaration should be omitted.
+        # stop argument defines the document type declaration and the step
+        # argument defines if the XML declaration should be omitted.
         return _b[:'html':True](
             # Method calls on a MarkupBuilder instance create elements with the
             # name equal to the method name.
