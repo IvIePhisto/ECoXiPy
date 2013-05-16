@@ -53,34 +53,37 @@ class StringOutput(Output):
     using code to ensure well-formed XML is created, especially in processing
     instructions, comments and the document type URIs.
     '''
-    _join = u''.join
-    _format_element = u'<{0}{1}>{2}</{0}>'.format
-    _format_element_empty = u'<{}{}/>'.format
-    _format_attribute = u' {}={}'.format
-    _format_pi = u'<?{}{}?>'.format
-    _format_comment = u'<!--{}-->'.format
-    _format_document = u'{}{}{}'.format
-    _format_xml_declaration = u'<?xml version="1.0" encoding="{}"?>\n'.format
-    _xml_declaration_no_encoding = u'<?xml version="1.0"?>\n'
-    _format_doctype_empty = u'<!DOCTYPE {}>'.format
-    _format_doctype_public = u'<!DOCTYPE {} PUBLIC "{}">'.format
-    _format_doctype_system = u'<!DOCTYPE {} SYSTEM "{}">'.format
-    _format_doctype_public_system = u'<!DOCTYPE {} PUBLIC "{}" "{}">'.format
-
     def __init__(self, entities=None):
         if entities is None:
             entities = {}
         self._entities = entities
+        self._join = u''.join
+        self._format_element = u'<{0}{1}>{2}</{0}>'.format
+        self._format_element_empty = u'<{}{}/>'.format
+        self._format_attribute = u' {}={}'.format
+        self._format_pi = u'<?{}{}?>'.format
+        self._format_comment = u'<!--{}-->'.format
+        self._format_document = u'{}{}{}'.format
+        self._format_xml_declaration = u'<?xml version="1.0" encoding="{}"?>\n'.format
+        self._xml_declaration_no_encoding = u'<?xml version="1.0"?>\n'
+        self._format_doctype_empty = u'<!DOCTYPE {}>'.format
+        self._format_doctype_public = u'<!DOCTYPE {} PUBLIC "{}">'.format
+        self._format_doctype_system = u'<!DOCTYPE {} SYSTEM "{}">'.format
+        self._format_doctype_public_system = u'<!DOCTYPE {} PUBLIC "{}" "{}">'.format
+        self._quote = xml.sax.saxutils.quoteattr
+        self._escape = xml.sax.saxutils.escape
 
-    _prepare_attr_value = lambda self, value: xml.sax.saxutils.quoteattr(
-        value, self._entities)
+    def _prepare_attr_value(self, value):
+        return self._quote(value, self._entities)
 
-    _prepare_text = lambda self, value: xml.sax.saxutils.escape(
-        value, self._entities)
+    def _prepare_text(self, value):
+        return self._escape(value, self._entities)
 
-    _prepare_child = lambda self, child: (
-        child if isinstance(child, XMLFragment)
-        else self._prepare_text(child))
+    def _prepare_child(self, child):
+        return (
+            child if isinstance(child, XMLFragment)
+            else self._prepare_text(child)
+        )
 
     def is_native_type(self, content):
         '''\
@@ -189,6 +192,8 @@ class XMLDocument(XMLFragment):
     An Unicode string representing a XML document created by
     :class:`StringOutput`.
     '''
+    __slots__ = ('_encoding', '_v_encoded')
+
     @classmethod
     def _create(cls, value, encoding):
         instance = XMLDocument(value)

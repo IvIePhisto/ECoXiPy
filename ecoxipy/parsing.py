@@ -20,7 +20,7 @@ from ecoxipy import _unicode
 class MarkupHandler(xml.sax.handler.ContentHandler,
         xml.sax.handler.DTDHandler, tinkerpy.LexicalHandler):
     '''\
-    A SAX handler to create :module:`ecoxipy` markup. By implementing your
+    A SAX handler to create :mod:`ecoxipy` markup. By implementing your
     own :class:`ecoxipy.Output` class you can use it to parse XML.
 
     :param output: The output istance to use.
@@ -119,7 +119,7 @@ class XMLFragmentParser(MarkupHandler):
     A SAX handler to read create XML fragments (lists of XML nodes) from
     Unicode strings and output :mod:`ecoxipy` data. It raises a
     :class:`XMLFragmentParsedException` when the root element is closed. Then,
-    and only then, the property :property:`xml_fragment` does not raise an
+    and only then, the property :attr:`xml_fragment` does not raise an
     :class:`AttributeError` on retrieval.
     '''
     def __init__(self, output):

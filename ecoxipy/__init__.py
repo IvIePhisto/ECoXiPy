@@ -37,8 +37,8 @@ class MarkupBuilder(object):
         The input encoding to be used to decode byte strings to Unicode.
 
 
-    Attributes and Item Retrieval - Elements
-    ----------------------------------------
+    **Attributes and Item Retrieval - Elements**
+
     Each attribute access on an instance of this class returns a method, which
     on calling creates an element in the output representation determined by
     the used :class:`Output` subclass instance. The name of the element is the
@@ -84,8 +84,8 @@ class MarkupBuilder(object):
     children or attributes is shorter.
 
 
-    Calling - XML Fragments
-    -----------------------
+    **Calling - XML Fragments**
+
     You can also call :class:`MarkupBuilder` instances to parse XML fragments
     (lists of XML Nodes). As with the ``children`` argument of the builder's
     dynamic methods, the arguments are unpacked and converted to Unicode, but
@@ -94,8 +94,8 @@ class MarkupBuilder(object):
     :class:`xml.sax.SAXException` if the XML is not well-formed.
 
 
-    Slicing - Processing Instructions and Documents
-    -----------------------------------------------
+    **Slicing - Processing Instructions and Documents**
+
     You can create processing instructions by using the slicing operator with
     a start argument, which becomes the target. If the end argument is
     specified it becomes the content. So the slice `['xml-stylesheet',
@@ -115,8 +115,8 @@ class MarkupBuilder(object):
     omitted.
 
 
-    Operators - Text and Comments
-    -----------------------------
+    **Operators - Text and Comments**
+
     The following operators create special nodes from their argument:
 
     ``&``

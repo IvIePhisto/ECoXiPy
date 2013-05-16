@@ -1,9 +1,9 @@
 # ECoXiPy - Easy Creation of XML in Python
 
-This Python 2 and 3 project (tested with 2.7 and 3.3) allows for easy creation
-of [XML](http://www.w3.org/XML/). The hierarchical structure of XML is easy to
-spot and the code to create XML is much shorter than using SAX, DOM or similar
-APIs.
+This Python 2 and 3 project (tested with CPython 2.7 and 3.3  as well as PyPy
+2.0.0) allows for easy creation of [XML](http://www.w3.org/XML/). The
+hierarchical structure of XML is easy to spot and the code to create XML is
+much shorter than using SAX, DOM or similar APIs.
 
 This project uses the MIT License, so you may freely use, distribute and
 modify it, provided you include the content of `License.txt`.
@@ -173,34 +173,38 @@ Execute unit tests:
 
 ### Performance Tests
 
-The performance tests create (nearly) the same HTML document using different
-APIs. When executing the module `tests.performance.performance_tests` the
-first argument specifies if the document should be rendered as an UTF-8
-encoded string after creating the data structures. The output as an UTF-8
-encoded string was chosen as most XML will ultimately be serialised in this
-form. All supplied `ecoxipy.Output` implementations (in
-`ecoxipy.string_output`, `ecoxipy.dom_output` and `ecoxipy.element_output`)
-are tested as well as `xml.sax` and `xml.dom.minidom` for comparison.
+Setup
+:   The same XHTML5 document is created with different APIs. All output
+    implementations of EcoXiPy (in `ecoxipy.string_output`,
+    `ecoxipy.dom_output` and `ecoxipy.element_output`) are tested as well as
+    `xml.sax` and `xml.dom.minidom`. For each of the APIs one test creates its
+    native representation and one test transforms this into an UTF-8 encoded
+    byte string, as as most XML will ultimately be serialised in this form.
+    The SAX tests create byte strings in both test types.
+
+Platform
+:   2.4 GHz Intel Core 2 Duo, 8 GB RAM on Mac OS X 10.8.3
+
+Running
+:   To run the [timeit](http://docs.python.org/2/library/timeit.html) tests
+    execute in a terminal from the project's root directory:
+
+        python -m tests.performance.timeit_tests <string output> <repetitions> <data count> [<CSV output path>]
+
+    Use no arguments to get help.
+
+    To run a batch of tests with CPython 2.7, CPython 3.3 and PyPy, once to
+    create native structutres and once to create byte strings, writing the
+    results to the file `timeit.csv`, execute the Bash script
+    `run_timeit_tests`.
 
 
-Run [timeit](http://docs.python.org/2/library/timeit.html) tests (linear
-increase of `data_count` yields exponential test document size increase):
+    Running [cProfile](http://docs.python.org/2/library/profile.html) tests:
 
-    python -m tests.performance.timeit_tests [<string output> <repetitions> <data count> [<CSV output path>]]
-
-
-To create a CSV file from a series of tests in Bash as I did for my
-performance test results (here using string output):
-
-    for ((i = 2; i <= 20; i += 2)); do python -m tests.performance.timeit_tests true 400 $i timeit.csv; done
+        python tests/performance/profiling_tests.py
 
 
-Run [cProfile](http://docs.python.org/2/library/profile.html) tests:
-
-    python tests/performance/profiling_tests.py
-
-
-These tests show that if string output is wanted, `ecoxipy.string_output` is
+These `timeit` tests show that if string output is wanted, `ecoxipy.string_output` is
 faster than all others, followed by `xml.sax`, `ecoxipy.element_output`,
 `xml.dom.minidom` with `ecoxipy.dom_output` at the end. If the data structures
 should not be converted to a string, `ecoxipy.element_output` is the fastest,

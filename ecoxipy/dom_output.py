@@ -64,27 +64,17 @@ class DOMOutput(Output):
     '''\
     An :class:`Output` implementation which creates :mod:`xml.dom` nodes.
 
-    :param document: The document to create DOM nodes with and to add those
-        to.
-    :type document: :class:`xml.dom.Document`
-    :param dom_implementation: The DOM implementation to use to create a
-        document, if ``document`` is :const:`None`. If this is :const:`None`,
+    :param dom_implementation: The DOM implementation to use to create
+        :class:`xml.dom.Node` instances. If this is :const:`None`
         :func:`xml.dom.minidom.getDOMImplementation` is used.
     :type dom_implementation: :class:`xml.dom.DOMImplementation`
     '''
-    def __init__(self, document=None, dom_implementation=None):
+    def __init__(self, dom_implementation=None):
         if dom_implementation is None:
             dom_implementation = xml.dom.minidom.getDOMImplementation()
         self._dom_implementation = dom_implementation
-        if document is None:
-            document = self._dom_implementation.createDocument(None, None,
+        self._document = self._dom_implementation.createDocument(None, None,
                 None)
-        self._document = document
-
-    @property
-    def doc(self):
-        '''The current :class:`xml.dom.Document`.'''
-        return self._document
 
     @classmethod
     def is_native_type(self, content):
@@ -115,11 +105,6 @@ class DOMOutput(Output):
             else:
                 element.appendChild(self._document.createTextNode(
                     child))
-        try:
-            self._document.removeChild(self._document.documentElement)
-        except xml.dom.NotFoundErr:
-            pass
-        self._document.appendChild(element)
         return element
 
     def text(self, content):
