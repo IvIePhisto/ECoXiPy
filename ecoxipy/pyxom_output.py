@@ -14,11 +14,11 @@ u'''\
 Examples
 --------
 
-Basic Usage:
+Creating a document and retrieving the byte string:
 
 >>> from ecoxipy import MarkupBuilder
 >>> b = MarkupBuilder()
->>> doc = b[:'section':True] (
+>>> document = b[:'section':True] (
 ...     b.article(
 ...         b.h1(
 ...             b & '<Example>', # Explicitly insert text
@@ -47,20 +47,8 @@ Basic Usage:
 ...         lang='en'
 ...     )
 ... )
-
-Getting the :func:`bytes` value of an document yields an encoded byte string:
-
 >>> document_string = u"""<!DOCTYPE section><article lang="en"><h1 data="to quote: &lt;&amp;&gt;&quot;'">&lt;Example&gt;</h1><p umlaut-attribute="äöüß">Hello<em count="1"> World</em>!</p><div><data-element>äöüß &lt;&amp;&gt;</data-element><p attr="value">raw content</p>Some Text<br/>012345</div><!--<This is a comment!>--><?pi-target <PI content>?><?pi-without-content?></article>"""
->>> import sys
->>> (unicode(doc) if sys.version_info[0] < 3 else str(doc)) == document_string
-True
-
-
-Getting the :func:`bytes` value of an :class:`Document` creates a byte string
-with the encoding specified on creation of the instance, it defaults
-to "UTF-8":
-
->>> bytes(doc) == document_string.encode('UTF-8')
+>>> bytes(document) == document_string.encode('UTF-8')
 True
 
 For more examples see :mod:`ecoxipy.pyxom`.

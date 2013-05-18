@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-'''\
+u'''\
 PyXOM - Pythonic XML Object Model
 =================================
 
@@ -8,40 +8,55 @@ structures. To create PyXOM data conveniently use :mod:`ecoxipy.pyxom_output`.
 
 Examples
 --------
->>> document = Document(u'html', None, None, [
-...     Element(u'html', [
-...         Element(u'head', [
-...             Element(u'title', [Text(u'The Title')], {}),
-...         ], {}),
-...         Element(u'body', [Text(u'Hello World!')], {}),
-...         ProcessingInstruction(u'target', u'content'),
-...         Comment(u'Comment Content'),
-...     ], {u'xmlns': u'http://www.w3.org/1999/xhtml/'})
-... ], True, None)
->>> print(str(document))
-<!DOCTYPE html><html xmlns="http://www.w3.org/1999/xhtml/"><head><title>The Title</title></head><body>Hello World!</body><?target content?><!--Comment Content--></html>
->>> for node in document[0][1:]:
-...     print(str(node))
-<body>Hello World!</body>
-<?target content?>
-<!--Comment Content-->
-'''
-# TODO finish doctests, especially of paths
-
-bla = '''
-Getting the :func:`bytes` value of an document yields an encoded byte string:
-
+>>> from ecoxipy import MarkupBuilder
+>>> b = MarkupBuilder()
+>>> document = b[:'section':True] (
+...     b.article(
+...         b.h1(
+...             b & '<Example>', # Explicitly insert text
+...             data='to quote: <&>"\\''
+...         ),
+...         b.p(
+...             {'umlaut-attribute': u'äöüß'},
+...             'Hello', b.em(' World', count=1), '!'
+...         ),
+...         None,
+...         b.div(
+...             # Insert elements with special names using subscripts:
+...             b['data-element'](u'äöüß <&>'),
+...             # Import content by calling the builder:
+...             b(
+...                 '<p attr="value">raw content</p>Some Text',
+...                 # Create an element without calling the creating method:
+...                 b.br,
+...                 (i for i in range(3))
+...             ),
+...             (i for i in range(3, 6))
+...         ),
+...         b | '<This is a comment!>',
+...         b['pi-target':'<PI content>'],
+...         b['pi-without-content':],
+...         lang='en'
+...     )
+... )
 >>> document_string = u"""<!DOCTYPE section><article lang="en"><h1 data="to quote: &lt;&amp;&gt;&quot;'">&lt;Example&gt;</h1><p umlaut-attribute="äöüß">Hello<em count="1"> World</em>!</p><div><data-element>äöüß &lt;&amp;&gt;</data-element><p attr="value">raw content</p>Some Text<br/>012345</div><!--<This is a comment!>--><?pi-target <PI content>?><?pi-without-content?></article>"""
+
+Getting the Unicode value of an document yields the XML document serialized as
+an Unicode string:
+
 >>> import sys
->>> (unicode(doc) if sys.version_info[0] < 3 else str(doc)) == document_string
+>>> if sys.version_info[0] < 3:
+...     unicode(document) == document_string
+... else:
+...     str(document) == document_string
 True
 
 
 Getting the :func:`bytes` value of an :class:`Document` creates a byte string
-with the encoding specified on creation of the instance, it defaults
-to "UTF-8":
+of the serialized XML with the encoding specified on creation of the instance,
+it defaults to "UTF-8":
 
->>> bytes(doc) == document_string.encode('UTF-8')
+>>> bytes(document) == document_string.encode('UTF-8')
 True
 
 
@@ -51,16 +66,11 @@ True
 which does not support comments):
 
 >>> document_string = u"""<?xml version="1.0" encoding="UTF-8"?>\\n<article lang="en"><h1 data="to quote: &lt;&amp;&gt;&quot;'">&lt;Example&gt;</h1><p umlaut-attribute="äöüß">Hello<em count="1"> World</em>!</p><div><data-element>äöüß &lt;&amp;&gt;</data-element><p attr="value">raw content</p>Some Text<br></br>012345</div><?pi-target <PI content>?><?pi-without-content ?></article>"""
->>> if sys.version_info[0] > 2:
-...     from io import StringIO
-...     string_io = StringIO
-... else:
-...     from io import BytesIO
-...     string_io = BytesIO
-...     document_string = document_string.encode('UTF-8')
->>> string_out = string_io()
->>> content_handler = doc.create_sax_events(out=string_out)
->>> string_out.getvalue() == document_string
+>>> import sys
+>>> from io import BytesIO
+>>> string_out = BytesIO()
+>>> content_handler = document.create_sax_events(out=string_out)
+>>> string_out.getvalue() == document_string.encode('UTF-8')
 True
 >>> string_out.close()
 
@@ -96,11 +106,9 @@ You can also create indented XML when calling the
 ...     <?pi-without-content ?>
 ... </article>
 ... """
->>> if sys.version_info[0] <= 2:
-...     indented_document_string = indented_document_string.encode('UTF-8')
->>> string_out = string_io()
->>> content_handler = doc.create_sax_events(indent_incr='    ', out=string_out)
->>> string_out.getvalue() == indented_document_string
+>>> string_out = BytesIO()
+>>> content_handler = document.create_sax_events(indent_incr='    ', out=string_out)
+>>> string_out.getvalue() == indented_document_string.encode('UTF-8')
 True
 >>> string_out.close()
 
@@ -162,7 +170,7 @@ class XMLNode(object):
         Creates a Unicode string containing the XML representation of
         the node.
         '''
-        return self.create_str()
+        return self.create_str(encoding=None)
 
     def __bytes__(self):
         '''\
@@ -177,7 +185,7 @@ class XMLNode(object):
         del __bytes__
 
 
-    def create_str(self, out=None, encoding=None):
+    def create_str(self, out=None, encoding='UTF-8'):
         '''\
         Creates a string containing the XML representation of the node.
 
@@ -190,7 +198,7 @@ class XMLNode(object):
         if out is None:
             out = ecoxipy.string_output.StringOutput()
         output_string = self._create_str(out)
-        if encoding is not None and not isinstance(output_string, bytes):
+        if encoding is not None:
             output_string = output_string.encode(encoding)
         return output_string
 
@@ -215,8 +223,8 @@ class XMLNode(object):
         :type content_handler: :class:`xml.sax.ContentHandler`
         :param out: The output to write to if no ``content_handler`` is given.
             It should have a ``write`` method like files.
-        :param out_encoding: The output encoding if no ``content_handler``
-            is given and ``out`` is not :const:`None`.
+        :param out_encoding: The output encoding or :const:`None` for
+            Unicode output.
         :param indent_incr: If this is not :const:`None` this activates
             pretty printing. In this case it should be a string and it is used
             for indenting.
@@ -256,13 +264,14 @@ class Text(XMLNode):
         return 'ecoxipy.pyxom.Text({})'.format(repr(self._value))
 
     def _create_sax_events(self, content_handler, indent):
-        content_handler.characters(self.value)
+        content_handler.characters(self._value)
 
     def _create_str(self, out):
         return out.text(self._value)
 
 
 class ContainerNode(XMLNode, collections.MutableSequence):
+    __metaclass__ = abc.ABCMeta
     __slots__ = ('_children')
 
     def __init__(self, children):
@@ -320,157 +329,6 @@ class ContainerNode(XMLNode, collections.MutableSequence):
         return iterator()
 
 
-class PyXOMPL(object):
-    doctest='''\
-
-    >>> p('html/body/ancestor>div/attributes>"data-foo"/bar/parent>True/parent>True/p')
-    >>> p('html/body//(div and where(attributes>"data-foo"/bar))/p')
-    >>> p('html/body//(div and {"data-foo":bar})/p')
-
-    >>> p('html/body/ancestor>(div or True/attributes>"data-foo"/bar/parent>True/parent>True)/p')
-    >>> p('html/body//(div or where(attributes>"data-foo"/bar))/p')
-    >>> p('html/body//(div or {"data-foo":bar})/p')
-
-    >>> p(\'''html/body//pi()/`re.findall(r' href=".+?"', _)`/parent>True''\')
-    >>> p(\'''html/body//pi(True, `re.findall(r' href=".+?"', _)`)\')
-    >>> p(\'''html/body//(pi() and where(`re.findall(r' href=".+?"', _)`))''\')
-
-    >>> p(\'''html/body//comment()/`_.startswith('TODO')`/parent>True''\')
-    >>> p(\'''html/body//comment(`_.startswith('TODO')`)''\')
-    >>> p(\'''html/body//comment() and where(`_.startswith('TODO')`)''\')
-
-    `text` := identifier | stringliteral
-
-    `boolean_expression` := `test` (``and`` | ``or`` ) `test` | ``not`` `test`
-
-    `python_expression` := ``\``` expression ``\```
-
-    `test` := `text` | `boolean_expression` | `python_expression`
-
-    `element_test` := `test` | ``element(`` `test` ``)``
-
-    `text_test` := ``text(`` [`test`] ``)``
-
-    `comment_test` := ``comment(`` [`test`] ``)``
-
-    `pi_test` := ``pi(`` [`test` [``,`` `test`]] ``)``
-
-    `document_test` := ``document(`` `test` [``,`` `test` [``,`` `test`]] ``)``
-
-    `attrs_test` := ``{`` ([`test` ``:`` `test` [``,`` `test` ``:`` `test`] ] | (`test` [``,`` `test`]*)+) ``}``
-
-    `node_test` := `element_test` | `text_test` | `pi_test` | `comment_test` | `document_test`
-
-    `forward_axis` := `self` | `child` | `descendant` | `attribute` | `following` | `following-sibling`
-
-    `reverse_axis` := `parent` | `ancestor` | `preceding` | `preceding-sibling`
-
-    `step` := [`axis` ``>``] `node_test` [``[`` index | slice ``]``]
-
-    `path` := `step` (``/`` `step`)*
-
-    '''
-    class _NodeVisitor(ast.NodeTransformer):
-        def generic_visit(self, node):
-            return ast.NodeTransformer.generic_visit(self, node)
-
-    def __init__(self, path):
-        self._steps = self._compile(path)
-
-    @classmethod
-    def _compile(self, path):
-        path_ast = compile(path, '<ecoxipy.pyxom.PyXOMPL: {}>'.format(path),
-            'eval',ast.PyCF_ONLY_AST)
-        print(ast.dump(path_ast, False))
-        visitor = self._NodeVisitor()
-        visitor.visit(path_ast)
-        print('---TRANSFORMED:---')
-        print(ast.dump(path_ast, False))
-
-
-class NodeFinder(object):
-    @staticmethod
-    def _test_node(name):
-        if name == '*':
-            return lambda context: isinstance(context, Element)
-        if name == '$':
-            return lambda context: isinstance(context, Text)
-        if name.startwith('!'):
-            if len(name) == 1:
-                return lambda context: isinstance(context, Comment)
-            name = name[1:]
-            return lambda context: (isinstance(context, Comment)
-                and context.content == name)
-        if name.startwith('?'):
-            if len(name) == 1:
-                return lambda context: isinstance(context,
-                    ProcessingInstruction)
-            name = name[1:]
-            try:
-                target, content = name.split(' ')
-            except ValueError:
-                return lambda context: isinstance(context,
-                    ProcessingInstruction) and context.target == name
-            return lambda context: (
-                isinstance(context, ProcessingInstruction)
-                and context.target == name and context.content == content
-            )
-        return lambda context: (isinstance(context, Element)
-            and context.name == name)
-
-    @staticmethod
-    def _test_attributes(attributes):
-        def _test(context):
-            try:
-                _attributes = context.attributes
-            except AttributeError:
-                return False
-            for attr_name, attr_value in attributes.items():
-                if attr_name in _attributes:
-                    if attr_value is not None:
-                        if attr_value != _attributes[attr_name]:
-                            return False
-                else:
-                    return False
-            return True
-        return _test
-
-    @classmethod
-    def _test_or(cls, sequence):
-        tests = [cls.create_test(item) for item in sequence]
-        def _test(context):
-            for test in tests:
-                if test(context):
-                    return True
-            return False
-        return _test
-
-    @classmethod
-    def create_test(cls, spec):
-        if isinstance(spec, collections.Sequence):
-            return cls._test_or(spec)
-        elif isinstance(spec, collections.Mapping):
-            return cls._test_attributes(spec)
-        elif isinstance(spec, collections.Callable):
-            return spec
-        if not isinstance(spec, _unicode):
-            spec = _unicode(spec)
-        return cls._test_node(_unicode(spec))
-
-    @classmethod
-    def find(self, context, path):
-        if len(path) == 0:
-            return context
-        for step in path:
-            if step is None:
-                context = list(context)
-            elif isinstance(step, int):
-                context = context[step]
-            else:
-                context = filter(self.create_test(step), context)
-        return context
-
-
 class Document(ContainerNode):
     '''\
     Represents a XML document.
@@ -485,7 +343,7 @@ class Document(ContainerNode):
     :param omit_xml_declaration: If :const:`True` the XML declaration is
         omitted.
     '''
-    __slots__ = ('_doctype', '_omit_xml_declaration')
+    __slots__ = ('_doctype', '_omit_xml_declaration', '_encoding')
 
     DocumentType = collections.namedtuple('DocumentType',
         'name publicid systemid')
@@ -641,7 +499,7 @@ class Element(ContainerNode):
         def do_indent(at_start=False):
             if indent:
                 if indent_count > 0 or not at_start:
-                    content_handler.characters('\n')
+                    content_handler.characters(u'\n')
                 for i in range(indent_count):
                     content_handler.characters(indent_incr)
         do_indent(True)
@@ -649,21 +507,20 @@ class Element(ContainerNode):
         content_handler.startElement(self.name, attributes)
         last_event_characters = False
         for child in self:
-            if isinstance(child, XMLNode):
-                child._create_sax_events(
-                    content_handler, child_indent)
-                last_event_characters = False
-            else:
+            if isinstance(child, Text):
                 if indent and not last_event_characters:
                     do_indent()
                     content_handler.characters(indent_incr)
-                content_handler.characters(child)
+                child._create_sax_events(content_handler, child_indent)
                 last_event_characters = True
+            else:
+                child._create_sax_events(content_handler, child_indent)
+                last_event_characters = False
         if len(self) > 0:
             do_indent()
         content_handler.endElement(self.name)
         if indent and indent_count == 0:
-            content_handler.characters('\n')
+            content_handler.characters(u'\n')
 
     def __repr__(self):
         return 'ecoxipy.pyxom.Element({}, [...], {})'.format(
@@ -697,10 +554,10 @@ class Comment(XMLNode):
         else:
             if indent:
                 indent_incr, indent_count = indent
-                content_handler.characters('\n')
+                content_handler.characters(u'\n')
                 for i in range(indent_count):
                         content_handler.characters(indent_incr)
-            comment(self._content)
+            comment(encode(self._content))
 
     def __repr__(self):
         return 'ecoxipy.pyxom.Comment({})'.format(repr(self._content))
@@ -733,7 +590,7 @@ class ProcessingInstruction(XMLNode):
     def _create_sax_events(self, content_handler, indent):
         if indent:
             indent_incr, indent_count = indent
-            content_handler.characters('\n')
+            content_handler.characters(u'\n')
             for i in range(indent_count):
                     content_handler.characters(indent_incr)
         content_handler.processingInstruction(self.target,
@@ -743,5 +600,157 @@ class ProcessingInstruction(XMLNode):
         return 'ecoxipy.pyxom.ProcessingInstruction({}, {})'.format(
             repr(self._target), repr(self._content))
 
+
+# PATH
+
+class PyXOMPL(object):
+    doctest='''\
+
+    >>> p('html/body/ancestor>div/attributes>"data-foo"/bar/parent>True/parent>True/p')
+    >>> p('html/body//(div and where(attributes>"data-foo"/bar))/p')
+    >>> p('html/body//(div and {"data-foo":bar})/p')
+
+    >>> p('html/body/ancestor>(div or True/attributes>"data-foo"/bar/parent>True/parent>True)/p')
+    >>> p('html/body//(div or where(attributes>"data-foo"/bar))/p')
+    >>> p('html/body//(div or {"data-foo":bar})/p')
+
+    >>> p(\'''html/body//pi()/`re.findall(r' href=".+?"', _)`/parent>True''\')
+    >>> p(\'''html/body//pi(True, `re.findall(r' href=".+?"', _)`)\')
+    >>> p(\'''html/body//(pi() and where(`re.findall(r' href=".+?"', _)`))''\')
+
+    >>> p(\'''html/body//comment()/`_.startswith('TODO')`/parent>True''\')
+    >>> p(\'''html/body//comment(`_.startswith('TODO')`)''\')
+    >>> p(\'''html/body//comment() and where(`_.startswith('TODO')`)''\')
+
+    `text` := identifier | stringliteral
+
+    `boolean_expression` := `test` (``and`` | ``or`` ) `test` | ``not`` `test`
+
+    `python_expression` := ``\``` expression ``\```
+
+    `test` := `text` | `boolean_expression` | `python_expression`
+
+    `element_test` := `test` | ``element(`` `test` ``)``
+
+    `text_test` := ``text(`` [`test`] ``)``
+
+    `comment_test` := ``comment(`` [`test`] ``)``
+
+    `pi_test` := ``pi(`` [`test` [``,`` `test`]] ``)``
+
+    `document_test` := ``document(`` `test` [``,`` `test` [``,`` `test`]] ``)``
+
+    `attrs_test` := ``{`` ([`test` ``:`` `test` [``,`` `test` ``:`` `test`] ] | (`test` [``,`` `test`]*)+) ``}``
+
+    `node_test` := `element_test` | `text_test` | `pi_test` | `comment_test` | `document_test`
+
+    `forward_axis` := `self` | `child` | `descendant` | `attribute` | `following` | `following-sibling`
+
+    `reverse_axis` := `parent` | `ancestor` | `preceding` | `preceding-sibling`
+
+    `step` := [`axis` ``>``] `node_test` [``[`` index | slice ``]``]
+
+    `path` := `step` (``/`` `step`)*
+
+    '''
+    class _NodeVisitor(ast.NodeTransformer):
+        def generic_visit(self, node):
+            return ast.NodeTransformer.generic_visit(self, node)
+
+    def __init__(self, path):
+        self._steps = self._compile(path)
+
+    @classmethod
+    def _compile(self, path):
+        path_ast = compile(path, '<ecoxipy.pyxom.PyXOMPL: {}>'.format(path),
+            'eval',ast.PyCF_ONLY_AST)
+        print(ast.dump(path_ast, False))
+        visitor = self._NodeVisitor()
+        visitor.visit(path_ast)
+        print('---TRANSFORMED:---')
+        print(ast.dump(path_ast, False))
+
+
+class NodeFinder(object):
+    @staticmethod
+    def _test_node(name):
+        if name == '*':
+            return lambda context: isinstance(context, Element)
+        if name == '$':
+            return lambda context: isinstance(context, Text)
+        if name.startwith('!'):
+            if len(name) == 1:
+                return lambda context: isinstance(context, Comment)
+            name = name[1:]
+            return lambda context: (isinstance(context, Comment)
+                and context.content == name)
+        if name.startwith('?'):
+            if len(name) == 1:
+                return lambda context: isinstance(context,
+                    ProcessingInstruction)
+            name = name[1:]
+            try:
+                target, content = name.split(' ')
+            except ValueError:
+                return lambda context: isinstance(context,
+                    ProcessingInstruction) and context.target == name
+            return lambda context: (
+                isinstance(context, ProcessingInstruction)
+                and context.target == name and context.content == content
+            )
+        return lambda context: (isinstance(context, Element)
+            and context.name == name)
+
+    @staticmethod
+    def _test_attributes(attributes):
+        def _test(context):
+            try:
+                _attributes = context.attributes
+            except AttributeError:
+                return False
+            for attr_name, attr_value in attributes.items():
+                if attr_name in _attributes:
+                    if attr_value is not None:
+                        if attr_value != _attributes[attr_name]:
+                            return False
+                else:
+                    return False
+            return True
+        return _test
+
+    @classmethod
+    def _test_or(cls, sequence):
+        tests = [cls.create_test(item) for item in sequence]
+        def _test(context):
+            for test in tests:
+                if test(context):
+                    return True
+            return False
+        return _test
+
+    @classmethod
+    def create_test(cls, spec):
+        if isinstance(spec, collections.Sequence):
+            return cls._test_or(spec)
+        elif isinstance(spec, collections.Mapping):
+            return cls._test_attributes(spec)
+        elif isinstance(spec, collections.Callable):
+            return spec
+        if not isinstance(spec, _unicode):
+            spec = _unicode(spec)
+        return cls._test_node(_unicode(spec))
+
+    @classmethod
+    def find(self, context, path):
+        if len(path) == 0:
+            return context
+        for step in path:
+            if step is None:
+                context = list(context)
+            elif isinstance(step, int):
+                context = context[step]
+            else:
+                context = filter(self.create_test(step), context)
+        return context
 
 del abc, collections

@@ -38,12 +38,14 @@ This is a major release introducing new capabilities and Python 3 support.
 *   *Changed:* Renamed module `ecoxipy.element_output` to
     `ecoxipy.pyxom_output` and moved the XML representation classes to their
     own module `ecoxipy.pyxom` naming them *PyXOM* - **Pythonic XML Object
-    Model**. Removed DOM creation was removed from those classes.
+    Model**. DOM creation was also removed from those classes.
 *   *Changed:* All XML data is internally handled as Unicode, a
     `ecoxipy.MarkupBuilder` instance converts byte strings from an encoding
     given on creation (defaults to UTF-8).
 *   *Changed:* XML parsing is now handled by `ecoxipy.MarkupBuilder` instead
     of the `ecoxipy.Output` implementations.
+*   *Changed:* Text node creation is now handled by `ecoxipy.MarkupBuilder`
+    instead of the `ecoxipy.Output` implementations.
 *   *Improved:* Unpacking of content while processing is done recursively on
     iterable and callable content.
 
