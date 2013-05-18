@@ -31,7 +31,7 @@ create XML is much shorter than using SAX, DOM or similar APIs.
       include_package_data=False,
       zip_safe=True,
       install_requires=[
-          'TinkerPy'
+          'TinkerPy>=0.2.1'
       ],
       test_suite='tests.test_suite'
 )

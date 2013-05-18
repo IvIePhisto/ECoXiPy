@@ -121,10 +121,18 @@ class XMLFragmentParser(MarkupHandler):
     :class:`XMLFragmentParsedException` when the root element is closed. Then,
     and only then, the property :attr:`xml_fragment` does not raise an
     :class:`AttributeError` on retrieval.
+
+    :param output: The instance to use for creating XML.
+    :type output: :class:`ecoxipy.Output`
+    :param parser: The parser to use. If it is :const:`None`
+        :func:`xml.sax.make_parser` is used to create one.
+    :type parser: :class:`xml.sax.xmlreader.XMLReader`
     '''
-    def __init__(self, output):
+    def __init__(self, output, parser=None):
         MarkupHandler.__init__(self, output)
-        self._parser = xml.sax.make_parser()
+        if parser is None:
+            parser = xml.sax.make_parser()
+        self._parser = parser
         self._parser.setContentHandler(self)
         self._parser.setDTDHandler(self)
         try:

@@ -4,7 +4,7 @@ import timeit
 
 from tests.performance import xml_sax
 from tests.performance import xml_dom_minidom
-from tests.performance import ecoxipy_element_output
+from tests.performance import ecoxipy_pyxom_output
 from tests.performance import ecoxipy_string_output
 from tests.performance import ecoxipy_dom_output
 
@@ -50,7 +50,7 @@ arguments: <string output> <repetitions> <data_count> [<file path>]
         number=repetitions)
     sax_time = timeit_run(xml_sax)
     dom_time = timeit_run(xml_dom_minidom)
-    element_out_time = timeit_run(ecoxipy_element_output)
+    element_out_time = timeit_run(ecoxipy_pyxom_output)
     string_out_time = timeit_run(ecoxipy_string_output)
     dom_out_time = timeit_run(ecoxipy_dom_output)
     python_version = platform.python_version()
@@ -90,7 +90,7 @@ Running Times:
 | xml.sax                {}
 | xml.dom.minidom        {}
 | ecoxipy.dom_output     {}
-| ecoxipy.element_output {}
+| ecoxipy.pyxom_output   {}
 | ecoxipy.string_output  {}\
 '''.format(
             python_version, python_platform,
@@ -107,7 +107,7 @@ Running Times:
         import os.path
         if not os.path.isfile(path):
             with open(path, 'w') as f:
-                f.write('Output,Python Platform,Python Version,xml.sax,xml.dom.minidom,ecoxipy.dom_output,ecoxipy.element_output,ecoxipy.string_output,Repetitions,Data Count\n')
+                f.write('Output,Python Platform,Python Version,xml.sax,xml.dom.minidom,ecoxipy.dom_output,ecoxipy.pyxom_output,ecoxipy.string_output,Repetitions,Data Count\n')
         with open(path, 'a') as f:
             f.write('{},{},{},{},{},{},{},{},{},{}\n'.format(
                 output_name, python_platform, python_version,

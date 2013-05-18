@@ -1,6 +1,6 @@
 import cProfile
 
-from tests.performance import ecoxipy_element_output
+from tests.performance import ecoxipy_pyxom_output
 from tests.performance import ecoxipy_string_output
 from tests.performance import ecoxipy_dom_output
 
@@ -13,10 +13,10 @@ if __name__ == '__main__':
     ECoXiPy Profiling
     =================
 
-    ecoxipy.element_output
+    ecoxipy.pyxom_output
     ----------------------
     '''
-    cProfile.run(create_test_run(ecoxipy_element_output), sort='tottime')
+    cProfile.run(create_test_run(ecoxipy_pyxom_output), sort='tottime')
 
     print '''
     ecoxipy.dom_output

@@ -12,11 +12,13 @@ Modules
 .. toctree::
 
     base
-    decorators
     string_output
     dom_output
-    element_output
+    pyxom
+    pyxom_output
+    decorators
     parsing
+
 
 TL;DR [#f1]_
 ------------
@@ -38,9 +40,9 @@ DOM Creation
 
     :ref:`ecoxipy.dom_output <ecoxipy.dom_output.examples>`
 
-Create low-footprint XML structures
+Create :mod:`ecoxipy.pyxom` structures
 
-    :ref:`ecoxipy.element_output <ecoxipy.element_output.examples>`
+    :ref:`ecoxipy.pyxom_output <ecoxipy.pyxom_output.examples>`
 
 
 

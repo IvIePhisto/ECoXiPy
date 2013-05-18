@@ -26,18 +26,26 @@ You might also be interested in:
 ## Release History
 
 **0.3.0**
+
+This is a major release introducing new capabilities and Python 3 support.
+
 *   *Added:* Support for Python 3.
-*   *Added:* Use `|` on `ecoxipy.MarkupBuilder` to create comments.
 *   *Added:* Use `|` on `ecoxipy.MarkupBuilder` to create comments.
 *   *Added:* Use slicing on `ecoxipy.MarkupBuilder` to create documents
     or processing instructions.
+*   *Added:* The module `ecoxipy.parsing` contains SAX to ECoXiPy parsing
+    facilities.
+*   *Changed:* Renamed module `ecoxipy.element_output` to
+    `ecoxipy.pyxom_output` and moved the XML representation classes to their
+    own module `ecoxipy.pyxom` naming them *PyXOM* - **Pythonic XML Object
+    Model**. Removed DOM creation was removed from those classes.
 *   *Changed:* All XML data is internally handled as Unicode, a
     `ecoxipy.MarkupBuilder` instance converts byte strings from an encoding
     given on creation (defaults to UTF-8).
+*   *Changed:* XML parsing is now handled by `ecoxipy.MarkupBuilder` instead
+    of the `ecoxipy.Output` implementations.
 *   *Improved:* Unpacking of content while processing is done recursively on
     iterable and callable content.
-*   *Removed:* Removed DOM creation from
-    `ecoxipy.element_output.ElementOutput`.
 
 
 **0.2.0**

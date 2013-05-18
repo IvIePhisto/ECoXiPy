@@ -1,1 +1,2 @@
 .. automodule:: ecoxipy
+    :no-members:

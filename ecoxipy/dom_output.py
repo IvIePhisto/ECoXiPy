@@ -97,14 +97,9 @@ class DOMOutput(Output):
         '''
         element = self._document.createElement(name)
         for name in attributes:
-            element.setAttribute(name,
-                attributes[name])
+            element.setAttribute(name, attributes[name])
         for child in children:
-            if isinstance(child, xml.dom.Node):
-                element.appendChild(child)
-            else:
-                element.appendChild(self._document.createTextNode(
-                    child))
+            element.appendChild(child)
         return element
 
     def text(self, content):

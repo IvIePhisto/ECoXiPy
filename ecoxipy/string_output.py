@@ -73,17 +73,8 @@ class StringOutput(Output):
         self._quote = xml.sax.saxutils.quoteattr
         self._escape = xml.sax.saxutils.escape
 
-    def _prepare_attr_value(self, value):
-        return self._quote(value, self._entities)
-
     def _prepare_text(self, value):
         return self._escape(value, self._entities)
-
-    def _prepare_child(self, child):
-        return (
-            child if isinstance(child, XMLFragment)
-            else self._prepare_text(child)
-        )
 
     def is_native_type(self, content):
         '''\
@@ -107,14 +98,14 @@ class StringOutput(Output):
         attributes = self._join([
             self._format_attribute(
                 self._prepare_text(attr_name),
-                self._prepare_attr_value(attr_value)
+                self._quote(attr_value, self._entities)
             )
             for attr_name, attr_value in attributes.items()
         ])
         if len(children) == 0:
             return XMLFragment(self._format_element_empty(name, attributes))
         return XMLFragment(self._format_element(name, attributes,
-            self._join([self._prepare_child(child) for child in children])
+            self._join([child for child in children])
         ))
 
     def text(self, content):
@@ -176,7 +167,7 @@ class StringOutput(Output):
             doctype = self._format_doctype_public_system(
                 doctype_name, doctype_publicid, doctype_systemid)
         document = self._format_document(xml_declaration, doctype,
-            self._join([self._prepare_child(child) for child in children])
+            self._join([child for child in children])
         )
         return XMLDocument._create(document, encoding)
 
@@ -186,6 +177,10 @@ class XMLFragment(_unicode):
     An XML Unicode string created by :class:`StringOutput`.
     '''
 
+    def __repr__(self):
+        return u'ecoxipy.string_output.XMLFragment({})'.format(
+            unicode.__repr__(self))
+
 
 class XMLDocument(XMLFragment):
     '''\
@@ -193,6 +188,10 @@ class XMLDocument(XMLFragment):
     :class:`StringOutput`.
     '''
     __slots__ = ('_encoding', '_v_encoded')
+
+    def __repr__(self):
+        return u'ecoxipy.string_output.XMLDocument({}, {})'.format(
+            unicode.__repr__(self), repr(self._encoding))
 
     @classmethod
     def _create(cls, value, encoding):
@@ -211,7 +210,7 @@ class XMLDocument(XMLFragment):
     @property
     def encoded(self):
         '''\
-        The document encoded with :property:`encoding`, thus it is a byte
+        The document encoded with :attr:`encoding`, thus it is a byte
         string.
 
         The data of this property is created on first access, further
