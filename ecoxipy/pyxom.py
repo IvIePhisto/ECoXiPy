@@ -8,6 +8,10 @@ structures. To create PyXOM data conveniently use :mod:`ecoxipy.pyxom_output`.
 
 Examples
 --------
+
+XML Creation
+^^^^^^^^^^^^
+
 >>> from ecoxipy import MarkupBuilder
 >>> b = MarkupBuilder()
 >>> document = b[:'section':True] (
@@ -39,6 +43,20 @@ Examples
 ...         lang='en'
 ...     )
 ... )
+
+
+Navigation
+^^^^^^^^^^
+
+>>> list(document[0][0].ancestors())
+[ecoxipy.pyxom.Element('article', [...], {...}), ecoxipy.pyxom.Document('section', 'None', 'None', [...], True, 'UTF-8')]
+>>> list(document[0][1].descendants())
+[ecoxipy.pyxom.Text('Hello'), ecoxipy.pyxom.Element('em', [...], {...}), ecoxipy.pyxom.Text(' World'), ecoxipy.pyxom.Text('!')]
+
+
+XML Serialization
+^^^^^^^^^^^^^^^^^
+
 >>> document_string = u"""<!DOCTYPE section><article lang="en"><h1 data="to quote: &lt;&amp;&gt;&quot;'">&lt;Example&gt;</h1><p umlaut-attribute="äöüß">Hello<em count="1"> World</em>!</p><div><data-element>äöüß &lt;&amp;&gt;</data-element><p attr="value">raw content</p>Some Text<br/>012345</div><!--<This is a comment!>--><?pi-target <PI content>?><?pi-without-content?></article>"""
 
 Getting the Unicode value of an document yields the XML document serialized as
@@ -155,15 +173,14 @@ class XMLNode(object):
         '''
         if test is None:
             test = lambda context: True
-        current = self
-        def iterator():
-            current = current.parent
+        def iterator(current):
             while True:
+                current = current.parent
                 if current is None:
                     break
                 elif test(current):
                     yield current
-        return iterator()
+        return iterator(self)
 
     def __str__(self):
         '''\
@@ -261,7 +278,8 @@ class Text(XMLNode):
         return self._value
 
     def __repr__(self):
-        return 'ecoxipy.pyxom.Text({})'.format(repr(self._value))
+        return 'ecoxipy.pyxom.Text(\'{}\')'.format(
+            self._value.encode('unicode_escape').decode())
 
     def _create_sax_events(self, content_handler, indent):
         content_handler.characters(self._value)
@@ -307,7 +325,7 @@ class ContainerNode(XMLNode, collections.MutableSequence):
     def __call__(self, *path):
         return Finder.find(self, path)
 
-    def descendants(self, test=None, document_order=True):
+    def descendants(self, document_order=True, test=None):
         '''\
         Returns iterator over all descendants.
         '''
@@ -319,13 +337,12 @@ class ContainerNode(XMLNode, collections.MutableSequence):
             test = lambda context: True
         def iterator():
             for child in children:
-                try:
-                    for descendant in child.descendants(document_order):
-                        if test(descendant):
+                if test(child):
+                    yield child
+                    if isinstance(child, ContainerNode):
+                        for descendant in child.descendants(document_order,
+                                test):
                             yield descendant
-                except AttributeError:
-                    if test(child):
-                        yield child
         return iterator()
 
 
@@ -445,9 +462,12 @@ class Document(ContainerNode):
         content_handler.endDocument()
 
     def __repr__(self):
-        return 'ecoxipy.pyxom.Document(*{}, [...], {}, {})'.format(
-            repr(self._doctype), self._omit_xml_declaration, self._encoding
-        )
+        return 'ecoxipy.pyxom.Document(\'{}\', \'{}\', \'{}\', [...], {}, \'{}\')'.format(
+            self._doctype.name.encode('unicode_escape').decode(),
+            _unicode(self._doctype.publicid).encode('unicode_escape').decode(),
+            _unicode(self._doctype.systemid).encode('unicode_escape').decode(),
+            repr(self._omit_xml_declaration),
+            self._encoding.encode('unicode_escape').decode())
 
 
 class Element(ContainerNode):
@@ -523,9 +543,8 @@ class Element(ContainerNode):
             content_handler.characters(u'\n')
 
     def __repr__(self):
-        return 'ecoxipy.pyxom.Element({}, [...], {})'.format(
-            repr(self._name), repr(self._attributes)
-        )
+        return 'ecoxipy.pyxom.Element(\'{}\', [...], {{...}})'.format(
+            self._name.encode('unicode_escape').decode())
 
 
 class Comment(XMLNode):
@@ -560,7 +579,8 @@ class Comment(XMLNode):
             comment(encode(self._content))
 
     def __repr__(self):
-        return 'ecoxipy.pyxom.Comment({})'.format(repr(self._content))
+        return 'ecoxipy.pyxom.Comment(\'{}\')'.format(
+            self._content.encode('unicode_escape').decode())
 
 
 class ProcessingInstruction(XMLNode):
@@ -597,8 +617,9 @@ class ProcessingInstruction(XMLNode):
             u'' if self._content is None else self._content)
 
     def __repr__(self):
-        return 'ecoxipy.pyxom.ProcessingInstruction({}, {})'.format(
-            repr(self._target), repr(self._content))
+        return 'ecoxipy.pyxom.ProcessingInstruction(\'{}\', \'{}\')'.format(
+            self._target.encode('unicode_escape').decode(),
+            self._content.encode('unicode_escape').decode())
 
 
 # PATH
@@ -647,6 +668,8 @@ class PyXOMPL(object):
     `forward_axis` := `self` | `child` | `descendant` | `attribute` | `following` | `following-sibling`
 
     `reverse_axis` := `parent` | `ancestor` | `preceding` | `preceding-sibling`
+
+    `axis` := `forward_axis` | `reverse_axis`
 
     `step` := [`axis` ``>``] `node_test` [``[`` index | slice ``]``]
 
