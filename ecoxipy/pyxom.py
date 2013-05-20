@@ -14,7 +14,7 @@ XML Creation
 
 >>> from ecoxipy import MarkupBuilder
 >>> b = MarkupBuilder()
->>> document = b[:'section':True] (
+>>> document = b[:'article':True] (
 ...     b.article(
 ...         b.h1(
 ...             b & '<Example>', # Explicitly insert text
@@ -48,27 +48,63 @@ XML Creation
 Navigation
 ^^^^^^^^^^
 
+Use list semantics to retrieve child nodes and attribute access to retrieve
+node information:
+
+>>> print(document.doctype.name)
+article
+>>> print(document[0].name)
+article
+>>> print(document[0].attributes['lang'])
+en
+>>> print(document[0][-2].target)
+pi-target
+>>> document[0][1].parent is document[0]
+True
+>>> document[0][0] is document[0][1].previous and document[0][1].next is document[0][2]
+True
+>>> document.parent is None and document[0].previous is None and document[0].next is None
+True
+
 You can retrieve iterators for navigation through the tree:
 
 >>> list(document[0][0].ancestors())
-[ecoxipy.pyxom.Element('article', [...], {...}), ecoxipy.pyxom.Document('section', 'None', 'None', [...], True, 'UTF-8')]
+[ecoxipy.pyxom.Element('article', [...], {...}), ecoxipy.pyxom.Document('article', 'None', 'None', [...], True, 'UTF-8')]
 >>> list(document[0][1].descendants())
 [ecoxipy.pyxom.Text('Hello'), ecoxipy.pyxom.Element('em', [...], {...}), ecoxipy.pyxom.Text(' World'), ecoxipy.pyxom.Text('!')]
+>>> list(document[0][-1].preceding_siblings())
+[ecoxipy.pyxom.ProcessingInstruction('pi-target', '<PI content>'), ecoxipy.pyxom.Comment('<This is a comment!>'), ecoxipy.pyxom.Element('div', [...], {...}), ecoxipy.pyxom.Element('p', [...], {...}), ecoxipy.pyxom.Element('h1', [...], {...})]
+>>> list(document[0][2][-1].preceding())
+[ecoxipy.pyxom.Text('4'), ecoxipy.pyxom.Text('3'), ecoxipy.pyxom.Text('2'), ecoxipy.pyxom.Text('1'), ecoxipy.pyxom.Text('0'), ecoxipy.pyxom.Element('br', [...], {...}), ecoxipy.pyxom.Text('Some Text'), ecoxipy.pyxom.Element('p', [...], {...}), ecoxipy.pyxom.Element('data-element', [...], {...}), ecoxipy.pyxom.Element('p', [...], {...}), ecoxipy.pyxom.Element('h1', [...], {...})]
+>>> list(document[0][0].following_siblings())
+[ecoxipy.pyxom.Element('p', [...], {...}), ecoxipy.pyxom.Element('div', [...], {...}), ecoxipy.pyxom.Comment('<This is a comment!>'), ecoxipy.pyxom.ProcessingInstruction('pi-target', '<PI content>'), ecoxipy.pyxom.ProcessingInstruction('pi-without-content', 'None')]
+>>> list(document[0][1][0].following())
+[ecoxipy.pyxom.Element('em', [...], {...}), ecoxipy.pyxom.Text('!'), ecoxipy.pyxom.Element('div', [...], {...}), ecoxipy.pyxom.Comment('<This is a comment!>'), ecoxipy.pyxom.ProcessingInstruction('pi-target', '<PI content>'), ecoxipy.pyxom.ProcessingInstruction('pi-without-content', 'None')]
 
 
-By supplying a test you can only included those nodes which satisfy a test:
+By supplying a test you can only nodes until a test is not satisfied. To
+indicate iteration stopped because a test has failed, the last item returned
+by the iterator is :const:`None` in this case.
 
->>> is_element = lambda context: isinstance(context, Element)
->>> list(document[0][0][0].ancestors(is_element))
-[ecoxipy.pyxom.Element('h1', [...], {...}), ecoxipy.pyxom.Element('article', [...], {...})]
->>> list(document[0][1].descendants(is_element))
-[ecoxipy.pyxom.Element('em', [...], {...})]
+>>> is_text = lambda context: isinstance(context, Text)
+>>> list(document[0][0][0].ancestors(Element.isinstance))
+[ecoxipy.pyxom.Element('h1', [...], {...}), ecoxipy.pyxom.Element('article', [...], {...}), None]
+>>> list(document[0][1].descendants(Text.isinstance))
+[ecoxipy.pyxom.Text('Hello'), None]
+>>> list(document[0][-1].preceding_siblings(ProcessingInstruction.isinstance))
+[ecoxipy.pyxom.ProcessingInstruction('pi-target', '<PI content>'), None]
+>>> list(document[0][2][-6].preceding(Element.isinstance))
+[ecoxipy.pyxom.Element('br', [...], {...}), None]
+>>> list(document[0][0].following_siblings(Element.isinstance))
+[ecoxipy.pyxom.Element('p', [...], {...}), ecoxipy.pyxom.Element('div', [...], {...}), None]
+>>> list(document[0][1][0].following(Element.isinstance))
+[ecoxipy.pyxom.Element('em', [...], {...}), None]
 
 
 XML Serialization
 ^^^^^^^^^^^^^^^^^
 
->>> document_string = u"""<!DOCTYPE section><article lang="en"><h1 data="to quote: &lt;&amp;&gt;&quot;'">&lt;Example&gt;</h1><p umlaut-attribute="äöüß">Hello<em count="1"> World</em>!</p><div><data-element>äöüß &lt;&amp;&gt;</data-element><p attr="value">raw content</p>Some Text<br/>012345</div><!--<This is a comment!>--><?pi-target <PI content>?><?pi-without-content?></article>"""
+>>> document_string = u"""<!DOCTYPE article><article lang="en"><h1 data="to quote: &lt;&amp;&gt;&quot;'">&lt;Example&gt;</h1><p umlaut-attribute="äöüß">Hello<em count="1"> World</em>!</p><div><data-element>äöüß &lt;&amp;&gt;</data-element><p attr="value">raw content</p>Some Text<br/>012345</div><!--<This is a comment!>--><?pi-target <PI content>?><?pi-without-content?></article>"""
 
 Getting the Unicode value of an document yields the XML document serialized as
 an Unicode string:
@@ -165,7 +201,7 @@ class XMLNode(object):
     as `UTF-8`.
     '''
     __metaclass__ = abc.ABCMeta
-    __slots__ = ('_parent')
+    __slots__ = ('_parent', '_next', '_previous')
 
     @property
     def parent(self):
@@ -178,6 +214,34 @@ class XMLNode(object):
         except AttributeError:
             return None
 
+    def _attribute_iterator(self, attribute, test):
+        if test is None:
+            test = lambda context: True
+        def iterator(current):
+            while True:
+                current = getattr(current, attribute)
+                if current is None:
+                    break
+                elif not test(current):
+                    yield None
+                    break
+                else:
+                    yield current
+        return iterator(self)
+
+    def _attribute_parent_iterator(self, attribute, test):
+        siblings = getattr(self, attribute + '_siblings')(test)
+        go_up = True
+        for sibling in siblings:
+            if sibling is None:
+                go_up = False
+            yield sibling
+        if go_up:
+            parent = self.parent
+            if parent is not None:
+                for parent_sibling in getattr(parent, attribute)(test):
+                    yield parent_sibling
+
     def ancestors(self, test=None):
         '''\
         Returns an iterator over all ancestors satisfying a test.
@@ -185,20 +249,85 @@ class XMLNode(object):
         :param test: A callable to execute for each ancestor. If the return
             value evaluates to a boolean :const:`True` the ancestor will be
             returned by the iterator, otherwise it won't and no more ancestors
-            are returned. If ``test`` is :const:`None` every descendant will
+            are returned. If ``test`` is :const:`None` every ancestor will
             be returned.
         :returns: An iterator over the ancestors satisfying the test.
         '''
-        if test is None:
-            test = lambda context: True
-        def iterator(current):
-            while True:
-                current = current.parent
-                if current is None or not test(current):
-                    break
-                else:
-                    yield current
-        return iterator(self)
+        return self._attribute_iterator('parent', test)
+
+    @property
+    def previous(self):
+        '''\
+        The previous :class:`XMLNode` or :const:`None` if the node has no
+        preceding sibling.
+        '''
+        try:
+            return self._previous
+        except AttributeError:
+            return None
+
+    def preceding_siblings(self, test=None):
+        '''\
+        Returns an iterator over all preceding siblings satisfying a test.
+
+        :param test: A callable to execute for each previous sibling. If the
+            return value evaluates to a boolean :const:`True` the sibling
+            will be returned by the iterator, otherwise it won't and no more
+            siblings are returned. If ``test`` is :const:`None` every
+            sibling will be returned.
+        :returns: An iterator over the preceding siblings satisfying the test.
+        '''
+        return self._attribute_iterator('previous', test)
+
+    def preceding(self, test=None):
+        '''\
+        Returns an iterator over all preceding nodes satisfying a test.
+
+        :param test: A callable to execute for each preceding node. If the
+            return value evaluates to a boolean :const:`True` the sibling
+            will be returned by the iterator, otherwise it won't and no more
+            preceding nodes are returned. If ``test`` is :const:`None` every
+            preceding node will be returned.
+        :returns: An iterator over the preceding nodes satisfying the test.
+        '''
+        return self._attribute_parent_iterator('preceding', test)
+
+    @property
+    def next(self):
+        '''\
+        The next :class:`XMLNode` or :const:`None` if the node has no
+        following sibling.
+        '''
+        try:
+            return self._next
+        except AttributeError:
+            return None
+
+    def following_siblings(self, test=None):
+        '''\
+        Returns an iterator over all following siblings satisfying a test.
+
+        :param test: A callable to execute for each following sibling. If the
+            return value evaluates to a boolean :const:`True` the sibling
+            will be returned by the iterator, otherwise it won't and no more
+            siblings are returned. If ``test`` is :const:`None` every
+            sibling will be returned.
+        :returns: An iterator over the following siblings satisfying the test.
+        '''
+        return self._attribute_iterator('next', test)
+
+    def following(self, test=None):
+        '''\
+        Returns an iterator over all following nodes satisfying a test.
+
+        :param test: A callable to execute for each following node. If the
+            return value evaluates to a boolean :const:`True` the sibling
+            will be returned by the iterator, otherwise it won't and no more
+            following nodes are returned. If ``test`` is :const:`None` every
+            following node will be returned.
+        :returns: An iterator over the following nodes satisfying the test.
+        '''
+        return self._attribute_parent_iterator('following', test)
 
     def __str__(self):
         '''\
@@ -284,6 +413,10 @@ class XMLNode(object):
     def __repr__(self):
         pass
 
+    @classmethod
+    def isinstance(cls, content):
+        return isinstance(content, cls)
+
 
 class ContainerNode(XMLNode, collections.MutableSequence):
     __metaclass__ = abc.ABCMeta
@@ -291,24 +424,50 @@ class ContainerNode(XMLNode, collections.MutableSequence):
 
     def __init__(self, children):
         self._children = children
-        for child in children:
+        for i, child in enumerate(children):
             child._parent = self
+            if i > 0:
+                self._wire_neighbors(previous, child)
+            previous = child
 
     def __getitem__(self, index):
         return self._children[index]
 
-    def __setitem__(self, index, child):
+    def _unwire_child(self, child):
+        del child._parent
+        del child._next
+        del child._previous
+
+    def _wire_neighbors(self, left, right):
+        left._next = right
+        right._previous = left
+
+    def _wire_child(self, index, child):
         child._parent = self
+        if len(self) > 1:
+            if index > 0:
+                self._wire_neighbors(self[index-1], child)
+            if index < len(self) - 1:
+                self._wire_neighbors(child, self[index+1])
+
+    def __setitem__(self, index, child):
+        try:
+            old_child = self._children[index]
+        except IndexError:
+            old_child = None
         self._children[index] = child
+        if old_child is not None:
+            self._unwire_child(old_child)
+        self._wire_child(index, child)
 
     def insert(self, index, child):
-        child._parent = self
         self._children.insert(index, child)
+        self._wire_child(index, child)
 
     def __delitem__(self, index):
         child = self._children[index]
-        del child._parent
         del self._children[index]
+        self._unwire_child(child)
 
     def __len__(self):
         return len(self._children)
@@ -342,6 +501,9 @@ class ContainerNode(XMLNode, collections.MutableSequence):
                     if isinstance(child, ContainerNode):
                         for descendant in child.descendants(test):
                             yield descendant
+                else:
+                    yield None
+                    break
         return iterator()
 
 
@@ -639,7 +801,8 @@ class ProcessingInstruction(XMLNode):
     def __repr__(self):
         return 'ecoxipy.pyxom.ProcessingInstruction(\'{}\', \'{}\')'.format(
             self._target.encode('unicode_escape').decode(),
-            self._content.encode('unicode_escape').decode())
+            'None' if self._content is None
+            else self._content.encode('unicode_escape').decode())
 
 
 # PATH
