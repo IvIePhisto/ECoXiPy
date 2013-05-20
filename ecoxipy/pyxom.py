@@ -48,10 +48,21 @@ XML Creation
 Navigation
 ^^^^^^^^^^
 
+You can retrieve iterators for navigation through the tree:
+
 >>> list(document[0][0].ancestors())
 [ecoxipy.pyxom.Element('article', [...], {...}), ecoxipy.pyxom.Document('section', 'None', 'None', [...], True, 'UTF-8')]
 >>> list(document[0][1].descendants())
 [ecoxipy.pyxom.Text('Hello'), ecoxipy.pyxom.Element('em', [...], {...}), ecoxipy.pyxom.Text(' World'), ecoxipy.pyxom.Text('!')]
+
+
+By supplying a test you can only included those nodes which satisfy a test:
+
+>>> is_element = lambda context: isinstance(context, Element)
+>>> list(document[0][0][0].ancestors(is_element))
+[ecoxipy.pyxom.Element('h1', [...], {...}), ecoxipy.pyxom.Element('article', [...], {...})]
+>>> list(document[0][1].descendants(is_element))
+[ecoxipy.pyxom.Element('em', [...], {...})]
 
 
 XML Serialization
@@ -169,16 +180,23 @@ class XMLNode(object):
 
     def ancestors(self, test=None):
         '''\
-        Returns iterator over all ancestors.
+        Returns an iterator over all ancestors satisfying a test.
+
+        :param test: A callable to execute for each ancestor. If the return
+            value evaluates to a boolean :const:`True` the ancestor will be
+            returned by the iterator, otherwise it won't and no more ancestors
+            are returned. If ``test`` is :const:`None` every descendant will
+            be returned.
+        :returns: An iterator over the ancestors satisfying the test.
         '''
         if test is None:
             test = lambda context: True
         def iterator(current):
             while True:
                 current = current.parent
-                if current is None:
+                if current is None or not test(current):
                     break
-                elif test(current):
+                else:
                     yield current
         return iterator(self)
 
@@ -267,27 +285,6 @@ class XMLNode(object):
         pass
 
 
-class Text(XMLNode):
-    __slots__ = ('_value', '_parent')
-
-    def __init__(self, value):
-        self._value = value
-
-    @property
-    def value(self):
-        return self._value
-
-    def __repr__(self):
-        return 'ecoxipy.pyxom.Text(\'{}\')'.format(
-            self._value.encode('unicode_escape').decode())
-
-    def _create_sax_events(self, content_handler, indent):
-        content_handler.characters(self._value)
-
-    def _create_str(self, out):
-        return out.text(self._value)
-
-
 class ContainerNode(XMLNode, collections.MutableSequence):
     __metaclass__ = abc.ABCMeta
     __slots__ = ('_children')
@@ -325,23 +322,25 @@ class ContainerNode(XMLNode, collections.MutableSequence):
     def __call__(self, *path):
         return Finder.find(self, path)
 
-    def descendants(self, document_order=True, test=None):
+    def descendants(self, test=None):
         '''\
-        Returns iterator over all descendants.
+        Returns an iterator over all descendants satisfying a test.
+
+        :param test: A callable to execute for each descendant. If the return
+            value evaluates to a boolean :const:`True` the descendant will be
+            returned by the iterator, otherwise it won't and neither its
+            children. If ``test`` is :const:`None` every descendant will be
+            returned.
+        :returns: An iterator over the descendants satisfying the test.
         '''
-        if document_order:
-            children = self
-        else:
-            children = reversed(self)
         if test is None:
             test = lambda context: True
         def iterator():
-            for child in children:
+            for child in self:
                 if test(child):
                     yield child
                     if isinstance(child, ContainerNode):
-                        for descendant in child.descendants(document_order,
-                                test):
+                        for descendant in child.descendants(test):
                             yield descendant
         return iterator()
 
@@ -547,6 +546,27 @@ class Element(ContainerNode):
             self._name.encode('unicode_escape').decode())
 
 
+class Text(XMLNode):
+    __slots__ = ('_value', '_parent')
+
+    def __init__(self, value):
+        self._value = value
+
+    @property
+    def value(self):
+        return self._value
+
+    def __repr__(self):
+        return 'ecoxipy.pyxom.Text(\'{}\')'.format(
+            self._value.encode('unicode_escape').decode())
+
+    def _create_sax_events(self, content_handler, indent):
+        content_handler.characters(self._value)
+
+    def _create_str(self, out):
+        return out.text(self._value)
+
+
 class Comment(XMLNode):
     '''\
     Represent a comment.
@@ -627,21 +647,23 @@ class ProcessingInstruction(XMLNode):
 class PyXOMPL(object):
     doctest='''\
 
-    >>> p('html/body/ancestor>div/attributes>"data-foo"/bar/parent>True/parent>True/p')
-    >>> p('html/body//(div and where(attributes>"data-foo"/bar))/p')
-    >>> p('html/body//(div and {"data-foo":bar})/p')
+    >>> p('html|body|_ancestor&div|attributes&"data-foo"|bar|_parent&_any|_parent&_any|p')
+    >>> p('html|body^(div and where(attributes&"data-foo"|bar))|p')
+    >>> p('html|body^(div and {"data-foo":bar})|p')
 
-    >>> p('html/body/ancestor>(div or True/attributes>"data-foo"/bar/parent>True/parent>True)/p')
-    >>> p('html/body//(div or where(attributes>"data-foo"/bar))/p')
-    >>> p('html/body//(div or {"data-foo":bar})/p')
+    >>> p('html|body|_ancestor&(div or _any|attributes&"data-foo"|bar|_parent&_any|_parent&_any)|p')
+    >>> p('html|body^(div or where(attributes&"data-foo"|bar))|p')
+    >>> p('html|body^(div or {"data-foo":bar})|p')
 
-    >>> p(\'''html/body//pi()/`re.findall(r' href=".+?"', _)`/parent>True''\')
-    >>> p(\'''html/body//pi(True, `re.findall(r' href=".+?"', _)`)\')
-    >>> p(\'''html/body//(pi() and where(`re.findall(r' href=".+?"', _)`))''\')
+    >>> p(\'''html|body^pi()|`re.findall(r' href=".+?"', _)`|_parent&_any''\')
+    >>> p(\'''html|body^(pi() and where(`re.findall(r' href=".+?"', _)`))''\')
 
-    >>> p(\'''html/body//comment()/`_.startswith('TODO')`/parent>True''\')
-    >>> p(\'''html/body//comment(`_.startswith('TODO')`)''\')
-    >>> p(\'''html/body//comment() and where(`_.startswith('TODO')`)''\')
+    >>> p(\'''html|body^comment()|`_.startswith('TODO')`|_parent&_any''\')
+    >>> p(\'''html|body^comment(`_.startswith('TODO')`)''\')
+    >>> p(\'''html|body^(comment() and where(`_.startswith('TODO')`))''\')
+
+    >>> p('html|body|_any|p[0]')
+    >>> p('html|body|_any|div[1:4]')
 
     `text` := identifier | stringliteral
 
@@ -651,15 +673,15 @@ class PyXOMPL(object):
 
     `test` := `text` | `boolean_expression` | `python_expression`
 
-    `element_test` := `test` | ``element(`` `test` ``)``
+    `element_test` := `test` | ``element(`` [`test`] ``)``
 
     `text_test` := ``text(`` [`test`] ``)``
 
     `comment_test` := ``comment(`` [`test`] ``)``
 
-    `pi_test` := ``pi(`` [`test` [``,`` `test`]] ``)``
+    `pi_test` := ``pi(`` [`test`] ``)``
 
-    `document_test` := ``document(`` `test` [``,`` `test` [``,`` `test`]] ``)``
+    `document_test` := ``document()``
 
     `attrs_test` := ``{`` ([`test` ``:`` `test` [``,`` `test` ``:`` `test`] ] | (`test` [``,`` `test`]*)+) ``}``
 
@@ -671,14 +693,35 @@ class PyXOMPL(object):
 
     `axis` := `forward_axis` | `reverse_axis`
 
-    `step` := [`axis` ``>``] `node_test` [``[`` index | slice ``]``]
+    `step` := [`axis` ``|``] `node_test` [``[`` index | slice ``]``]
 
-    `path` := `step` (``/`` `step`)*
+    `path` := `step` (``>`` `step`)*
 
     '''
-    class _NodeVisitor(ast.NodeTransformer):
+    class _NodeVisitor(ast.NodeVisitor):
+        def __init__(self):
+            self._path = []
+
+        def visit_Name(self, node):
+            return node.id
+
+        def visit_Str(self, node):
+            return node.s
+
         def generic_visit(self, node):
-            return ast.NodeTransformer.generic_visit(self, node)
+            if isinstance(node, ast.BinOp):
+                if isinstance(node.op, ast.BitOr):
+                    self._path.append(self.visit(node.left))
+                    self.visit(node.right)
+                elif isinstance(node.op, ast.BitAnd):
+                    self.visit(node.left)
+                    self.visit(node.right)
+                else:
+                    # ast.BitXor
+                    self.visit(node.left)
+                    self.visit(node.right)
+            else:
+                ast.NodeVisitor.generic_visit(self, node)
 
     def __init__(self, path):
         self._steps = self._compile(path)
@@ -690,90 +733,11 @@ class PyXOMPL(object):
         print(ast.dump(path_ast, False))
         visitor = self._NodeVisitor()
         visitor.visit(path_ast)
+        print(visitor._path)
+        '''
         print('---TRANSFORMED:---')
         print(ast.dump(path_ast, False))
+        '''
 
-
-class NodeFinder(object):
-    @staticmethod
-    def _test_node(name):
-        if name == '*':
-            return lambda context: isinstance(context, Element)
-        if name == '$':
-            return lambda context: isinstance(context, Text)
-        if name.startwith('!'):
-            if len(name) == 1:
-                return lambda context: isinstance(context, Comment)
-            name = name[1:]
-            return lambda context: (isinstance(context, Comment)
-                and context.content == name)
-        if name.startwith('?'):
-            if len(name) == 1:
-                return lambda context: isinstance(context,
-                    ProcessingInstruction)
-            name = name[1:]
-            try:
-                target, content = name.split(' ')
-            except ValueError:
-                return lambda context: isinstance(context,
-                    ProcessingInstruction) and context.target == name
-            return lambda context: (
-                isinstance(context, ProcessingInstruction)
-                and context.target == name and context.content == content
-            )
-        return lambda context: (isinstance(context, Element)
-            and context.name == name)
-
-    @staticmethod
-    def _test_attributes(attributes):
-        def _test(context):
-            try:
-                _attributes = context.attributes
-            except AttributeError:
-                return False
-            for attr_name, attr_value in attributes.items():
-                if attr_name in _attributes:
-                    if attr_value is not None:
-                        if attr_value != _attributes[attr_name]:
-                            return False
-                else:
-                    return False
-            return True
-        return _test
-
-    @classmethod
-    def _test_or(cls, sequence):
-        tests = [cls.create_test(item) for item in sequence]
-        def _test(context):
-            for test in tests:
-                if test(context):
-                    return True
-            return False
-        return _test
-
-    @classmethod
-    def create_test(cls, spec):
-        if isinstance(spec, collections.Sequence):
-            return cls._test_or(spec)
-        elif isinstance(spec, collections.Mapping):
-            return cls._test_attributes(spec)
-        elif isinstance(spec, collections.Callable):
-            return spec
-        if not isinstance(spec, _unicode):
-            spec = _unicode(spec)
-        return cls._test_node(_unicode(spec))
-
-    @classmethod
-    def find(self, context, path):
-        if len(path) == 0:
-            return context
-        for step in path:
-            if step is None:
-                context = list(context)
-            elif isinstance(step, int):
-                context = context[step]
-            else:
-                context = filter(self.create_test(step), context)
-        return context
 
 del abc, collections
