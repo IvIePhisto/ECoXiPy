@@ -171,7 +171,7 @@ import xml.sax
 import xml.sax.xmlreader
 import xml.sax.saxutils
 
-from ecoxipy import _python3, _unicode
+from ecoxipy import _python2, _unicode
 import ecoxipy.string_output
 
 
@@ -284,7 +284,7 @@ class XMLNode(object):
         '''
         return self.create_str(encoding='UTF-8')
 
-    if not _python3:
+    if _python2:
         __unicode__ = __str__
         __str__ = __bytes__
         del __bytes__
@@ -353,16 +353,15 @@ class XMLNode(object):
     def __repr__(self):
         pass
 
-    #@abc.abstractmethod
-    def copy(self, test=None):
+    @abc.abstractmethod
+    def duplicate(self, test=None):
         '''\
-        Return a copy of the XML node, and its descendants if it is a
+        Return a deep copy of the XML node, and its descendants if it is a
         :class:`ContainerNode` instance.
         '''
 
 
 class ContainerNode(XMLNode, collections.MutableSequence):
-    __metaclass__ = abc.ABCMeta
     __slots__ = ('_children')
 
     def __init__(self, children):
@@ -531,7 +530,7 @@ class Document(ContainerNode):
         '''
         return self.create_str(encoding=self._encoding)
 
-    if not _python3:
+    if _python2:
         __str__ = __bytes__
         del __bytes__
 
@@ -585,6 +584,12 @@ class Document(ContainerNode):
             _unicode(self._doctype.systemid).encode('unicode_escape').decode(),
             repr(self._omit_xml_declaration),
             self._encoding.encode('unicode_escape').decode())
+
+    def duplicate(self):
+        return Document(self._doctype.name, self._doctype.publicid,
+            self._doctype.systemid,
+            [child.duplicate() for child in self],
+            self._omit_xml_declaration, self._encoding)
 
 
 class Element(ContainerNode):
@@ -663,33 +668,17 @@ class Element(ContainerNode):
         return 'ecoxipy.pyxom.Element(\'{}\', [...], {{...}})'.format(
             self._name.encode('unicode_escape').decode())
 
-
-class Text(XMLNode):
-    __slots__ = ('_value', '_parent')
-
-    def __init__(self, value):
-        self._value = value
-
-    @property
-    def value(self):
-        return self._value
-
-    def __repr__(self):
-        return 'ecoxipy.pyxom.Text(\'{}\')'.format(
-            self._value.encode('unicode_escape').decode())
-
-    def _create_sax_events(self, content_handler, indent):
-        content_handler.characters(self._value)
-
-    def _create_str(self, out):
-        return out.text(self._value)
+    def duplicate(self):
+        return Element(self._name,
+            [child.duplicate() for child in self],
+            {name: value for name, value in self._attributes.items()})
 
 
-class Comment(XMLNode):
+class ContentNode(XMLNode):
     '''\
-    Represent a comment.
+    Represents a node with content.
 
-    :param content: The comment content.
+    :param content: The content.
     '''
     __slots__ = ('_content')
 
@@ -700,8 +689,31 @@ class Comment(XMLNode):
     def content(self):
         return self._content
 
+
+class Text(ContentNode):
+    '''\
+    Represents a node of text.
+    '''
+    def __repr__(self):
+        return 'ecoxipy.pyxom.Text(\'{}\')'.format(
+            self.content.encode('unicode_escape').decode())
+
+    def _create_sax_events(self, content_handler, indent):
+        content_handler.characters(self.content)
+
     def _create_str(self, out):
-        return out.comment(self._content)
+        return out.text(self.content)
+
+    def duplicate(self):
+        return Text(self.content)
+
+
+class Comment(ContentNode):
+    '''\
+    Represent a comment node.
+    '''
+    def _create_str(self, out):
+        return out.comment(self.content)
 
     def _create_sax_events(self, content_handler, indent):
         try:
@@ -714,36 +726,35 @@ class Comment(XMLNode):
                 content_handler.characters(u'\n')
                 for i in range(indent_count):
                         content_handler.characters(indent_incr)
-            comment(encode(self._content))
+            comment(encode(self.content))
 
     def __repr__(self):
         return 'ecoxipy.pyxom.Comment(\'{}\')'.format(
-            self._content.encode('unicode_escape').decode())
+            self.content.encode('unicode_escape').decode())
+
+    def duplicate(self):
+        return Comment(self.content)
 
 
-class ProcessingInstruction(XMLNode):
+class ProcessingInstruction(ContentNode):
     '''\
     Represent a processing instruction.
 
     :param target: The processing instruction target.
     :param content: The processing instruction content or :const:`None`.
     '''
-    __slots__ = ('_target', '_content')
+    __slots__ = ('_target')
 
     def __init__(self, target, content):
+        ContentNode.__init__(self, content)
         self._target = target
-        self._content = content
 
     @property
     def target(self):
         return self._target
 
-    @property
-    def content(self):
-        return self._content
-
     def _create_str(self, out):
-        return out.processing_instruction(self._target, self._content)
+        return out.processing_instruction(self._target, self.content)
 
     def _create_sax_events(self, content_handler, indent):
         if indent:
@@ -752,14 +763,17 @@ class ProcessingInstruction(XMLNode):
             for i in range(indent_count):
                     content_handler.characters(indent_incr)
         content_handler.processingInstruction(self.target,
-            u'' if self._content is None else self._content)
+            u'' if self.content is None else self.content)
 
     def __repr__(self):
         return 'ecoxipy.pyxom.ProcessingInstruction(\'{}\', {})'.format(
             self._target.encode('unicode_escape').decode(),
-            'None' if self._content is None
+            'None' if self.content is None
             else '\'{}\''.format(
-                self._content.encode('unicode_escape').decode()))
+                self.content.encode('unicode_escape').decode()))
+
+    def duplicate(self):
+        return ProcessingInstruction(self._target, self.content)
 
 
 # PATH

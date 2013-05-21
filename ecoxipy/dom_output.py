@@ -49,15 +49,15 @@ import io
 import xml.dom
 import xml.dom.minidom
 
-from ecoxipy import Output, _python3
+from ecoxipy import Output, _python2
 
 
-if _python3:
-    _create_xml_fragment_doc = lambda text: xml.dom.minidom.parseString(
-        '<ROOT>{}</ROOT>'.format(text))
-else:
+if _python2:
     _create_xml_fragment_doc = lambda text: xml.dom.minidom.parseString(
         '<ROOT>{}</ROOT>'.format(text.encode('UTF-8')))
+else:
+    _create_xml_fragment_doc = lambda text: xml.dom.minidom.parseString(
+        '<ROOT>{}</ROOT>'.format(text))
 
 
 class DOMOutput(Output):

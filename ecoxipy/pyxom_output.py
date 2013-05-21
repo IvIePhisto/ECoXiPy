@@ -60,7 +60,7 @@ For more examples see :mod:`ecoxipy.pyxom`.
 .. autoclass:: ecoxipy.pyxom_output.PyXOMOutput
 '''
 
-from ecoxipy import Output, _python3, _unicode
+from ecoxipy import Output, _unicode
 
 import ecoxipy.pyxom
 

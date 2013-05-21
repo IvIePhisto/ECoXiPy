@@ -38,7 +38,7 @@ True
 import xml.sax.saxutils
 import string
 
-from ecoxipy import Output, _python3, _unicode
+from ecoxipy import Output, _unicode
 
 
 class StringOutput(Output):

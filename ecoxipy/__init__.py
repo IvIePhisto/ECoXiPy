@@ -150,8 +150,8 @@ import collections
 import xml.sax.xmlreader
 from abc import ABCMeta, abstractmethod
 
-_python3 = sys.version_info[0] >= 3
-_unicode = str if _python3 else unicode
+_python2 = sys.version_info[0] <= 2
+_unicode = unicode if _python2 else str
 
 import ecoxipy.parsing
 
