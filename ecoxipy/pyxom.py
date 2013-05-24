@@ -26,7 +26,8 @@ take care of conversion.
 ...         ),
 ...         b.p(
 ...             {'umlaut-attribute': u'äöüß'},
-...             'Hello', Element.create('em', ' World', count=1), '!'
+...             'Hello', Element.create('em', ' World',
+...                 attributes={'count':1}), '!'
 ...         ),
 ...         None,
 ...         b.div(
@@ -56,15 +57,15 @@ node information:
 article
 >>> print(document[0].name)
 article
->>> print(document[0].attributes['lang'])
+>>> print(document[0].attributes['lang'].value)
 en
 >>> print(document[0][-2].target)
 pi-target
->>> document[0][1].parent() is document[0]
+>>> document[0][1].parent is document[0]
 True
->>> document[0][0] is document[0][1].previous() and document[0][1].next() is document[0][2]
+>>> document[0][0] is document[0][1].previous and document[0][1].next is document[0][2]
 True
->>> document.parent() is None and document[0].previous() is None and document[0].next() is None
+>>> document.parent is None and document[0].previous is None and document[0].next is None
 True
 >>> document[0].attributes.parent is document[0]
 True
@@ -72,44 +73,116 @@ True
 
 You can retrieve iterators for navigation through the tree:
 
->>> list(document[0][0].ancestors())
-[ecoxipy.pyxom.Element('article', [...], {...}), ecoxipy.pyxom.Document(Doctype('article', None, None), [...], True, 'UTF-8')]
+>>> list(document[0][0].ancestors)
+[ecoxipy.pyxom.Element('article', [...], {...}), ecoxipy.pyxom.Document(ecoxipy.pyxom.DocumentType('article', None, None), [...], True, 'UTF-8')]
+>>> list(document[0][1].children())
+[ecoxipy.pyxom.Text('Hello'), ecoxipy.pyxom.Element('em', [...], {...}), ecoxipy.pyxom.Text('!')]
+>>> list(document[0][1].children(True))
+[ecoxipy.pyxom.Text('!'), ecoxipy.pyxom.Element('em', [...], {...}), ecoxipy.pyxom.Text('Hello')]
 >>> list(document[0][1].descendants())
 [ecoxipy.pyxom.Text('Hello'), ecoxipy.pyxom.Element('em', [...], {...}), ecoxipy.pyxom.Text(' World'), ecoxipy.pyxom.Text('!')]
->>> list(document[0][-1].preceding_siblings())
+>>> list(document[0][1].descendants(True))
+[ecoxipy.pyxom.Text('!'), ecoxipy.pyxom.Element('em', [...], {...}), ecoxipy.pyxom.Text(' World'), ecoxipy.pyxom.Text('Hello')]
+>>> list(document[0][-1].preceding_siblings)
 [ecoxipy.pyxom.ProcessingInstruction('pi-target', '<PI content>'), ecoxipy.pyxom.Comment('<This is a comment!>'), ecoxipy.pyxom.Element('div', [...], {...}), ecoxipy.pyxom.Element('p', [...], {...}), ecoxipy.pyxom.Element('h1', [...], {...})]
->>> list(document[0][2][-1].preceding())
+>>> list(document[0][2][-1].preceding)
 [ecoxipy.pyxom.Text('4'), ecoxipy.pyxom.Text('3'), ecoxipy.pyxom.Text('2'), ecoxipy.pyxom.Text('1'), ecoxipy.pyxom.Text('0'), ecoxipy.pyxom.Element('br', [...], {...}), ecoxipy.pyxom.Text('Some Text'), ecoxipy.pyxom.Element('p', [...], {...}), ecoxipy.pyxom.Element('data-element', [...], {...}), ecoxipy.pyxom.Element('p', [...], {...}), ecoxipy.pyxom.Element('h1', [...], {...})]
->>> list(document[0][0].following_siblings())
+>>> list(document[0][0].following_siblings)
 [ecoxipy.pyxom.Element('p', [...], {...}), ecoxipy.pyxom.Element('div', [...], {...}), ecoxipy.pyxom.Comment('<This is a comment!>'), ecoxipy.pyxom.ProcessingInstruction('pi-target', '<PI content>'), ecoxipy.pyxom.ProcessingInstruction('pi-without-content', None)]
->>> list(document[0][1][0].following())
+>>> list(document[0][1][0].following)
 [ecoxipy.pyxom.Element('em', [...], {...}), ecoxipy.pyxom.Text('!'), ecoxipy.pyxom.Element('div', [...], {...}), ecoxipy.pyxom.Comment('<This is a comment!>'), ecoxipy.pyxom.ProcessingInstruction('pi-target', '<PI content>'), ecoxipy.pyxom.ProcessingInstruction('pi-without-content', None)]
 
 
-Manipulation
-^^^^^^^^^^^^
+Manipulation and Equality
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
 All :class:`XMLNode` instances have attributes which allow for modification.
 :class:`Document` and :class:`Element` instances also allow modification of
 their contents like sequences.
+
+
+Duplication and Equality
+""""""""""""""""""""""""
 
 >>> document_copy = document.duplicate()
 >>> document is document_copy
 False
 >>> document == document_copy
 True
->>> old_data = document_copy[0][0].attributes.attr('data', 'foo bar')
->>> document_copy[0][0].attributes.attr('data', None) == u'foo bar'
-True
->>> u'data' in document_copy[0][0].attributes
+>>> document != document_copy
 False
+
+
+Attributes
+""""""""""
+
+>>> old_data = document_copy[0][0].attributes['data'].value
+>>> document_copy[0][0].attributes['data'].value = 'foo bar'
+>>> document_copy[0][0].attributes['data'].value == u'foo bar'
+True
+>>> 'data' in document_copy[0][0].attributes
+True
 >>> document == document_copy
 False
->>> document_copy[0][0].attributes.attr('data', old_data)
->>> u'data' in document_copy[0][0].attributes
+>>> document != document_copy
 True
+>>> document_copy[0][0].attributes.create_attribute('foo', 'bar')
+>>> foo_attr = document_copy[0][0].attributes['foo']
+>>> 'foo' in document_copy[0][0].attributes
+True
+>>> document_copy[0][0].attributes.remove(foo_attr)
+>>> 'foo' in document_copy[0][0].attributes
+False
+>>> foo_attr.parent == None
+True
+>>> document_copy[0][0].attributes.add(foo_attr)
+>>> 'foo' in document_copy[0][0].attributes
+True
+>>> foo_attr.parent == document_copy[0][0].attributes
+True
+>>> foo_attr.parent != document_copy[0][0].attributes
+False
+>>> del document_copy[0][0].attributes['foo']
+>>> 'foo' in document_copy[0][0].attributes
+False
+>>> document_copy[0][0].attributes['data'].value = old_data
 >>> document == document_copy
 True
+>>> document != document_copy
+False
+
+
+Elements
+""""""""
+
+>>> document_copy[0].insert(1, document_copy[0][0])
+>>> document_copy[0][0] == document[0][1]
+True
+>>> document_copy[0][0] != document[0][1]
+False
+>>> document_copy[0][1] == document[0][0]
+True
+>>> document_copy[0][1] != document[0][0]
+False
+>>> p_element = document_copy[0][0]
+>>> document_copy[0].remove(p_element)
+>>> document_copy[0][0].name == u'h1' and p_element.parent is None
+True
+>>> document_copy[0][0].append(p_element)
+>>> document_copy[0][0][-1] is p_element
+True
+>>> p_element in document_copy[0][0]
+True
+>>> p_element in document[0]
+False
+>>> document[0][1] in document_copy[0][0]
+False
+>>> document[0][1] is document_copy[0][0][-1]
+False
+>>> document[0][1] == document_copy[0][0][-1]
+True
+>>> document[0][1] != document_copy[0][0][-1]
+False
 
 
 XML Serialization
@@ -220,6 +293,7 @@ class XMLNode(object):
         except AttributeError:
             return None
 
+    @property
     def parent(self):
         '''\
         The parent :class:`ContainerNode` or :const:`None` if the node has no
@@ -227,6 +301,7 @@ class XMLNode(object):
         '''
         return self._attribute_node('_parent')
 
+    @property
     def previous(self):
         '''\
         The previous :class:`XMLNode` or :const:`None` if the node has no
@@ -234,6 +309,7 @@ class XMLNode(object):
         '''
         return self._attribute_node('_previous')
 
+    @property
     def next(self):
         '''\
         The next :class:`XMLNode` or :const:`None` if the node has no
@@ -251,18 +327,21 @@ class XMLNode(object):
                     yield current
         return iterator(self)
 
+    @property
     def ancestors(self):
         '''\
         Returns an iterator over all ancestors.
         '''
         return self._attribute_iterator('_parent')
 
+    @property
     def preceding_siblings(self):
         '''\
         Returns an iterator over all preceding siblings.
         '''
         return self._attribute_iterator('_previous')
 
+    @property
     def following_siblings(self):
         '''\
         Returns an iterator over all following siblings.
@@ -273,18 +352,20 @@ class XMLNode(object):
         siblings = self._attribute_iterator(attribute)
         for sibling in siblings:
             yield sibling
-        parent = self.parent()
+        parent = self.parent
         if parent is not None:
             for parent_sibling in parent._attribute_climbing_iterator(
                     attribute):
                 yield parent_sibling
 
+    @property
     def preceding(self):
         '''\
         Returns an iterator over all preceding nodes.
         '''
         return self._attribute_climbing_iterator('_previous')
 
+    @property
     def following(self):
         '''\
         Returns an iterator over all following nodes.
@@ -378,13 +459,11 @@ class XMLNode(object):
 
 
 class ContainerNode(XMLNode, collections.MutableSequence):
-    __slots__ = ('_children', '_indexes')
+    __slots__ = ('_children')
 
     def __init__(self, children):
         self._children = children
-        self._indexes = {}
         for i, child in enumerate(children):
-            self._indexes[id(child)] = i
             child._parent = self
             if i > 0:
                 self._wire_neighbors(previous, child)
@@ -426,21 +505,33 @@ class ContainerNode(XMLNode, collections.MutableSequence):
         return iterator()
 
     def _unwire_child(self, child):
-        del child._parent
-        del child._next
-        del child._previous
-        del self._indexes[id(child)]
+        try:
+            del child._parent
+        except AttributeError:
+            pass
+        self._wire_neighbors(child.previous, child.next)
+        try:
+            del child._next
+        except AttributeError:
+            pass
+        try:
+            del child._previous
+        except AttributeError:
+            pass
 
     def _wire_neighbors(self, left, right):
-        left._next = right
-        right._previous = left
+        if left is not None:
+            left._next = right
+        if right is not None:
+            right._previous = left
 
-    def _wire_child(self, index, child):
+    def _remove_from_parent(self, child):
         old_parent = child.parent
         if old_parent is not None:
             old_parent.remove(child)
+
+    def _wire_child(self, index, child):
         child._parent = self
-        self._indexes[child] = i
         if len(self) > 1:
             if index > 0:
                 self._wire_neighbors(self[index-1], child)
@@ -457,12 +548,16 @@ class ContainerNode(XMLNode, collections.MutableSequence):
         return self._children.__iter__()
 
     def __contains__(self, child):
-        return child in self._indexes
+        for current_child in self._children:
+            if child is current_child:
+                return True
+        return False
 
     def __reversed__(self):
         return self._children.__reversed__()
 
     def __setitem__(self, index, child):
+        self._remove_from_parent(child)
         try:
             old_child = self._children[index]
         except IndexError:
@@ -473,6 +568,7 @@ class ContainerNode(XMLNode, collections.MutableSequence):
         self._wire_child(index, child)
 
     def insert(self, index, child):
+        self._remove_from_parent(child)
         self._children.insert(index, child)
         self._wire_child(index, child)
 
@@ -482,11 +578,98 @@ class ContainerNode(XMLNode, collections.MutableSequence):
         self._unwire_child(child)
 
     def remove(self, child):
-        index = self._indexes[id(child)]
-        del self[index]
+        for index, current_child in enumerate(self._children):
+            if child is current_child:
+                del self[index]
+                return
+        raise ValueError(child)
 
-    def __call__(self, *path):
-        return Finder.find(self, path)
+
+class DocumentType(object):
+    '''\
+    Represents a document type declaration of a :class:`Document`. It should
+    not be instantiated on itself.
+
+    :param name: The document element name.
+    :type name: Unicode string
+    :param publicid: The document type public ID or :const:`None`.
+    :type publicid: Unicode string
+    :param systemid: The document type system ID or :const:`None`.
+    :type systemid: Unicode string
+    '''
+    __slots__ = ('_name', '_publicid', '_systemid')
+
+    def __init__(self, name, publicid, systemid):
+        self._name = name
+        self._publicid = publicid
+        self._systemid = systemid
+
+    @property
+    def name(self):
+        '''\
+        The document element name.
+        '''
+        return self._name
+
+    @name.setter
+    def name(self, name):
+        if name is not None:
+            name = _unicode(name)
+        else:
+            self._publicid = None
+            self._systemid = None
+        self._name = name
+
+    @property
+    def publicid(self):
+        '''\
+        The document type public ID or :const:`None`
+        '''
+        return self._publicid
+
+    @publicid.setter
+    def publicid(self, publicid):
+        if publicid is not None:
+            publicid = _unicode(publicid)
+        self._publicid = publicid
+
+    @property
+    def systemid(self):
+        '''\
+        The document type system ID or :const:`None`
+        '''
+        return self._systemid
+
+    @systemid.setter
+    def systemid(self, systemid):
+        if systemid is not None:
+            systemid = _unicode(systemid)
+        self._systemid = systemid
+
+    def __repr__(self):
+        return 'ecoxipy.pyxom.DocumentType(\'{}\', {}, {})'.format(
+            self._name.encode('unicode_escape').decode(),
+            'None' if self._publicid is None
+            else "'{}'".format(_unicode(self._publicid).encode(
+                'unicode_escape').decode()),
+            'None' if self._systemid is None
+            else "'{}'".format(_unicode(self._systemid).encode(
+                'unicode_escape').decode()),
+        )
+
+    def __eq__(self, other):
+        return (isinstance(other, DocumentType)
+            and self._name == other._name
+            and self._publicid == other._publicid
+            and self._systemid == other._systemid
+        )
+
+    def __ne__(self, other):
+        return (not(isinstance(other, DocumentType))
+            or self._name != other._name
+            or self._publicid != other._publicid
+            or self._systemid != other._systemid
+        )
 
 
 class Document(ContainerNode):
@@ -495,42 +678,49 @@ class Document(ContainerNode):
 
     :param doctype_name: The document type root element name or :const:`None`
         if the document should not have document type declaration.
-    :param doctype_publicid: The public ID of the document type declaration.
-    :param doctype_publicid: The system ID of the document type declaration.
-    :param children: The document root nodes.
+    :type doctype_name: Unicode string
+    :param doctype_publicid: The public ID of the document type declaration
+        or :const:`None`.
+    :type doctype_publicid: Unicode string
+    :param doctype_systemid: The system ID of the document type declaration
+        or :const:`None`.
+    :type doctype_systemid: Unicode string
+    :param children: The document root :class:`XMLNode` instances.
     :param encoding: The encoding of the document. If it is :const:`None`
         `UTF-8` is used.
+    :type encoding: Unicode string
     :param omit_xml_declaration: If :const:`True` the XML declaration is
         omitted.
+    :type omit_xml_declaration: :func:`bool`
     '''
     __slots__ = ('_doctype', '_omit_xml_declaration', '_encoding')
-
-    DocumentType = collections.namedtuple('DocumentType',
-        'name publicid systemid')
-    '''\
-    Represents a document type declaration.
-
-    :param name: The document element name.
-    :param publicid: The document type public ID.
-    :param systemid: The document type system ID.
-    '''
 
     def __init__(self, doctype_name, doctype_publicid, doctype_systemid,
             children, omit_xml_declaration, encoding):
         ContainerNode.__init__(self, children)
-        if doctype_name is None:
-            self._doctype = None
-        else:
-            doctype_name = doctype_name
-            self._doctype = self.DocumentType(doctype_name, doctype_publicid,
-                doctype_systemid)
+        self._doctype = DocumentType(doctype_name, doctype_publicid,
+            doctype_systemid)
         self._omit_xml_declaration = omit_xml_declaration
         if encoding is None:
-            encoding = 'UTF-8'
+            encoding = u'UTF-8'
         self._encoding = encoding
 
     @staticmethod
     def create(*children, **kargs):
+        '''\
+        Creates a document and converts parameters to appropriate types.
+
+        :param children: The document root nodes. All items that are not
+            :class:`XMLNode` instances create :class:`Text` nodes after they
+            have been converted to Unicode strings.
+        :param kargs: The parameters as the constructor has (except
+            ``children``) are recognized. The items ``doctype_name``,
+            ``doctype_publicid``, ``doctype_systemid``, and ``encoding`` are
+            converted to Unicode strings if they are not :const:`None`.
+            ``omit_xml_declaration`` is converted to boolean.
+        :returns: The created document.
+        :rtype: :class:`Document`
+        '''
         doctype_name = kargs.get('doctype_name', None)
         if doctype_name is not None:
             doctype_name = _unicode(doctype_name)
@@ -556,7 +746,7 @@ class Document(ContainerNode):
     @property
     def doctype(self):
         '''\
-        The :class:`Doctype` instance of the document or :const:`None`.
+        The :class:`DocumentType` instance of the document or :const:`None`.
         '''
         return self._doctype
 
@@ -569,7 +759,7 @@ class Document(ContainerNode):
 
     @omit_xml_declaration.setter
     def omit_xml_declaration(self, value):
-        self._omit_xml_declaration = value
+        self._omit_xml_declaration = bool(value)
 
     @property
     def encoding(self):
@@ -580,6 +770,10 @@ class Document(ContainerNode):
 
     @encoding.setter
     def encoding(self, value):
+        if value is not None:
+            value = _unicode(value)
+        else:
+            value = u'UTF-8'
         self._encoding = value
 
     def __bytes__(self):
@@ -595,25 +789,6 @@ class Document(ContainerNode):
 
     def create_sax_events(self, content_handler=None, out=None,
             out_encoding='UTF-8', indent_incr=None):
-        '''\
-        Creates SAX events.
-
-        :param content_handler: If this is :const:`None` a
-            ``xml.sax.saxutils.XMLGenerator`` is created and used as the
-            content handler. If in this case ``out`` is not :const:`None`,
-            it is used for output.
-        :type content_handler: :class:`xml.sax.ContentHandler`
-        :param out: The output to write to if no ``content_handler`` is given.
-            It should have a ``write`` method like files.
-        :param out_encoding: This is not taken into account, instead
-            :meth:`encoding` is used  if no ``content_handler``
-            is given and ``out`` is not :const:`None`.
-        :param indent_incr: If this is not :const:`None` this activates
-            pretty printing. In this case it should be a string and it is used
-            for indenting.
-        :type indent_incr: :func:`str`
-        :returns: The content handler used.
-        '''
         return XMLNode.create_sax_events(self, content_handler, out,
             self._encoding, indent_incr)
 
@@ -637,14 +812,8 @@ class Document(ContainerNode):
         content_handler.endDocument()
 
     def __repr__(self):
-        return 'ecoxipy.pyxom.Document(Doctype(\'{}\', {}, {}), [...], {}, \'{}\')'.format(
-            self._doctype.name.encode('unicode_escape').decode(),
-            'None' if self._doctype.publicid is None
-            else "'{}'".format(_unicode(self._doctype.publicid).encode(
-                'unicode_escape').decode()),
-            'None' if self._doctype.systemid is None
-            else "'{}'".format(_unicode(self._doctype.systemid).encode(
-                'unicode_escape').decode()),
+        return 'ecoxipy.pyxom.Document({}, [...], {}, \'{}\')'.format(
+            repr(self._doctype),
             repr(self._omit_xml_declaration),
             self._encoding.encode('unicode_escape').decode())
 
@@ -664,7 +833,7 @@ class Document(ContainerNode):
         if (not(isinstance(other, Document))
                 or self._doctype != other._doctype
                 or self._omit_xml_declaration != other._omit_xml_declaration
-                or self._encoding == other._encoding
+                or self._encoding != other._encoding
                 or len(self) != len(other)):
             return True
         for i in range(len(self)):
@@ -679,11 +848,126 @@ class Document(ContainerNode):
             self._omit_xml_declaration, self._encoding)
 
 
-class Attributes(dict):
+class Attribute(object):
+    __slots__ = ('_parent', '_name', '_value')
+
+    def __init__(self, parent, name, value):
+        self._parent = parent
+        self._name = name
+        self._value = value
+
+    @property
+    def parent(self):
+        '''\
+        The parent :class:`Attributes`.
+        '''
+        try:
+            return self._parent
+        except AttributeError:
+            return None
+
+    @property
+    def name(self):
+        return self._name
+
+    @name.setter
+    def name(self, name):
+        name = _unicode(name)
+        if name in self._parent._attributes:
+            raise KeyError(
+                u'An attribute with name "{}" does already exist in the parent.'.format(
+                    name))
+        del self._parent._attributes[self._name]
+        self._parent._attributes[name] = self
+        self._name = name
+
+    @property
+    def value(self):
+        return self._value
+
+    @value.setter
+    def value(self, value):
+        self._value = _unicode(value)
+
+    def __repr__(self):
+        return 'ecoxipy.pyxom.Attribute(\'{}\', \'{}\')'.format(
+            self._name.encode('unicode_escape').decode(),
+            self._value.encode('unicode_escape').decode()
+        )
+
+    def __eq__(self, other):
+        return (isinstance(other, Attribute)
+            and self.name == other.name
+            and self.value == other.value)
+
+    def __ne__(self, other):
+        return (not(isinstance(other, Attribute))
+            or self.name != other.name
+            or self.value != other.value)
+
+
+class Attributes(collections.Mapping):
     '''\
     Represents the attributes of an :class:`Element`. It should not be
     instantiated on itself.
     '''
+    __slots__ = ('_parent', '_attributes')
+
+    def __init__(self, parent, attributes):
+        self._parent = parent
+        self._attributes = {}
+        for name in attributes:
+            value = attributes[name]
+            self._attributes[name] = Attribute(self, name, value)
+
+    def __len__(self):
+        return len(self._attributes)
+
+    def __iter__(self):
+        return self._attributes.__iter__()
+
+    def __contains__(self, name):
+        name = _unicode(name)
+        return name in self._attributes
+
+    def __getitem__(self, name):
+        name = _unicode(name)
+        return self._attributes[name]
+
+    def __delitem__(self, name):
+        name = _unicode(name)
+        item = self._attributes[name]
+        del self._attributes[name]
+        del item._parent
+
+    def create_attribute(self, name, value):
+        name = _unicode(name)
+        if name in self._attributes:
+            raise KeyError(
+                u'An attribute with name "{}" already exists.'.format(name))
+        value = _unicode(value)
+        self._attributes[name] = Attribute(self, name, value)
+
+    def add(self, attribute):
+        if not isinstance(attribute, Attribute):
+            raise ValueError(
+                'The parameter "attribute" must be an "ecoxipy.pyxom.Attribute" instance.')
+        if attribute.name in self._attributes:
+            raise KeyError(
+                u'An attribute with name "{}" already exists.'.format(name))
+        parent = attribute.parent
+        if parent is not None:
+            parent.remove(attribute)
+        self._attributes[attribute.name] = attribute
+        attribute._parent = self
+
+    def remove(self, attribute):
+        self_attribute = self._attributes[attribute.name]
+        if self_attribute is not attribute:
+            raise ValueError(
+                'The parameter "attribute" must be contained within object.')
+        del self[attribute.name]
+
     @property
     def parent(self):
         '''\
@@ -691,32 +975,16 @@ class Attributes(dict):
         '''
         return self._parent
 
-    def attr(self, name, value=False):
-        '''\
-        Allows for getting, setting and deleting attributes. The name and
-        possible value are automatically converted to Unicode strings.
+    def __repr__(self):
+        return 'ecoxipy.pyxom.Attributes{}'.format(
+            ', '.join([repr(attribute) for attribute in self.values()])
+        )
 
-        :param name: The name of the attribute.
-        :param value: :const:`False` for retrieval, :const:`None` for
-            deletion and other types for setting the attribute.
-        :returns: The attribute value (before setting or deletion if
-            applicable) or :const:`None` if it does not exist.
-        :raises KeyError: If the attribute is not defined on retrieval or
-            deletion.
-        '''
-        name = _unicode(name)
-        try:
-            current_value = self[name]
-        except KeyError:
-            if value is False or value is None:
-                raise
-            current_value = None
-        if value is None:
-            del self[name]
-        elif value is not False:
-            value = _unicode(value)
-            self[name] = value
-        return current_value
+    def to_dict(self):
+        return {
+            attribute.name: attribute.value
+            for attribute in self.values()
+        }
 
 
 class Element(ContainerNode):
@@ -724,26 +992,43 @@ class Element(ContainerNode):
     Represents a XML element.
 
     :param name: The name of the element to create.
-    :param children: The children of the element.
+    :type name: Unicode string
+    :param children: The children :class:`XMLNode` instances of the element.
     :type children: iterable of items
-    :param attributes: The attributes of the element.
-    :type attributes: subscriptable iterable over keys
+    :param attributes: Defines the attributes of the element. Must be usable
+        as the parameter of :func:`dict` and should contain only Unicode
+        strings as key and value definitions.
     '''
     __slots__ = ('_name', '_attributes')
 
     def __init__(self, name, children, attributes):
         ContainerNode.__init__(self, children)
         self._name = name
-        self._attributes = Attributes(attributes)
-        self._attributes._parent = self
+        self._attributes = Attributes(self, attributes)
 
     @staticmethod
-    def create(name, *children, **attributes):
+    def create(name, *children, **kargs):
+        '''\
+        Creates an element and converts parameters to appropriate types.
+
+        :param children: The element child nodes. All items that are not
+            :class:`XMLNode` instances create :class:`Text` nodes after they
+            have been converted to Unicode strings.
+        :param kargs: The item ``attributes`` defines the attributes and must
+            have a method :meth:`items()` (like :func:`dict`) which returns
+            an iterable of 2-:func:`tuple` instances containing the attribute
+            name as the first and the attribute value as the second item.
+            Attribute names and values are converted to Unicode strings.
+        :returns: The created element.
+        :rtype: :class:`Element`
+        '''
+        attributes = kargs.get('attributes', {})
         return Element(_unicode(name),
             [
                 child if isinstance(child, XMLNode) else Text.create(child)
                 for child in children
-            ], {
+            ],
+            {} if attributes is None else {
                 _unicode(attr_name): _unicode(attr_value)
                 for attr_name, attr_value in attributes.items()
             })
@@ -755,20 +1040,19 @@ class Element(ContainerNode):
 
     @name.setter
     def name(self, name):
-        self._name = name
+        self._name = _unicode(name)
 
     @property
     def attributes(self):
         '''\
-        An :func:`dict` containing the element's attributes. The key
-        represents an attribute's name, the value is the attribute's value.
+        An :class:`Attributes` instance containing the element's attributes.
         '''
         return self._attributes
 
     def _create_str(self, out):
         return out.element(self.name, [
                 child._create_str(out) for child in self
-            ], self.attributes)
+            ], self._attributes.to_dict())
 
     def _create_sax_events(self, content_handler, indent):
         if indent:
@@ -783,7 +1067,8 @@ class Element(ContainerNode):
                 for i in range(indent_count):
                     content_handler.characters(indent_incr)
         do_indent(True)
-        attributes = xml.sax.xmlreader.AttributesImpl(self.attributes)
+        attributes = xml.sax.xmlreader.AttributesImpl(
+            self._attributes.to_dict())
         content_handler.startElement(self.name, attributes)
         last_event_characters = False
         for child in self:
@@ -831,7 +1116,7 @@ class Element(ContainerNode):
     def duplicate(self):
         return Element(self._name,
             [child.duplicate() for child in self],
-            {name: value for name, value in self._attributes.items()})
+            self._attributes.to_dict())
 
 
 class ContentNode(XMLNode):
@@ -839,6 +1124,7 @@ class ContentNode(XMLNode):
     Represents a node with content.
 
     :param content: The content.
+    :type content: Unicode string
     '''
     __slots__ = ('_content')
 
@@ -847,6 +1133,14 @@ class ContentNode(XMLNode):
 
     @classmethod
     def create(cls, content):
+        '''\
+        Creates an instance of the :class:`ContentNode` implementation and
+        converts ``content`` to an Unicode string.
+
+        :param content: The content of the node. This will be converted to an
+            Unicode string.
+        :returns: The created :class:`ContentNode` implementation instance.
+        '''
         return cls(_unicode(content))
 
     @property
@@ -855,7 +1149,7 @@ class ContentNode(XMLNode):
 
     @content.setter
     def content(self, value):
-        self._content = value
+        self._content = _unicode(value)
 
     def __eq__(self, other):
         return (isinstance(other, self.__class__)
@@ -927,6 +1221,16 @@ class ProcessingInstruction(ContentNode):
 
     @staticmethod
     def create(target, content=None):
+        '''\
+        Creates a processing instruction node and converts the parameters to
+        appropriate types.
+
+        :param target: The target, will be converted to an Unicode string.
+        :param content: The content, if it is not :const:`None` it will be
+            converted to an Unicode string.
+        :returns: The created processing instruction.
+        :rtype: :class:`ProcessingInstruction`
+        '''
         target = _unicode(target)
         if content is not None:
             content = _unicode(content)
@@ -938,7 +1242,13 @@ class ProcessingInstruction(ContentNode):
 
     @target.setter
     def target(self, value):
-        self._target = value
+        self._target = _unicode(value)
+
+    @ContentNode.content.setter
+    def content(self, value):
+        if value is not None:
+            value = _unicode(value)
+        self._content = value
 
     def _create_str(self, out):
         return out.processing_instruction(self._target, self.content)
