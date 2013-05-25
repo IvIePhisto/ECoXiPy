@@ -103,23 +103,23 @@ True
 You can retrieve iterators for navigation through the tree:
 
 >>> list(document[0][0].ancestors)
-[ecoxipy.pyxom.Element('article', [...], {...}), ecoxipy.pyxom.Document(ecoxipy.pyxom.DocumentType('article', None, None), [...], True, 'UTF-8')]
+[ecoxipy.pyxom.Element['article', {...}], ecoxipy.pyxom.Document[ecoxipy.pyxom.DocumentType('article', None, None), True, 'UTF-8']]
 >>> list(document[0][1].children())
-[ecoxipy.pyxom.Text('Hello'), ecoxipy.pyxom.Element('em', [...], {...}), ecoxipy.pyxom.Text('!')]
+[ecoxipy.pyxom.Text('Hello'), ecoxipy.pyxom.Element['em', {...}], ecoxipy.pyxom.Text('!')]
 >>> list(document[0][1].children(True))
-[ecoxipy.pyxom.Text('!'), ecoxipy.pyxom.Element('em', [...], {...}), ecoxipy.pyxom.Text('Hello')]
+[ecoxipy.pyxom.Text('!'), ecoxipy.pyxom.Element['em', {...}], ecoxipy.pyxom.Text('Hello')]
 >>> list(document[0][1].descendants())
-[ecoxipy.pyxom.Text('Hello'), ecoxipy.pyxom.Element('em', [...], {...}), ecoxipy.pyxom.Text(' World'), ecoxipy.pyxom.Text('!')]
+[ecoxipy.pyxom.Text('Hello'), ecoxipy.pyxom.Element['em', {...}], ecoxipy.pyxom.Text(' World'), ecoxipy.pyxom.Text('!')]
 >>> list(document[0][1].descendants(True))
-[ecoxipy.pyxom.Text('!'), ecoxipy.pyxom.Element('em', [...], {...}), ecoxipy.pyxom.Text(' World'), ecoxipy.pyxom.Text('Hello')]
+[ecoxipy.pyxom.Text('!'), ecoxipy.pyxom.Element['em', {...}], ecoxipy.pyxom.Text(' World'), ecoxipy.pyxom.Text('Hello')]
 >>> list(document[0][-1].preceding_siblings)
-[ecoxipy.pyxom.ProcessingInstruction('pi-target', '<PI content>'), ecoxipy.pyxom.Comment('<This is a comment!>'), ecoxipy.pyxom.Element('div', [...], {...}), ecoxipy.pyxom.Element('p', [...], {...}), ecoxipy.pyxom.Element('h1', [...], {...})]
+[ecoxipy.pyxom.ProcessingInstruction('pi-target', '<PI content>'), ecoxipy.pyxom.Comment('<This is a comment!>'), ecoxipy.pyxom.Element['div', {...}], ecoxipy.pyxom.Element['p', {...}], ecoxipy.pyxom.Element['h1', {...}]]
 >>> list(document[0][2][-1].preceding)
-[ecoxipy.pyxom.Text('4'), ecoxipy.pyxom.Text('3'), ecoxipy.pyxom.Text('2'), ecoxipy.pyxom.Text('1'), ecoxipy.pyxom.Text('0'), ecoxipy.pyxom.Element('br', [...], {...}), ecoxipy.pyxom.Text('Some Text'), ecoxipy.pyxom.Element('p', [...], {...}), ecoxipy.pyxom.Element('data-element', [...], {...}), ecoxipy.pyxom.Element('p', [...], {...}), ecoxipy.pyxom.Element('h1', [...], {...})]
+[ecoxipy.pyxom.Text('4'), ecoxipy.pyxom.Text('3'), ecoxipy.pyxom.Text('2'), ecoxipy.pyxom.Text('1'), ecoxipy.pyxom.Text('0'), ecoxipy.pyxom.Element['br', {...}], ecoxipy.pyxom.Text('Some Text'), ecoxipy.pyxom.Element['p', {...}], ecoxipy.pyxom.Element['data-element', {...}], ecoxipy.pyxom.Element['p', {...}], ecoxipy.pyxom.Element['h1', {...}]]
 >>> list(document[0][0].following_siblings)
-[ecoxipy.pyxom.Element('p', [...], {...}), ecoxipy.pyxom.Element('div', [...], {...}), ecoxipy.pyxom.Comment('<This is a comment!>'), ecoxipy.pyxom.ProcessingInstruction('pi-target', '<PI content>'), ecoxipy.pyxom.ProcessingInstruction('pi-without-content', None)]
+[ecoxipy.pyxom.Element['p', {...}], ecoxipy.pyxom.Element['div', {...}], ecoxipy.pyxom.Comment('<This is a comment!>'), ecoxipy.pyxom.ProcessingInstruction('pi-target', '<PI content>'), ecoxipy.pyxom.ProcessingInstruction('pi-without-content', None)]
 >>> list(document[0][1][0].following)
-[ecoxipy.pyxom.Element('em', [...], {...}), ecoxipy.pyxom.Text('!'), ecoxipy.pyxom.Element('div', [...], {...}), ecoxipy.pyxom.Comment('<This is a comment!>'), ecoxipy.pyxom.ProcessingInstruction('pi-target', '<PI content>'), ecoxipy.pyxom.ProcessingInstruction('pi-without-content', None)]
+[ecoxipy.pyxom.Element['em', {...}], ecoxipy.pyxom.Text('!'), ecoxipy.pyxom.Element['div', {...}], ecoxipy.pyxom.Comment('<This is a comment!>'), ecoxipy.pyxom.ProcessingInstruction('pi-target', '<PI content>'), ecoxipy.pyxom.ProcessingInstruction('pi-without-content', None)]
 
 
 Manipulation and Equality
@@ -133,9 +133,15 @@ their contents like sequences.
 Duplication and Equality
 """"""""""""""""""""""""
 
+Use :meth:`duplicate` to create a deep copy of a XML node:
+
 >>> document_copy = document.duplicate()
 >>> document is document_copy
 False
+
+
+Equality and inequality recursively compare XML nodes:
+
 >>> document == document_copy
 True
 >>> document != document_copy
@@ -145,6 +151,11 @@ False
 Attributes
 """"""""""
 
+Attributes are :class:`Attribute` instances are contained in one
+:class:`Attributes` instance per :class:`Element`:
+
+>>> document_copy[0][0].attributes['data']
+ecoxipy.pyxom.Attribute('data', 'to quote: <&>"\\'')
 >>> old_data = document_copy[0][0].attributes['data'].value
 >>> document_copy[0][0].attributes['data'].value = 'foo bar'
 >>> document_copy[0][0].attributes['data'].value == u'foo bar'
@@ -615,6 +626,10 @@ class ContainerNode(XMLNode, collections.MutableSequence):
         raise ValueError(child)
 
 
+_string_repr = lambda value: 'None' if value is None else "'{}'".format(
+    value.encode('unicode_escape').decode().replace("'", "\\'"))
+
+
 class DocumentType(object):
     '''\
     Represents a document type declaration of a :class:`Document`. It should
@@ -685,14 +700,10 @@ class DocumentType(object):
         self._systemid = systemid
 
     def __repr__(self):
-        return 'ecoxipy.pyxom.DocumentType(\'{}\', {}, {})'.format(
-            self._name.encode('unicode_escape').decode(),
-            'None' if self._publicid is None
-            else "'{}'".format(_unicode(self._publicid).encode(
-                'unicode_escape').decode()),
-            'None' if self._systemid is None
-            else "'{}'".format(_unicode(self._systemid).encode(
-                'unicode_escape').decode()),
+        return 'ecoxipy.pyxom.DocumentType({}, {}, {})'.format(
+            _string_repr(self._name),
+            _string_repr(self._publicid),
+            _string_repr(self._systemid),
         )
 
     def __eq__(self, other):
@@ -854,10 +865,10 @@ class Document(ContainerNode):
         content_handler.endDocument()
 
     def __repr__(self):
-        return 'ecoxipy.pyxom.Document({}, [...], {}, \'{}\')'.format(
+        return 'ecoxipy.pyxom.Document[{}, {}, {}]'.format(
             repr(self._doctype),
             repr(self._omit_xml_declaration),
-            self._encoding.encode('unicode_escape').decode())
+            _string_repr(self._encoding))
 
     def __eq__(self, other):
         if not(isinstance(other, Document)
@@ -937,10 +948,8 @@ class Attribute(object):
         self._value = _unicode(value)
 
     def __repr__(self):
-        return 'ecoxipy.pyxom.Attribute(\'{}\', \'{}\')'.format(
-            self._name.encode('unicode_escape').decode(),
-            self._value.encode('unicode_escape').decode()
-        )
+        return 'ecoxipy.pyxom.Attribute({}, {})'.format(
+            _string_repr(self._name), _string_repr(self._value))
 
     def __eq__(self, other):
         return (isinstance(other, Attribute)
@@ -1027,8 +1036,7 @@ class Attributes(collections.Mapping):
 
     def __repr__(self):
         return 'ecoxipy.pyxom.Attributes{}'.format(
-            ', '.join([repr(attribute) for attribute in self.values()])
-        )
+            ', '.join([repr(attribute) for attribute in self.values()]))
 
     def to_dict(self):
         return {
@@ -1148,8 +1156,8 @@ class Element(ContainerNode):
             content_handler.characters(u'\n')
 
     def __repr__(self):
-        return 'ecoxipy.pyxom.Element(\'{}\', [...], {{...}})'.format(
-            self._name.encode('unicode_escape').decode())
+        return 'ecoxipy.pyxom.Element[{}, {{...}}]'.format(
+            _string_repr(self._name))
 
     def __eq__(self, other):
         if not(isinstance(other, Element)
@@ -1225,8 +1233,7 @@ class Text(ContentNode):
     Represents a node of text.
     '''
     def __repr__(self):
-        return 'ecoxipy.pyxom.Text(\'{}\')'.format(
-            self.content.encode('unicode_escape').decode())
+        return 'ecoxipy.pyxom.Text({})'.format(_string_repr(self.content))
 
     def _create_sax_events(self, content_handler, indent):
         content_handler.characters(self.content)
@@ -1272,8 +1279,7 @@ class Comment(ContentNode):
             comment(encode(self.content))
 
     def __repr__(self):
-        return 'ecoxipy.pyxom.Comment(\'{}\')'.format(
-            self.content.encode('unicode_escape').decode())
+        return 'ecoxipy.pyxom.Comment({})'.format(_string_repr(self.content))
 
     def duplicate(self):
         return Comment(self.content)
@@ -1356,11 +1362,8 @@ class ProcessingInstruction(ContentNode):
             u'' if self.content is None else self.content)
 
     def __repr__(self):
-        return 'ecoxipy.pyxom.ProcessingInstruction(\'{}\', {})'.format(
-            self._target.encode('unicode_escape').decode(),
-            'None' if self.content is None
-            else "'{}'".format(self.content.encode(
-                'unicode_escape').decode()))
+        return 'ecoxipy.pyxom.ProcessingInstruction({}, {})'.format(
+            _string_repr(self._target), _string_repr(self.content))
 
     def __eq__(self, other):
         return (isinstance(other, ProcessingInstruction)
