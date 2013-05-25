@@ -8,11 +8,11 @@ The package :mod:`ecoxipy` contains the basic API for creating `XML
 <http://www.w3.org/XML/>`_. The central :class:`MarkupBuilder` provides the
 interface you use, through an instance of this class all XML creation is done.
 An instance of :class:`Output` you give to the :class:`MarkupBuilder` (if you
-don't an instance of :class:`ecoxipy.pyxom_output.PyXOMOutput` is created)
+don't an instance of :class:`ecoxipy.pyxom.output.PyXOMOutput` is created)
 does all the actual work and creates data in its XML representation. This way
 the same code can create XML as:
 
-*   Low-footprint data structures using :mod:`ecoxipy.pyxom_output`, those
+*   Low-footprint data structures using :mod:`ecoxipy.pyxom.output`, those
     can create :mod:`xml.sax` events or can be serialized to byte or
     Unicode strings, besides being easily navigateable object structures.
 *   Byte strings using :mod:`ecoxipy.string_output`.
@@ -164,7 +164,7 @@ class MarkupBuilder(object):
     :param output:
 
         The output to use. If this is :const:`None`,
-        :class:`ecoxipy.pyxom_output.PyXOMOutput` is used.
+        :class:`ecoxipy.pyxom.output.PyXOMOutput` is used.
 
     :type output: :class:`Output`
 
@@ -181,7 +181,7 @@ class MarkupBuilder(object):
     '''
     def __init__(self, output=None, in_encoding='UTF-8', parser=None):
         if output is None:
-            from ecoxipy.pyxom_output import PyXOMOutput
+            from ecoxipy.pyxom.output import PyXOMOutput
             output = PyXOMOutput()
         self._output = output
         self._in_encoding = in_encoding

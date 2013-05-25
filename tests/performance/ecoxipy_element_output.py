@@ -1,4 +1,4 @@
-from ecoxipy.pyxom_output import PyXOMOutput
+from ecoxipy.pyxom.output import PyXOMOutput
 from ecoxipy.decorators import markup_builder_namespace, HTML5_ELEMENT_NAMES
 
 from tests.performance.ecoxipy_base import create_testdoc

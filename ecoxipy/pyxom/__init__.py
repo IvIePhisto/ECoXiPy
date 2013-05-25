@@ -4,7 +4,7 @@ PyXOM - Pythonic XML Object Model
 =================================
 
 This module implements a pythonic object model for the representation of XML
-structures. To create PyXOM data conveniently use :mod:`ecoxipy.pyxom_output`.
+structures. To create PyXOM data conveniently use :mod:`ecoxipy.pyxom.output`.
 
 Examples
 --------

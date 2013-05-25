@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 u'''\
 
-:mod:`ecoxipy.pyxom_output` - PyXOM Structures
+:mod:`ecoxipy.pyxom.output` - PyXOM Structures
 ============================================================
 
 :class:`PyXOMOutput` creates structures consisting of
@@ -9,7 +9,7 @@ u'''\
 :class:`xml.dom` structures.
 
 
-.. _ecoxipy.pyxom_output.examples:
+.. _ecoxipy.pyxom.output.examples:
 
 Examples
 --------
@@ -57,7 +57,7 @@ For more examples see :mod:`ecoxipy.pyxom`.
 :class:`Output` Implementation
 ------------------------------
 
-.. autoclass:: ecoxipy.pyxom_output.PyXOMOutput
+.. autoclass:: ecoxipy.pyxom.output.PyXOMOutput
 '''
 
 from ecoxipy import Output, _unicode

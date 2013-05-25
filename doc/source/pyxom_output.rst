@@ -1,2 +1,2 @@
-.. automodule:: ecoxipy.pyxom_output
+.. automodule:: ecoxipy.pyxom.output
     :no-members:

@@ -90,7 +90,7 @@ Running Times:
 | xml.sax                {}
 | xml.dom.minidom        {}
 | ecoxipy.dom_output     {}
-| ecoxipy.pyxom_output   {}
+| ecoxipy.pyxom.output   {}
 | ecoxipy.string_output  {}\
 '''.format(
             python_version, python_platform,
@@ -107,7 +107,7 @@ Running Times:
         import os.path
         if not os.path.isfile(path):
             with open(path, 'w') as f:
-                f.write('Output,Python Platform,Python Version,xml.sax,xml.dom.minidom,ecoxipy.dom_output,ecoxipy.pyxom_output,ecoxipy.string_output,Repetitions,Data Count\n')
+                f.write('Output,Python Platform,Python Version,xml.sax,xml.dom.minidom,ecoxipy.dom_output,ecoxipy.pyxom.output,ecoxipy.string_output,Repetitions,Data Count\n')
         with open(path, 'a') as f:
             f.write('{},{},{},{},{},{},{},{},{},{}\n'.format(
                 output_name, python_platform, python_version,

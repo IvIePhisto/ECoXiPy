@@ -13,7 +13,7 @@ if __name__ == '__main__':
     ECoXiPy Profiling
     =================
 
-    ecoxipy.pyxom_output
+    ecoxipy.pyxom.output
     ----------------------
     '''
     cProfile.run(create_test_run(ecoxipy_pyxom_output), sort='tottime')
