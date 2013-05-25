@@ -69,7 +69,14 @@ class PyXOMOutput(Output):
     '''\
     An :class:`Output` implementation which creates
     :class:`ecoxipy.pyxom.XMLNode` instances and Unicode string instances.
+
+    :param check_well_formedness: If :const:`True` the nodes will be checked
+        for valid values.
+    :type check_well_formedness: :func:`bool`
     '''
+    def __init__(self, check_well_formedness=False):
+        self._check_well_formedness = check_well_formedness
+
     @classmethod
     def is_native_type(self, content):
         '''\
@@ -89,7 +96,8 @@ class PyXOMOutput(Output):
         :returns: The element created.
         :rtype: :class:`ecoxipy.pyxom.Element`
         '''
-        return ecoxipy.pyxom.Element(name, children, attributes)
+        return ecoxipy.pyxom.Element(name, children, attributes,
+            self._check_well_formedness)
 
     def text(self, content):
         '''\
@@ -106,7 +114,7 @@ class PyXOMOutput(Output):
         :returns: The created comment.
         :rtype: :class:`ecoxipy.pyxom.Comment`
         '''
-        return ecoxipy.pyxom.Comment(content)
+        return ecoxipy.pyxom.Comment(content, self._check_well_formedness)
 
     def processing_instruction(self, target, content):
         '''\
@@ -115,7 +123,8 @@ class PyXOMOutput(Output):
         :returns: The created processing instruction.
         :rtype: :class:`ecoxipy.pyxom.ProcessingInstruction`
         '''
-        return ecoxipy.pyxom.ProcessingInstruction(target, content)
+        return ecoxipy.pyxom.ProcessingInstruction(target, content,
+            self._check_well_formedness)
 
     def document(self, doctype_name, doctype_publicid, doctype_systemid,
             children, omit_xml_declaration, encoding):
@@ -126,6 +135,7 @@ class PyXOMOutput(Output):
         :rtype: :class:`ecoxipy.pyxom.Document`
         '''
         return ecoxipy.pyxom.Document(doctype_name, doctype_publicid,
-            doctype_systemid, children, omit_xml_declaration, encoding)
+            doctype_systemid, children, omit_xml_declaration, encoding,
+            self._check_well_formedness)
 
 del Output

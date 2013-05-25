@@ -438,4 +438,5 @@ class Output(object):
         :returns:
             The created document representation.
         '''
+
 del ABCMeta, abstractmethod, sys
