@@ -42,7 +42,14 @@ take care of conversion.
 ...         Comment.create('<This is a comment!>'),
 ...         ProcessingInstruction.create('pi-target', '<PI content>'),
 ...         ProcessingInstruction.create('pi-without-content'),
-...         lang='en'
+...         b['foo:somexml'](
+...             b['foo:somexml']({'foo:bar': 1, 't:test': 2}),
+...             b['somexml']({'xmlns': ''}),
+...             b['bar:somexml'],
+...             {'xmlns:foo': 'foo://bar', 'xmlns:t': '',
+...                 'foo:bar': 'Hello'}
+...         ),
+...         {'xmlns': 'http://www.w3.org/1999/xhtml/'}
 ...     ), doctype_name='article', omit_xml_declaration=True
 ... )
 
@@ -56,24 +63,23 @@ enforces that the element, attribute and document type names are valid XML
 names, and that processing instruction target and content as well as comment
 contents conform to their constraints:
 
->>> t = Document.create([], doctype_name='1nvalid-xml-name')
-Traceback (most recent call last):
-ecoxipy._helpers.XMLWellFormednessException: The value "1nvalid-xml-name" is not a valid XML name.
->>> t = Element.create('1nvalid-xml-name', [], {})
-Traceback (most recent call last):
-ecoxipy._helpers.XMLWellFormednessException: The value "1nvalid-xml-name" is not a valid XML name.
->>> t = Element.create('t', [], attributes={'1nvalid-xml-name': 'content'})
-Traceback (most recent call last):
-ecoxipy._helpers.XMLWellFormednessException: The value "1nvalid-xml-name" is not a valid XML name.
->>> t = ProcessingInstruction.create('1nvalid-xml-name')
-Traceback (most recent call last):
-ecoxipy._helpers.XMLWellFormednessException: The value "1nvalid-xml-name" is not a valid XML processing instruction target.
->>> t = ProcessingInstruction.create('target', 'invalid PI content ?>')
-Traceback (most recent call last):
-ecoxipy._helpers.XMLWellFormednessException: The value "invalid PI content ?>" is not a valid XML processing instruction content because it contains "?>".
->>> t = Comment.create('invalid XML comment --')
-Traceback (most recent call last):
-ecoxipy._helpers.XMLWellFormednessException: The value "invalid XML comment --" is not a valid XML comment because it contains "--".
+>>> def catch_not_well_formed(cls, *args, **kargs):
+...     try:
+...         return cls.create(*args, **kargs)
+...     except XMLWellFormednessException as e:
+...         print(e)
+>>> t = catch_not_well_formed(Document, [], doctype_name='1nvalid-xml-name')
+The value "1nvalid-xml-name" is not a valid XML name.
+>>> t = catch_not_well_formed(Element, '1nvalid-xml-name', [], {})
+The value "1nvalid-xml-name" is not a valid XML name.
+>>> t = catch_not_well_formed(Element, 't', [], attributes={'1nvalid-xml-name': 'content'})
+The value "1nvalid-xml-name" is not a valid XML name.
+>>> t = catch_not_well_formed(ProcessingInstruction, '1nvalid-xml-name')
+The value "1nvalid-xml-name" is not a valid XML processing instruction target.
+>>> t = catch_not_well_formed(ProcessingInstruction, 'target', 'invalid PI content ?>')
+The value "invalid PI content ?>" is not a valid XML processing instruction content because it contains "?>".
+>>> t = catch_not_well_formed(Comment, 'invalid XML comment --')
+The value "invalid XML comment --" is not a valid XML comment because it contains "--".
 
 
 Navigation
@@ -86,9 +92,9 @@ node information:
 article
 >>> print(document[0].name)
 article
->>> print(document[0].attributes['lang'].value)
-en
->>> print(document[0][-2].target)
+>>> print(document[0].attributes['xmlns'].value)
+http://www.w3.org/1999/xhtml/
+>>> print(document[0][-3].target)
 pi-target
 >>> document[0][1].parent is document[0]
 True
@@ -112,14 +118,80 @@ You can retrieve iterators for navigation through the tree:
 [ecoxipy.pyxom.Text('Hello'), ecoxipy.pyxom.Element['em', {...}], ecoxipy.pyxom.Text(' World'), ecoxipy.pyxom.Text('!')]
 >>> list(document[0][1].descendants(True))
 [ecoxipy.pyxom.Text('!'), ecoxipy.pyxom.Element['em', {...}], ecoxipy.pyxom.Text(' World'), ecoxipy.pyxom.Text('Hello')]
->>> list(document[0][-1].preceding_siblings)
+>>> list(document[0][-2].preceding_siblings)
 [ecoxipy.pyxom.ProcessingInstruction('pi-target', '<PI content>'), ecoxipy.pyxom.Comment('<This is a comment!>'), ecoxipy.pyxom.Element['div', {...}], ecoxipy.pyxom.Element['p', {...}], ecoxipy.pyxom.Element['h1', {...}]]
 >>> list(document[0][2][-1].preceding)
 [ecoxipy.pyxom.Text('4'), ecoxipy.pyxom.Text('3'), ecoxipy.pyxom.Text('2'), ecoxipy.pyxom.Text('1'), ecoxipy.pyxom.Text('0'), ecoxipy.pyxom.Element['br', {...}], ecoxipy.pyxom.Text('Some Text'), ecoxipy.pyxom.Element['p', {...}], ecoxipy.pyxom.Element['data-element', {...}], ecoxipy.pyxom.Element['p', {...}], ecoxipy.pyxom.Element['h1', {...}]]
 >>> list(document[0][0].following_siblings)
-[ecoxipy.pyxom.Element['p', {...}], ecoxipy.pyxom.Element['div', {...}], ecoxipy.pyxom.Comment('<This is a comment!>'), ecoxipy.pyxom.ProcessingInstruction('pi-target', '<PI content>'), ecoxipy.pyxom.ProcessingInstruction('pi-without-content', None)]
+[ecoxipy.pyxom.Element['p', {...}], ecoxipy.pyxom.Element['div', {...}], ecoxipy.pyxom.Comment('<This is a comment!>'), ecoxipy.pyxom.ProcessingInstruction('pi-target', '<PI content>'), ecoxipy.pyxom.ProcessingInstruction('pi-without-content', None), ecoxipy.pyxom.Element['foo:somexml', {...}]]
 >>> list(document[0][1][0].following)
-[ecoxipy.pyxom.Element['em', {...}], ecoxipy.pyxom.Text('!'), ecoxipy.pyxom.Element['div', {...}], ecoxipy.pyxom.Comment('<This is a comment!>'), ecoxipy.pyxom.ProcessingInstruction('pi-target', '<PI content>'), ecoxipy.pyxom.ProcessingInstruction('pi-without-content', None)]
+[ecoxipy.pyxom.Element['em', {...}], ecoxipy.pyxom.Text('!'), ecoxipy.pyxom.Element['div', {...}], ecoxipy.pyxom.Comment('<This is a comment!>'), ecoxipy.pyxom.ProcessingInstruction('pi-target', '<PI content>'), ecoxipy.pyxom.ProcessingInstruction('pi-without-content', None), ecoxipy.pyxom.Element['foo:somexml', {...}]]
+
+
+Namespaces
+""""""""""
+
+PyXOM supports the interpretation of `Namespaces in XML
+<http://www.w3.org/TR/REC-xml-names/`_. Namespace prefixes and local names are
+calculated from :class:`Element` and :class:`Attribute` names:
+
+>>> document[0].namespace_prefix == None
+True
+>>> print(document[0].local_name)
+article
+>>> print(document[0][-1].namespace_prefix)
+foo
+>>> print(document[0][-1].local_name)
+somexml
+>>> attr = document[0][-1].attributes['foo:bar']
+>>> print(attr.namespace_prefix)
+foo
+>>> print(attr.local_name)
+bar
+
+
+The namespace URI is available as :attr:`Element.namespace_uri` and
+:attr:`Attribute.namespace_uri`, these properties look up the namespace
+prefix of the node in the parent elements:
+
+>>> xhtml_namespace_uri = u'http://www.w3.org/1999/xhtml/'
+>>> document[0][1].namespace_uri == xhtml_namespace_uri
+True
+>>> document[0][1][1].namespace_uri == xhtml_namespace_uri
+True
+>>> document[0][-1][0].namespace_uri == u'foo://bar'
+True
+>>> document[0][-1][0].attributes['foo:bar'].namespace_uri == u'foo://bar'
+True
+
+
+The namespace prefixes active on an element are available as the iterator
+:attr:`Element.namespace_prefixes`:
+
+>>> prefixes = sorted(list(document[0][-1][0].namespace_prefixes),
+...     key=lambda value: '' if value is None else value)
+>>> prefixes[0] == None
+True
+>>> print(u', '.join(prefixes[1:]))
+foo, t
+>>> print(list(document[0].namespace_prefixes))
+[None]
+
+
+If an element or attribute is in no namespace, ``namespace_uri`` is
+:const:`None`:
+
+>>> document[0][-1][0].attributes['t:test'].namespace_uri == None
+True
+>>> document[0][-1][1].namespace_uri == None
+True
+
+
+If an undefined namespace prefix is used, the ``namespace_uri`` is
+:const:`False`:
+
+>>> document[0][-1][2].namespace_uri == False
+True
 
 
 Manipulation and Equality
@@ -190,6 +262,12 @@ False
 True
 >>> document != document_copy
 False
+>>> attr = document[0][-1].attributes['foo:bar']
+>>> attr.name = 'test'
+>>> attr.namespace_prefix is None
+True
+>>> print(attr.local_name)
+test
 
 
 Other Nodes
@@ -223,16 +301,27 @@ False
 True
 >>> document[0][1] != document_copy[0][0][-1]
 False
+>>> document[0][-1].name = 'foo'
+>>> document[0][-1].namespace_prefix is None
+True
+>>> print(document[0][-1].local_name)
+foo
 
 
 XML Serialization
 ^^^^^^^^^^^^^^^^^
 
->>> document_string = u"""<!DOCTYPE article><article lang="en"><h1 data="to quote: &lt;&amp;&gt;&quot;'">&lt;Example&gt;</h1><p umlaut-attribute="äöüß">Hello<em count="1"> World</em>!</p><div><data-element>äöüß &lt;&amp;&gt;</data-element><p attr="value">raw content</p>Some Text<br/>012345</div><!--<This is a comment!>--><?pi-target <PI content>?><?pi-without-content?></article>"""
+First we remove embedded non-HTML XML, as there are multiple attributes on the
+element and the order they are rendered in is indeterministic, which makes it
+hard to compare:
+
+>>> del document[0][-1]
+
 
 Getting the Unicode value of an document yields the XML document serialized as
 an Unicode string:
 
+>>> document_string = u"""<!DOCTYPE article><article xmlns="http://www.w3.org/1999/xhtml/"><h1 data="to quote: &lt;&amp;&gt;&quot;'">&lt;Example&gt;</h1><p umlaut-attribute="äöüß">Hello<em count="1"> World</em>!</p><div><data-element>äöüß &lt;&amp;&gt;</data-element><p attr="value">raw content</p>Some Text<br/>012345</div><!--<This is a comment!>--><?pi-target <PI content>?><?pi-without-content?></article>"""
 >>> import sys
 >>> if sys.version_info[0] < 3:
 ...     unicode(document) == document_string
@@ -254,7 +343,7 @@ True
 :class:`xml.sax.ContentHandler` is :class:`xml.sax.saxutils.ContentHandler`,
 which does not support comments):
 
->>> document_string = u"""<?xml version="1.0" encoding="UTF-8"?>\\n<article lang="en"><h1 data="to quote: &lt;&amp;&gt;&quot;'">&lt;Example&gt;</h1><p umlaut-attribute="äöüß">Hello<em count="1"> World</em>!</p><div><data-element>äöüß &lt;&amp;&gt;</data-element><p attr="value">raw content</p>Some Text<br></br>012345</div><?pi-target <PI content>?><?pi-without-content ?></article>"""
+>>> document_string = u"""<?xml version="1.0" encoding="UTF-8"?>\\n<article xmlns="http://www.w3.org/1999/xhtml/"><h1 data="to quote: &lt;&amp;&gt;&quot;'">&lt;Example&gt;</h1><p umlaut-attribute="äöüß">Hello<em count="1"> World</em>!</p><div><data-element>äöüß &lt;&amp;&gt;</data-element><p attr="value">raw content</p>Some Text<br></br>012345</div><?pi-target <PI content>?><?pi-without-content ?></article>"""
 >>> import sys
 >>> from io import BytesIO
 >>> string_out = BytesIO()
@@ -269,7 +358,7 @@ You can also create indented XML when calling the
 
 >>> indented_document_string = u"""\\
 ... <?xml version="1.0" encoding="UTF-8"?>
-... <article lang="en">
+... <article xmlns="http://www.w3.org/1999/xhtml/">
 ...     <h1 data="to quote: &lt;&amp;&gt;&quot;'">
 ...         &lt;Example&gt;
 ...     </h1>
@@ -316,6 +405,7 @@ import xml.sax.saxutils
 from ecoxipy import _python2, _unicode
 import ecoxipy.string_output
 import ecoxipy._helpers
+from ecoxipy._helpers import XMLWellFormednessException
 
 
 class XMLNode(object):
@@ -901,16 +991,86 @@ class Document(ContainerNode):
             self._omit_xml_declaration, self._encoding)
 
 
-class Attribute(object):
-    __slots__ = ('_parent', '_name', '_value', '_check_well_formedness')
+class NamespaceNameMixin(object):
+    __metaclass__ = abc.ABCMeta
+    _namespace_name_slots__ = ('_namespace_prefix', '_local_name')
+
+    def _set_namespace_properties(self, index):
+        components = ecoxipy._helpers.get_qualified_name_components(
+            self.name)
+        self._namespace_prefix, self._local_name = components
+        return components[index]
+
+    def _clear_namespace_properties(self):
+        del self._namespace_prefix
+        del self._local_name
+
+    @property
+    def namespace_prefix(self):
+        try:
+            return self._namespace_prefix
+        except AttributeError:
+            return self._set_namespace_properties(0)
+
+    @property
+    def local_name(self):
+        try:
+            return self._local_name
+        except AttributeError:
+            return self._set_namespace_properties(1)
+
+    @property
+    def namespace_uri(self):
+        raise NotImplementedError()
+
+
+class Attribute(NamespaceNameMixin):
+    __slots__ = NamespaceNameMixin._namespace_name_slots__ + (
+        '_parent', '_name', '_value', '_check_well_formedness',
+        '_namespace_attribute_prefix')
 
     def __init__(self, parent, name, value, check_well_formedness):
         if check_well_formedness:
             ecoxipy._helpers.enforce_valid_xml_name(name)
         self._parent = parent
+        self._namespace_attribute_prefix = False
         self._name = name
         self._value = value
         self._check_well_formedness = check_well_formedness
+        self._update_namespace_prefix()
+
+    def _set_namespace(self, prefix, value):
+        attributes = self.parent
+        if len(value) == 0:
+            value = None
+        if attributes is not None:
+            attributes.parent._set_namespace(prefix, value)
+
+    def _remove_namespace(self, prefix):
+        attributes = self.parent
+        if attributes is not None:
+            attributes.parent._remove_namespace(prefix)
+
+    def _update_namespace_uri(self):
+        prefix = self._namespace_attribute_prefix
+        if prefix is not False:
+            self._set_namespace(prefix, self._value)
+
+    def _update_namespace_prefix(self):
+        name = self._name
+        if name == u'xmlns':
+            prefix = None
+        elif name.startswith(u'xmlns:') and len(name) > 6:
+            prefix = name[6:]
+        else:
+            prefix = False
+        old_prefix = self._namespace_attribute_prefix
+        if prefix != old_prefix:
+            if old_prefix is not False:
+                self._remove_namespace(old_prefix)
+            if prefix is not False:
+                self._set_namespace(prefix, self._value)
+            self._namespace_attribute_prefix = prefix
 
     @property
     def parent(self):
@@ -929,6 +1089,8 @@ class Attribute(object):
     @name.setter
     def name(self, name):
         name = _unicode(name)
+        if name == self._name:
+            return
         if self._check_well_formedness:
             ecoxipy._helpers.enforce_valid_xml_name(name)
         if name in self._parent._attributes:
@@ -938,6 +1100,8 @@ class Attribute(object):
         del self._parent._attributes[self._name]
         self._parent._attributes[name] = self
         self._name = name
+        self._clear_namespace_properties()
+        self._update_namespace_prefix()
 
     @property
     def value(self):
@@ -945,7 +1109,18 @@ class Attribute(object):
 
     @value.setter
     def value(self, value):
-        self._value = _unicode(value)
+        value = _unicode(value)
+        if value == self._value:
+            return
+        self._update_namespace_uri()
+        self._value = value
+
+    @NamespaceNameMixin.namespace_uri.getter
+    def namespace_uri(self):
+        attributes = self.parent
+        if attributes is None:
+            return False
+        return attributes.parent.get_namespace_uri(self.namespace_prefix)
 
     def __repr__(self):
         return 'ecoxipy.pyxom.Attribute({}, {})'.format(
@@ -1045,7 +1220,7 @@ class Attributes(collections.Mapping):
         }
 
 
-class Element(ContainerNode):
+class Element(ContainerNode, NamespaceNameMixin):
     '''\
     Represents a XML element.
 
@@ -1060,7 +1235,8 @@ class Element(ContainerNode):
         attribute names will be checked to be a valid XML name.
     :type check_well_formedness: :func:`bool`
     '''
-    __slots__ = ('_name', '_attributes', '_check_well_formedness')
+    __slots__ = NamespaceNameMixin._namespace_name_slots__ + (
+        '_name', '_attributes', '_check_well_formedness', '_namespaces')
 
     def __init__(self, name, children, attributes,
             check_well_formedness=False):
@@ -1068,6 +1244,7 @@ class Element(ContainerNode):
             ecoxipy._helpers.enforce_valid_xml_name(name)
         ContainerNode.__init__(self, children)
         self._name = name
+        self._namespaces = {}
         self._attributes = Attributes(self, attributes, check_well_formedness)
         self._check_well_formedness = check_well_formedness
 
@@ -1098,6 +1275,31 @@ class Element(ContainerNode):
                 for attr_name, attr_value in attributes.items()
             }, True)
 
+    def _set_namespace(self, prefix, value):
+        self._namespaces[prefix] = value
+
+    def _remove_namespace(self, prefix):
+        del self._namespaces[prefix]
+
+    @property
+    def namespace_prefixes(self):
+        def iterator():
+            current = self
+            while isinstance(current, Element):
+                for prefix in current._namespaces:
+                    yield prefix
+                current = current.parent
+        return iterator()
+
+    def get_namespace_uri(self, prefix):
+        current = self
+        while isinstance(current, Element):
+            try:
+                return current._namespaces[prefix]
+            except KeyError:
+                current = current.parent
+        return False
+
     @property
     def name(self):
         '''The name of the element.'''
@@ -1106,9 +1308,16 @@ class Element(ContainerNode):
     @name.setter
     def name(self, name):
         name = _unicode(name)
+        if name == self._name:
+            return
         if self._check_well_formedness:
             ecoxipy._helpers.enforce_valid_xml_name(name)
         self._name = name
+        self._clear_namespace_properties()
+
+    @NamespaceNameMixin.namespace_uri.getter
+    def namespace_uri(self):
+        return self.get_namespace_uri(self.namespace_prefix)
 
     @property
     def attributes(self):

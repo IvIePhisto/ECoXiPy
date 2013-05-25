@@ -1,7 +1,16 @@
 # -*- coding: utf-8 -*-
 def _xml_name_regex():
     import re
-    name_start_char = u':|[A-Z]|_|[a-z]|[\xC0-\xD6]|[\xD8-\xF6]|[\xF8-\u02FF]|[\u0370-\u037D]|[\u037F-\u1FFF]|[\u200C-\u200D]|[\u2070-\u218F]|[\u2C00-\u2FEF]|[\u3001-\uD7FF]|[\uF900-\uFDCF]|[\uFDF0-\uFFFD]|[\U00010000-\U000EFFFF]'
+    name_start_char = u':|[A-Z]|_|[a-z]|[\xC0-\xD6]|[\xD8-\xF6]|[\xF8-\u02FF]|[\u0370-\u037D]|[\u037F-\u1FFF]|[\u200C-\u200D]|[\u2070-\u218F]|[\u2C00-\u2FEF]|[\u3001-\uD7FF]|[\uF900-\uFDCF]|[\uFDF0-\uFFFD]'
+    extented_chars_start = '\U00010000'
+    extented_chars_end = '\U000EFFFF'
+    if len(extented_chars_start) > 1: # narrow Python build
+        name_start_char = u'{}|[{}-{}][{}-{}]'.format(name_start_char,
+            extented_chars_start[0], extented_chars_end[0],
+            extented_chars_start[1], extented_chars_end[1],)
+    else: # wide Python build
+        name_start_char = u'{}[{}-{}]'.format(name_start_char,
+            extented_chars_start, extented_chars_end)
     name_char = u'{}|\\-|\\.|[0-9]|\xB7|[\u0300-\u036F]|[\u203F-\u2040]'.format(name_start_char)
     name = u'^{}({})*$'.format(name_start_char, name_char)
     name_regex = re.compile(name)
@@ -36,3 +45,16 @@ def enforce_valid_comment(value):
     if u'--' in value:
         raise XMLWellFormednessException(
             u'The value "{}" is not a valid XML comment because it contains "--".'.format(value))
+
+
+def get_qualified_name_components(name):
+    components = name.split(u':', 1)
+    if len(components) == 1:
+        prefix = None
+        local_name = name
+    else:
+        prefix, local_name = components
+        if u':' in local_name:
+            prefix = None
+            local_name = name
+    return prefix, local_name
