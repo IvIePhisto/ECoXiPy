@@ -50,11 +50,6 @@ class StringOutput(Output):
     :param check_well_formedness: The property
         :property:`check_well_formedness` is determined by this value.
     :type check_well_formedness: :func:`bool`
-
-    This class is aimed at high performance by working on string concatenation
-    and omitting any sanity checks. This means it is the responsibility of
-    using code to ensure well-formed XML is created, especially in processing
-    instructions, comments and the document type URIs.
     '''
     def __init__(self, entities=None, check_well_formedness=False):
         if entities is None:
@@ -82,8 +77,10 @@ class StringOutput(Output):
         self._xml_declaration_no_encoding = u'<?xml version="1.0"?>\n'
         self._format_doctype_empty = u'<!DOCTYPE {}>'.format
         self._format_doctype_public = u'<!DOCTYPE {} PUBLIC "{}">'.format
-        self._format_doctype_system = u'<!DOCTYPE {} SYSTEM "{}">'.format
-        self._format_doctype_public_system = u'<!DOCTYPE {} PUBLIC "{}" "{}">'.format
+        self._format_doctype_system = u'<!DOCTYPE {} SYSTEM {}>'.format
+        self._format_doctype_public_system = u'<!DOCTYPE {} PUBLIC "{}" {}>'.format
+        self._format_doctype_systemid_quotes = u'"{}"'.format
+        self._format_doctype_systemid_apos = u"'{}'".format
         self._quote = xml.sax.saxutils.quoteattr
         self._escape = xml.sax.saxutils.escape
 
@@ -196,18 +193,35 @@ class StringOutput(Output):
         if doctype_name is None:
             doctype = u''
         else:
+            if doctype_systemid is not None:
+                if doctype_systemid.contains(u'"'):
+                    systemid_creator = self._format_doctype_systemid_apos
+                else:
+                    systemid_creator = self._format_doctype_systemid_quotes
             self._check_name(doctype_name)
             if doctype_publicid is None and doctype_systemid is None:
                 doctype = self._format_doctype_empty(doctype_name)
             elif doctype_systemid is None:
+                if self._check_well_formedness:
+                    ecoxipy._helpers.enforce_valid_doctype_publicid(
+                        doctype_publicid)
                 doctype = self._format_doctype_public(
                     doctype_name, doctype_publicid)
             elif doctype_publicid is None:
+                if self._check_well_formedness:
+                    ecoxipy._helpers.enforce_valid_doctype_systemid(
+                        doctype_systemid)
                 doctype = self._format_doctype_system(
-                    doctype_name, doctype_systemid)
+                    doctype_name, systemid_creator(doctype_systemid))
             else:
+                if self._check_well_formedness:
+                    ecoxipy._helpers.enforce_valid_doctype_publicid(
+                        doctype_publicid)
+                    ecoxipy._helpers.enforce_valid_doctype_systemid(
+                        doctype_systemid)
                 doctype = self._format_doctype_public_system(
-                    doctype_name, doctype_publicid, doctype_systemid)
+                    doctype_name, doctype_publicid,
+                    systemid_creator(doctype_systemid))
         document = self._format_document(xml_declaration, doctype,
             self._join([child for child in children])
         )

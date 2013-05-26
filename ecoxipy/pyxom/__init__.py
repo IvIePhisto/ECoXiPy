@@ -738,8 +738,13 @@ class DocumentType(object):
     __slots__ = ('_name', '_publicid', '_systemid', '_check_well_formedness')
 
     def __init__(self, name, publicid, systemid, check_well_formedness):
-        if name is not None and check_well_formedness:
-            ecoxipy._helpers.enforce_valid_xml_name(name)
+        if check_well_formedness:
+            if name is not None:
+                ecoxipy._helpers.enforce_valid_xml_name(name)
+            if publicid is not None:
+                ecoxipy._helpers.enforce_valid_doctype_publicid(publicid)
+            if systemid is not None:
+                ecoxipy._helpers.enforce_valid_doctype_systemid(systemid)
         self._name = name
         self._publicid = publicid
         self._systemid = systemid
@@ -774,6 +779,8 @@ class DocumentType(object):
     def publicid(self, publicid):
         if publicid is not None:
             publicid = _unicode(publicid)
+            if self._check_well_formedness:
+                ecoxipy._helpers.enforce_valid_doctype_publicid(publicid)
         self._publicid = publicid
 
     @property
@@ -787,6 +794,8 @@ class DocumentType(object):
     def systemid(self, systemid):
         if systemid is not None:
             systemid = _unicode(systemid)
+            if self._check_well_formedness:
+                ecoxipy._helpers.enforce_valid_doctype_systemid(systemid)
         self._systemid = systemid
 
     def __repr__(self):
