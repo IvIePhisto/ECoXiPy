@@ -12,7 +12,7 @@ using string concatenation.
 
 Usage Example:
 
->>> xml_output = StringOutput()
+>>> xml_output = StringOutput(check_well_formedness=True)
 >>> from ecoxipy import MarkupBuilder
 >>> b = MarkupBuilder(xml_output)
 >>> xml = b[:'section'] (
@@ -39,7 +39,7 @@ import xml.sax.saxutils
 import string
 
 from ecoxipy import Output, _unicode
-
+import ecoxipy._helpers
 
 class StringOutput(Output):
     '''\
@@ -47,16 +47,30 @@ class StringOutput(Output):
 
     :param entities: A mapping of characters to text to replace them with
         when escaping.
+    :param check_well_formedness: The property
+        :property:`check_well_formedness` is determined by this value.
+    :type check_well_formedness: :func:`bool`
 
     This class is aimed at high performance by working on string concatenation
     and omitting any sanity checks. This means it is the responsibility of
     using code to ensure well-formed XML is created, especially in processing
     instructions, comments and the document type URIs.
     '''
-    def __init__(self, entities=None):
+    def __init__(self, entities=None, check_well_formedness=False):
         if entities is None:
             entities = {}
         self._entities = entities
+        if bool(check_well_formedness):
+            self._check_name = ecoxipy._helpers.enforce_valid_xml_name
+            self._check_pi_target = ecoxipy._helpers.enforce_valid_pi_target
+            self._check_pi_content = ecoxipy._helpers.enforce_valid_pi_content
+            self._check_comment = ecoxipy._helpers.enforce_valid_comment
+        else:
+            nothing = lambda value: None
+            self._check_name = nothing
+            self._check_pi_target = nothing
+            self._check_pi_content = nothing
+            self._check_comment = nothing
         self._join = u''.join
         self._format_element = u'<{0}{1}>{2}</{0}>'.format
         self._format_element_empty = u'<{}{}/>'.format
@@ -73,8 +87,20 @@ class StringOutput(Output):
         self._quote = xml.sax.saxutils.quoteattr
         self._escape = xml.sax.saxutils.escape
 
+    @property
+    def check_well_formedness(self):
+        '''If :const:`True` the nodes will be checked for valid values.'''
+        return self._check_well_formedness
+
     def _prepare_text(self, value):
         return self._escape(value, self._entities)
+
+    def _prepare_attribute(self, name, value):
+        self._check_name(name)
+        return self._format_attribute(
+            self._prepare_text(name),
+            self._quote(value, self._entities)
+        )
 
     def is_native_type(self, content):
         '''\
@@ -93,13 +119,14 @@ class StringOutput(Output):
 
         :returns: The element created.
         :rtype: :class:`XMLFragment`
+        :raises ecoxipy.XMLWellFormednessException: If
+            :property:`check_well_formedness` is :const:`True` and the
+            ``name`` is not a valid XML name.
         '''
+        self._check_name(name)
         name = self._prepare_text(name)
         attributes = self._join([
-            self._format_attribute(
-                self._prepare_text(attr_name),
-                self._quote(attr_value, self._entities)
-            )
+            self._prepare_attribute(attr_name, attr_value)
             for attr_name, attr_value in attributes.items()
         ])
         if len(children) == 0:
@@ -123,7 +150,11 @@ class StringOutput(Output):
 
         :returns: The created comment.
         :rtype: :class:`XMLFragment`
+        :raises ecoxipy.XMLWellFormednessException: If
+            :property:`check_well_formedness` is :const:`True` and
+            either ``content`` is not valid.
         '''
+        self._check_comment(content)
         return XMLFragment(self._format_comment(content))
 
 
@@ -133,7 +164,13 @@ class StringOutput(Output):
 
         :returns: The created processing instruction.
         :rtype: :class:`XMLFragment`
+        :raises ecoxipy.XMLWellFormednessException: If
+            :property:`check_well_formedness` is :const:`True` and
+            either the ``target`` or ``content`` are not valid.
         '''
+        self._check_pi_target(target)
+        if content is not None:
+            self._check_pi_content(content)
         return XMLFragment(self._format_pi(target,
             u'' if content is None or len(content) == 0 else u' ' + content
         ))
@@ -145,6 +182,9 @@ class StringOutput(Output):
 
         :returns: The created document.
         :rtype: :class:`XMLDocument`
+        :raises ecoxipy.XMLWellFormednessException: If
+            :property:`check_well_formedness` is :const:`True` and the
+            document type's document element name is not a valid XML name.
         '''
         if omit_xml_declaration:
             xml_declaration = u''
@@ -155,17 +195,19 @@ class StringOutput(Output):
                 xml_declaration = self._format_xml_declaration(encoding)
         if doctype_name is None:
             doctype = u''
-        elif doctype_publicid is None and doctype_systemid is None:
-            doctype = self._format_doctype_empty(doctype_name)
-        elif doctype_systemid is None:
-            doctype = self._format_doctype_public(
-                doctype_name, doctype_publicid)
-        elif doctype_publicid is None:
-            doctype = self._format_doctype_system(
-                doctype_name, doctype_systemid)
         else:
-            doctype = self._format_doctype_public_system(
-                doctype_name, doctype_publicid, doctype_systemid)
+            self._check_name(doctype_name)
+            if doctype_publicid is None and doctype_systemid is None:
+                doctype = self._format_doctype_empty(doctype_name)
+            elif doctype_systemid is None:
+                doctype = self._format_doctype_public(
+                    doctype_name, doctype_publicid)
+            elif doctype_publicid is None:
+                doctype = self._format_doctype_system(
+                    doctype_name, doctype_systemid)
+            else:
+                doctype = self._format_doctype_public_system(
+                    doctype_name, doctype_publicid, doctype_systemid)
         document = self._format_document(xml_declaration, doctype,
             self._join([child for child in children])
         )

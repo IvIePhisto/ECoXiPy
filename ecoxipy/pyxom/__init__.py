@@ -63,6 +63,7 @@ enforces that the element, attribute and document type names are valid XML
 names, and that processing instruction target and content as well as comment
 contents conform to their constraints:
 
+>>> from ecoxipy import XMLWellFormednessException
 >>> def catch_not_well_formed(cls, *args, **kargs):
 ...     try:
 ...         return cls.create(*args, **kargs)
@@ -405,7 +406,6 @@ import xml.sax.saxutils
 from ecoxipy import _python2, _unicode
 import ecoxipy.string_output
 import ecoxipy._helpers
-from ecoxipy._helpers import XMLWellFormednessException
 
 
 class XMLNode(object):

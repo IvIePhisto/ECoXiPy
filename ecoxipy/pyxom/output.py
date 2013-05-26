@@ -70,12 +70,17 @@ class PyXOMOutput(Output):
     An :class:`Output` implementation which creates
     :class:`ecoxipy.pyxom.XMLNode` instances and Unicode string instances.
 
-    :param check_well_formedness: If :const:`True` the nodes will be checked
-        for valid values.
+    :param check_well_formedness: The property
+        :property:`check_well_formedness` is determined by this value.
     :type check_well_formedness: :func:`bool`
     '''
     def __init__(self, check_well_formedness=False):
-        self._check_well_formedness = check_well_formedness
+        self._check_well_formedness = bool(check_well_formedness)
+
+    @property
+    def check_well_formedness(self):
+        '''If :const:`True` the nodes will be checked for valid values.'''
+        return self._check_well_formedness
 
     @classmethod
     def is_native_type(self, content):
@@ -95,6 +100,9 @@ class PyXOMOutput(Output):
 
         :returns: The element created.
         :rtype: :class:`ecoxipy.pyxom.Element`
+        :raises ecoxipy.XMLWellFormednessException: If
+            :property:`check_well_formedness` is :const:`True` and the
+            ``name`` is not a valid XML name.
         '''
         return ecoxipy.pyxom.Element(name, children, attributes,
             self._check_well_formedness)
@@ -113,6 +121,9 @@ class PyXOMOutput(Output):
 
         :returns: The created comment.
         :rtype: :class:`ecoxipy.pyxom.Comment`
+        :raises ecoxipy.XMLWellFormednessException: If
+            :property:`check_well_formedness` is :const:`True` and
+            either ``content`` is not valid.
         '''
         return ecoxipy.pyxom.Comment(content, self._check_well_formedness)
 
@@ -122,6 +133,9 @@ class PyXOMOutput(Output):
 
         :returns: The created processing instruction.
         :rtype: :class:`ecoxipy.pyxom.ProcessingInstruction`
+        :raises ecoxipy.XMLWellFormednessException: If
+            :property:`check_well_formedness` is :const:`True` and
+            either the ``target`` or ``content`` are not valid.
         '''
         return ecoxipy.pyxom.ProcessingInstruction(target, content,
             self._check_well_formedness)
@@ -133,6 +147,9 @@ class PyXOMOutput(Output):
 
         :returns: The created document representation.
         :rtype: :class:`ecoxipy.pyxom.Document`
+        :raises ecoxipy.XMLWellFormednessException: If
+            :property:`check_well_formedness` is :const:`True` and the
+            document type's document element name is not a valid XML name.
         '''
         return ecoxipy.pyxom.Document(doctype_name, doctype_publicid,
             doctype_systemid, children, omit_xml_declaration, encoding,

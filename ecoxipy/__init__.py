@@ -143,6 +143,7 @@ Classes
 
 .. autoclass:: Output
 
+.. autoclass:: XMLWellFormednessException
 '''
 
 import sys
@@ -438,5 +439,15 @@ class Output(object):
         :returns:
             The created document representation.
         '''
+
+
+class XMLWellFormednessException(Exception):
+    '''\
+    Indicates XML is not well-formed.
+
+    This is used by :class:`ecoxipy.string_output.StringOutput` and
+    :mod:`ecoxipy.pyxom`.
+    '''
+
 
 del ABCMeta, abstractmethod, sys
