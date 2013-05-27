@@ -46,17 +46,16 @@ True
 '''
 
 import io
-import xml.dom
-import xml.dom.minidom
+from xml.dom import minidom, Node
 
 from ecoxipy import Output, _python2
 
 
 if _python2:
-    _create_xml_fragment_doc = lambda text: xml.dom.minidom.parseString(
+    _create_xml_fragment_doc = lambda text: minidom.parseString(
         '<ROOT>{}</ROOT>'.format(text.encode('UTF-8')))
 else:
-    _create_xml_fragment_doc = lambda text: xml.dom.minidom.parseString(
+    _create_xml_fragment_doc = lambda text: minidom.parseString(
         '<ROOT>{}</ROOT>'.format(text))
 
 
@@ -71,7 +70,7 @@ class DOMOutput(Output):
     '''
     def __init__(self, dom_implementation=None):
         if dom_implementation is None:
-            dom_implementation = xml.dom.minidom.getDOMImplementation()
+            dom_implementation = minidom.getDOMImplementation()
         self._dom_implementation = dom_implementation
         self._document = self._dom_implementation.createDocument(None, None,
                 None)
@@ -86,7 +85,7 @@ class DOMOutput(Output):
         :returns: :const:`True` for :`xml.dom.Node` instances, :const:`False`
             otherwise.
         '''
-        return isinstance(content, xml.dom.Node)
+        return isinstance(content, Node)
 
     def element(self, name, children, attributes):
         '''\

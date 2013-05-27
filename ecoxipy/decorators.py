@@ -117,8 +117,8 @@ HTML5
 
 import tinkerpy
 
-import ecoxipy
-import ecoxipy.string_output
+from ecoxipy import MarkupBuilder
+from ecoxipy.string_output import StringOutput
 
 
 def markup_builder_namespace(output, builder_name, *element_names, **kargs):
@@ -138,7 +138,7 @@ def markup_builder_namespace(output, builder_name, *element_names, **kargs):
     :returns: The decorated function with it's namespace extented by the
         element creators, as defined by ``element_names``.
     '''
-    builder = ecoxipy.MarkupBuilder(output(**kargs))
+    builder = MarkupBuilder(output(**kargs))
     return tinkerpy.namespace(builder,
         *element_names,
         **{builder_name: builder}
@@ -146,7 +146,7 @@ def markup_builder_namespace(output, builder_name, *element_names, **kargs):
 
 
 xml_string_namespace = lambda builder_name, vocabulary: markup_builder_namespace(
-        ecoxipy.string_output.StringOutput, builder_name, *vocabulary)
+        StringOutput, builder_name, *vocabulary)
 '''\
 Uses :func:`markup_builder_namespace` to decorate the target
 function with the given ``vocabulary``.

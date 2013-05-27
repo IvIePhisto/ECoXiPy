@@ -2,8 +2,10 @@
 
 from ecoxipy import XMLWellFormednessException
 
+
 def _prepare_value(value):
     return value.encode('unicode-escape').decode().replace('"', '\\"')
+
 
 def _xml_name_regex():
     import re

@@ -58,11 +58,10 @@ The value "invalid PI content ?>" is not a valid XML processing instruction cont
 The value "invalid XML comment --" is not a valid XML comment because it contains "--".
 '''
 
-import xml.sax.saxutils
-import string
+from xml.sax.saxutils import quoteattr, escape
 
-from ecoxipy import Output, _unicode
-import ecoxipy._helpers
+from ecoxipy import Output, _unicode, _helpers
+
 
 class StringOutput(Output):
     '''\
@@ -79,10 +78,10 @@ class StringOutput(Output):
             entities = {}
         self._entities = entities
         if bool(check_well_formedness):
-            self._check_name = ecoxipy._helpers.enforce_valid_xml_name
-            self._check_pi_target = ecoxipy._helpers.enforce_valid_pi_target
-            self._check_pi_content = ecoxipy._helpers.enforce_valid_pi_content
-            self._check_comment = ecoxipy._helpers.enforce_valid_comment
+            self._check_name = _helpers.enforce_valid_xml_name
+            self._check_pi_target = _helpers.enforce_valid_pi_target
+            self._check_pi_content = _helpers.enforce_valid_pi_content
+            self._check_comment = _helpers.enforce_valid_comment
         else:
             nothing = lambda value: None
             self._check_name = nothing
@@ -105,8 +104,6 @@ class StringOutput(Output):
         self._format_doctype_public_system = u'<!DOCTYPE {} PUBLIC "{}" {}>'.format
         self._format_doctype_systemid_quotes = u'"{}"'.format
         self._format_doctype_systemid_apos = u"'{}'".format
-        self._quote = xml.sax.saxutils.quoteattr
-        self._escape = xml.sax.saxutils.escape
 
     @property
     def check_well_formedness(self):
@@ -114,13 +111,13 @@ class StringOutput(Output):
         return self._check_well_formedness
 
     def _prepare_text(self, value):
-        return self._escape(value, self._entities)
+        return escape(value, self._entities)
 
     def _prepare_attribute(self, name, value):
         self._check_name(name)
         return self._format_attribute(
             self._prepare_text(name),
-            self._quote(value, self._entities)
+            quoteattr(value, self._entities)
         )
 
     def is_native_type(self, content):
@@ -173,7 +170,7 @@ class StringOutput(Output):
         :rtype: :class:`XMLFragment`
         :raises ecoxipy.XMLWellFormednessException: If
             :property:`check_well_formedness` is :const:`True` and
-            either ``content`` is not valid.
+            ``content`` is not valid.
         '''
         self._check_comment(content)
         return XMLFragment(self._format_comment(content))
@@ -187,7 +184,7 @@ class StringOutput(Output):
         :rtype: :class:`XMLFragment`
         :raises ecoxipy.XMLWellFormednessException: If
             :property:`check_well_formedness` is :const:`True` and
-            either the ``target`` or ``content`` are not valid.
+            either the ``target`` or the ``content`` are not valid.
         '''
         self._check_pi_target(target)
         if content is not None:
@@ -205,7 +202,9 @@ class StringOutput(Output):
         :rtype: :class:`XMLDocument`
         :raises ecoxipy.XMLWellFormednessException: If
             :property:`check_well_formedness` is :const:`True` and the
-            document type's document element name is not a valid XML name.
+            document type's document element name is not a valid XML name,
+            ``doctype_publicid`` is not a valid public ID or
+            ``doctype_systemid`` is not a valid system ID.
         '''
         if omit_xml_declaration:
             xml_declaration = u''
@@ -227,21 +226,21 @@ class StringOutput(Output):
                 doctype = self._format_doctype_empty(doctype_name)
             elif doctype_systemid is None:
                 if self._check_well_formedness:
-                    ecoxipy._helpers.enforce_valid_doctype_publicid(
+                    _helpers.enforce_valid_doctype_publicid(
                         doctype_publicid)
                 doctype = self._format_doctype_public(
                     doctype_name, doctype_publicid)
             elif doctype_publicid is None:
                 if self._check_well_formedness:
-                    ecoxipy._helpers.enforce_valid_doctype_systemid(
+                    _helpers.enforce_valid_doctype_systemid(
                         doctype_systemid)
                 doctype = self._format_doctype_system(
                     doctype_name, systemid_creator(doctype_systemid))
             else:
                 if self._check_well_formedness:
-                    ecoxipy._helpers.enforce_valid_doctype_publicid(
+                    _helpers.enforce_valid_doctype_publicid(
                         doctype_publicid)
-                    ecoxipy._helpers.enforce_valid_doctype_systemid(
+                    _helpers.enforce_valid_doctype_systemid(
                         doctype_systemid)
                 doctype = self._format_doctype_public_system(
                     doctype_name, doctype_publicid,
@@ -303,4 +302,4 @@ class XMLDocument(XMLFragment):
             return self._v_encoded
 
 
-del string, Output
+del Output

@@ -401,15 +401,13 @@ Classes
 '''
 
 import abc
-import ast
 import collections
-import xml.sax
-import xml.sax.xmlreader
-import xml.sax.saxutils
+from xml.sax.xmlreader import AttributesImpl
+from xml.sax.saxutils import XMLGenerator
 
 from ecoxipy import _python2, _unicode
-import ecoxipy.string_output
-import ecoxipy._helpers
+from ecoxipy.string_output import StringOutput
+from ecoxipy import _helpers
 
 
 class XMLNode(object):
@@ -421,6 +419,8 @@ class XMLNode(object):
     '''
     __metaclass__ = abc.ABCMeta
     __slots__ = ('_parent', '_next', '_previous')
+
+    _string_output = StringOutput()
 
     def _attribute_node(self, attribute):
         try:
@@ -518,7 +518,7 @@ class XMLNode(object):
             output. Is only taken into account if ``out`` is :const:`None`.
         '''
         if out is None:
-            out = ecoxipy.string_output.StringOutput()
+            out = self._string_output
         output_string = self._create_str(out)
         if encoding is not None:
             output_string = output_string.encode(encoding)
@@ -545,7 +545,7 @@ class XMLNode(object):
         :returns: The content handler used.
         '''
         if content_handler is None:
-            content_handler = xml.sax.saxutils.XMLGenerator(out, out_encoding)
+            content_handler = XMLGenerator(out, out_encoding)
         if indent_incr is None:
             indent = False
         else:
@@ -744,11 +744,11 @@ class DocumentType(object):
     def __init__(self, name, publicid, systemid, check_well_formedness):
         if check_well_formedness:
             if name is not None:
-                ecoxipy._helpers.enforce_valid_xml_name(name)
+                _helpers.enforce_valid_xml_name(name)
             if publicid is not None:
-                ecoxipy._helpers.enforce_valid_doctype_publicid(publicid)
+                _helpers.enforce_valid_doctype_publicid(publicid)
             if systemid is not None:
-                ecoxipy._helpers.enforce_valid_doctype_systemid(systemid)
+                _helpers.enforce_valid_doctype_systemid(systemid)
         self._name = name
         self._publicid = publicid
         self._systemid = systemid
@@ -769,7 +769,7 @@ class DocumentType(object):
         else:
             name = _unicode(name)
             if self._check_well_formedness:
-                ecoxipy._helpers.enforce_valid_xml_name(name)
+                _helpers.enforce_valid_xml_name(name)
         self._name = name
 
     @property
@@ -784,7 +784,7 @@ class DocumentType(object):
         if publicid is not None:
             publicid = _unicode(publicid)
             if self._check_well_formedness:
-                ecoxipy._helpers.enforce_valid_doctype_publicid(publicid)
+                _helpers.enforce_valid_doctype_publicid(publicid)
         self._publicid = publicid
 
     @property
@@ -799,7 +799,7 @@ class DocumentType(object):
         if systemid is not None:
             systemid = _unicode(systemid)
             if self._check_well_formedness:
-                ecoxipy._helpers.enforce_valid_doctype_systemid(systemid)
+                _helpers.enforce_valid_doctype_systemid(systemid)
         self._systemid = systemid
 
     def __repr__(self):
@@ -847,6 +847,10 @@ class Document(ContainerNode):
     :param check_well_formedness: If :const:`True` the document element name
         will be checked to be a valid XML name.
     :type check_well_formedness: :func:`bool`
+    :raises ecoxipy.XMLWellFormednessException: If ``check_well_formedness``
+        is :const:`True` and ``doctype_name`` is not a valid XML name,
+        ``doctype_publicid`` is not a valid public ID or ``doctype_systemid``
+        is not a valid system ID.
     '''
     __slots__ = ('_doctype', '_omit_xml_declaration', '_encoding')
 
@@ -876,6 +880,9 @@ class Document(ContainerNode):
             ``omit_xml_declaration`` is converted to boolean.
         :returns: The created document.
         :rtype: :class:`Document`
+        :raises ecoxipy.XMLWellFormednessException: If ``doctype_name`` is not
+            a valid XML name, ``doctype_publicid`` is not a valid public ID or
+            ``doctype_systemid`` is not a valid system ID.
         '''
         doctype_name = kargs.get('doctype_name', None)
         if doctype_name is not None:
@@ -1009,7 +1016,7 @@ class NamespaceNameMixin(object):
     _namespace_name_slots__ = ('_namespace_prefix', '_local_name')
 
     def _set_namespace_properties(self, index):
-        components = ecoxipy._helpers.get_qualified_name_components(
+        components = _helpers.get_qualified_name_components(
             self.name)
         self._namespace_prefix, self._local_name = components
         return components[index]
@@ -1044,7 +1051,7 @@ class Attribute(NamespaceNameMixin):
 
     def __init__(self, parent, name, value, check_well_formedness):
         if check_well_formedness:
-            ecoxipy._helpers.enforce_valid_xml_name(name)
+            _helpers.enforce_valid_xml_name(name)
         self._parent = parent
         self._namespace_attribute_prefix = False
         self._name = name
@@ -1105,7 +1112,7 @@ class Attribute(NamespaceNameMixin):
         if name == self._name:
             return
         if self._check_well_formedness:
-            ecoxipy._helpers.enforce_valid_xml_name(name)
+            _helpers.enforce_valid_xml_name(name)
         if name in self._parent._attributes:
             raise KeyError(
                 u'An attribute with name "{}" does already exist in the parent.'.format(
@@ -1247,6 +1254,9 @@ class Element(ContainerNode, NamespaceNameMixin):
     :param check_well_formedness: If :const:`True` the element name and
         attribute names will be checked to be a valid XML name.
     :type check_well_formedness: :func:`bool`
+    :raises ecoxipy.XMLWellFormednessException: If
+        ``check_well_formedness`` is :const:`True` and the
+        ``name`` is not a valid XML name.
     '''
     __slots__ = NamespaceNameMixin._namespace_name_slots__ + (
         '_name', '_attributes', '_check_well_formedness', '_namespaces')
@@ -1254,7 +1264,7 @@ class Element(ContainerNode, NamespaceNameMixin):
     def __init__(self, name, children, attributes,
             check_well_formedness=False):
         if check_well_formedness:
-            ecoxipy._helpers.enforce_valid_xml_name(name)
+            _helpers.enforce_valid_xml_name(name)
         ContainerNode.__init__(self, children)
         self._name = name
         self._namespaces = {}
@@ -1276,6 +1286,8 @@ class Element(ContainerNode, NamespaceNameMixin):
             Attribute names and values are converted to Unicode strings.
         :returns: The created element.
         :rtype: :class:`Element`
+        :raises ecoxipy.XMLWellFormednessException: If the ``name`` is not a
+             valid XML name.
         '''
         attributes = kargs.get('attributes', {})
         return Element(_unicode(name),
@@ -1324,7 +1336,7 @@ class Element(ContainerNode, NamespaceNameMixin):
         if name == self._name:
             return
         if self._check_well_formedness:
-            ecoxipy._helpers.enforce_valid_xml_name(name)
+            _helpers.enforce_valid_xml_name(name)
         self._name = name
         self._clear_namespace_properties()
 
@@ -1357,7 +1369,7 @@ class Element(ContainerNode, NamespaceNameMixin):
                 for i in range(indent_count):
                     content_handler.characters(indent_incr)
         do_indent(True)
-        attributes = xml.sax.xmlreader.AttributesImpl(
+        attributes = AttributesImpl(
             self._attributes.to_dict())
         content_handler.startElement(self.name, attributes)
         last_event_characters = False
@@ -1469,18 +1481,33 @@ class Text(ContentNode):
 
 class Comment(ContentNode):
     '''\
-    Represent a comment node.
+    Represents a comment node.
+
+    :param content: The content.
+    :type content: Unicode string
+    :raises ecoxipy.XMLWellFormednessException: If ``check_well_formedness``
+        is :const:`True` and ``content`` is not valid.
     '''
     __slots__ = ('_check_well_formedness')
 
     def __init__(self, content, check_well_formedness=False):
         if check_well_formedness:
-            ecoxipy._helpers.enforce_valid_comment(content)
+            _helpers.enforce_valid_comment(content)
         ContentNode.__init__(self, content)
         self._check_well_formedness = check_well_formedness
 
     @staticmethod
     def create(content):
+        '''\
+        Creates a comment node.
+
+        :param content: The content of the comment. This will be converted to an
+            Unicode string.
+        :returns: The created commment node.
+        :rtype: :class:`Comment`
+        :raises ecoxipy.XMLWellFormednessException: If ``content`` is not
+            valid.
+        '''
         content = _unicode(content)
         return Comment(content, True)
 
@@ -1510,7 +1537,7 @@ class Comment(ContentNode):
     def content(self, content):
         content = _unicode(content)
         if self._check_well_formedness:
-            ecoxipy._helpers.enforce_valid_comment(content)
+            _helpers.enforce_valid_comment(content)
         self._content = content
 
 
@@ -1523,14 +1550,17 @@ class ProcessingInstruction(ContentNode):
     :param check_well_formedness: If :const:`True` the target will be checked
         to be a valid XML name.
     :type check_well_formedness: :func:`bool`
+    :raises ecoxipy.XMLWellFormednessException: If ``check_well_formedness``
+        is :const:`True` and either the ``target`` or the ``content`` are not
+        valid.
     '''
     __slots__ = ('_target', '_check_well_formedness')
 
     def __init__(self, target, content, check_well_formedness=False):
         if check_well_formedness:
-            ecoxipy._helpers.enforce_valid_pi_target(target)
+            _helpers.enforce_valid_pi_target(target)
             if content is not None:
-                ecoxipy._helpers.enforce_valid_pi_content(content)
+                _helpers.enforce_valid_pi_content(content)
         ContentNode.__init__(self, content)
         self._target = target
         self._check_well_formedness = check_well_formedness
@@ -1546,6 +1576,8 @@ class ProcessingInstruction(ContentNode):
             converted to an Unicode string.
         :returns: The created processing instruction.
         :rtype: :class:`ProcessingInstruction`
+        :raises ecoxipy.XMLWellFormednessException: If either the ``target``
+            or the ``content`` are not valid.
         '''
         target = _unicode(target)
         if content is not None:
@@ -1560,7 +1592,7 @@ class ProcessingInstruction(ContentNode):
     def target(self, target):
         target = _unicode(target)
         if self._check_well_formedness:
-            ecoxipy._helpers.enforce_valid_pi_target(target)
+            _helpers.enforce_valid_pi_target(target)
         self._target = _unicode(target)
 
     @ContentNode.content.setter
@@ -1568,7 +1600,7 @@ class ProcessingInstruction(ContentNode):
         if content is not None:
             content = _unicode(content)
             if self._check_well_formedness:
-                ecoxipy._helpers.enforce_valid_pi_content(content)
+                _helpers.enforce_valid_pi_content(content)
         self._content = content
 
     def _create_str(self, out):
@@ -1602,6 +1634,8 @@ class ProcessingInstruction(ContentNode):
 
 
 # PATH
+
+import ast
 
 class PyXOMPL(object):
     doctest='''\

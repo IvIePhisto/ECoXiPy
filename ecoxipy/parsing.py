@@ -8,17 +8,18 @@ The package :mod:`ecoxipy.parsing` contains :mod:`xml.sax` handlers to parse
 XML into :class:`ecoxipy.MarkupBuilder` structures.
 '''
 
-import io
-import xml.sax
-import xml.sax.handler
+from io import BytesIO
+from xml.sax import (SAXNotRecognizedException, SAXNotSupportedException,
+    make_parser)
+from xml.sax.handler import (ContentHandler, DTDHandler,
+    property_lexical_handler)
 
-import tinkerpy
+from tinkerpy import LexicalHandler
 
 from ecoxipy import _unicode
 
 
-class MarkupHandler(xml.sax.handler.ContentHandler,
-        xml.sax.handler.DTDHandler, tinkerpy.LexicalHandler):
+class MarkupHandler(ContentHandler, DTDHandler, LexicalHandler):
     '''\
     A SAX handler to create :mod:`ecoxipy` markup. By implementing your
     own :class:`ecoxipy.Output` class you can use it to parse XML.
@@ -131,15 +132,13 @@ class XMLFragmentParser(MarkupHandler):
     def __init__(self, output, parser=None):
         MarkupHandler.__init__(self, output)
         if parser is None:
-            parser = xml.sax.make_parser()
+            parser = make_parser()
         self._parser = parser
         self._parser.setContentHandler(self)
         self._parser.setDTDHandler(self)
         try:
-            self._parser.setFeature(xml.sax.handler.property_lexical_handler,
-                self)
-        except (xml.sax.SAXNotRecognizedException,
-                xml.sax.SAXNotSupportedException):
+            self._parser.setFeature(property_lexical_handler, self)
+        except (SAXNotRecognizedException, SAXNotSupportedException):
             pass
 
     def endElement(self, name):
@@ -173,7 +172,7 @@ class XMLFragmentParser(MarkupHandler):
         '''
         content_document = u'<ROOT>{}</ROOT>'.format(xml_fragment)
         content_document = content_document.encode('UTF-8')
-        byte_stream = io.BytesIO(content_document)
+        byte_stream = BytesIO(content_document)
         try:
             self._parser.parse(byte_stream)
         except XMLFragmentParsedException:
@@ -183,4 +182,4 @@ class XMLFragmentParser(MarkupHandler):
         finally:
             byte_stream.close()
 
-del tinkerpy
+del ContentHandler, DTDHandler, LexicalHandler
