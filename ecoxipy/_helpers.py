@@ -2,6 +2,8 @@
 
 from ecoxipy import XMLWellFormednessException
 
+def _prepare_value(value):
+    return value.encode('unicode-escape').decode().replace('"', '\\"')
 
 def _xml_name_regex():
     import re
@@ -25,30 +27,30 @@ _xml_name_regex = _xml_name_regex()
 def enforce_valid_xml_name(value):
     if _xml_name_regex.match(value) is None:
         raise XMLWellFormednessException(
-            u'The value "{}" is not a valid XML name.'.format(value))
+            u'The value "{}" is not a valid XML name.'.format(_prepare_value(value)))
 
 
 def enforce_valid_pi_target(value):
     if _xml_name_regex.match(value) is None or value.lower() == u'xml':
         raise XMLWellFormednessException(
-            u'The value "{}" is not a valid XML processing instruction target.'.format(value))
+            u'The value "{}" is not a valid XML processing instruction target.'.format(_prepare_value(value)))
 
 
 def enforce_valid_pi_content(value):
     if u'?>' in value:
         raise XMLWellFormednessException(
-            u'The value "{}" is not a valid XML processing instruction content because it contains "?>".'.format(value))
+            u'The value "{}" is not a valid XML processing instruction content because it contains "?>".'.format(_prepare_value(value)))
 
 
 def enforce_valid_comment(value):
     if u'--' in value:
         raise XMLWellFormednessException(
-            u'The value "{}" is not a valid XML comment because it contains "--".'.format(value))
+            u'The value "{}" is not a valid XML comment because it contains "--".'.format(_prepare_value(value)))
 
 def enforce_valid_doctype_systemid(value):
     if u'"' in value and u"'" in value:
         raise XMLWellFormednessException(
-            u'The value "{}" is not a valid document type system ID.'.format(value))
+            u'The value "{}" is not a valid document type system ID.'.format(_prepare_value(value)))
 
 
 def _doctype_publicid_regex():
@@ -60,7 +62,7 @@ _doctype_publicid_regex = _doctype_publicid_regex()
 def enforce_valid_doctype_publicid(value):
     if _doctype_publicid_regex.match(value) is None:
         raise XMLWellFormednessException(
-            u'The value "{}" is not a valid document type public ID.'.format(value))
+            u'The value "{}" is not a valid document type public ID.'.format(_prepare_value(value)))
 
 
 def get_qualified_name_components(name):

@@ -33,6 +33,29 @@ Usage Example:
 ... )
 >>> xml == u"""<?xml version="1.0"?>\\n<!DOCTYPE section><section attr="'&quot;&lt;&amp;&gt;"><p>Hello World!</p><p>äöüß</p><p>&lt;&amp;&gt;</p><raw/>text<br/>012345<!--<This is a comment!>--><?pi-target <PI content>?><?pi-without-content?></section>"""
 True
+
+>>> from ecoxipy import XMLWellFormednessException
+>>> def catch_not_well_formed(method, *args):
+...     try:
+...         return getattr(xml_output, method)(*args)
+...     except XMLWellFormednessException as e:
+...         print(e)
+>>> t = catch_not_well_formed(u'document', u'1nvalid-xml-name', None, None, [], True, u'UTF-8')
+The value "1nvalid-xml-name" is not a valid XML name.
+>>> t = catch_not_well_formed(u'document', u'html', u'"', None, [], True, u'UTF-8')
+The value "\\"" is not a valid document type public ID.
+>>> t = catch_not_well_formed(u'document', u'html', None, u'"\\'', [], True, u'UTF-8')
+The value "\\"'" is not a valid document type system ID.
+>>> t = catch_not_well_formed(u'element', u'1nvalid-xml-name', [], {})
+The value "1nvalid-xml-name" is not a valid XML name.
+>>> t = catch_not_well_formed(u'element', u't', [], {u'1nvalid-xml-name': u'content'})
+The value "1nvalid-xml-name" is not a valid XML name.
+>>> t = catch_not_well_formed(u'processing_instruction', u'1nvalid-xml-name', None)
+The value "1nvalid-xml-name" is not a valid XML processing instruction target.
+>>> t = catch_not_well_formed(u'processing_instruction', u'target', u'invalid PI content ?>')
+The value "invalid PI content ?>" is not a valid XML processing instruction content because it contains "?>".
+>>> t = catch_not_well_formed(u'comment', u'invalid XML comment --')
+The value "invalid XML comment --" is not a valid XML comment because it contains "--".
 '''
 
 import xml.sax.saxutils
@@ -66,6 +89,7 @@ class StringOutput(Output):
             self._check_pi_target = nothing
             self._check_pi_content = nothing
             self._check_comment = nothing
+        self._check_well_formedness = check_well_formedness
         self._join = u''.join
         self._format_element = u'<{0}{1}>{2}</{0}>'.format
         self._format_element_empty = u'<{}{}/>'.format
@@ -194,7 +218,7 @@ class StringOutput(Output):
             doctype = u''
         else:
             if doctype_systemid is not None:
-                if doctype_systemid.contains(u'"'):
+                if u'"' in doctype_systemid:
                     systemid_creator = self._format_doctype_systemid_apos
                 else:
                     systemid_creator = self._format_doctype_systemid_quotes

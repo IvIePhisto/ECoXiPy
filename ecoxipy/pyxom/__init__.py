@@ -71,6 +71,10 @@ contents conform to their constraints:
 ...         print(e)
 >>> t = catch_not_well_formed(Document, [], doctype_name='1nvalid-xml-name')
 The value "1nvalid-xml-name" is not a valid XML name.
+>>> t = catch_not_well_formed(Document, [], doctype_name='html', doctype_publicid='"')
+The value "\\"" is not a valid document type public ID.
+>>> t = catch_not_well_formed(Document, [], doctype_name='html', doctype_systemid='"\\'')
+The value "\\"'" is not a valid document type system ID.
 >>> t = catch_not_well_formed(Element, '1nvalid-xml-name', [], {})
 The value "1nvalid-xml-name" is not a valid XML name.
 >>> t = catch_not_well_formed(Element, 't', [], attributes={'1nvalid-xml-name': 'content'})
