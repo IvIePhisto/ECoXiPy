@@ -296,10 +296,16 @@ False
 >>> document_copy[0].remove(p_element)
 >>> document_copy[0][0].name == u'h1' and p_element.parent is None
 True
+>>> p_element in document_copy[0]
+False
+>>> p_element.namespace_uri == False
+True
 >>> document_copy[0][0].append(p_element)
 >>> document_copy[0][0][-1] is p_element
 True
 >>> p_element in document_copy[0][0]
+True
+>>> p_element.namespace_uri == u'http://www.w3.org/1999/xhtml/'
 True
 >>> p_element in document[0]
 False
@@ -681,6 +687,10 @@ class ContainerNode(XMLNode, collections.MutableSequence):
                 self._wire_neighbors(self[index-1], child)
             if index < len(self) - 1:
                 self._wire_neighbors(child, self[index+1])
+        try:
+            child._clear_namespace_uri()
+        except AttributeError:
+            pass
 
     def __getitem__(self, index):
         return self._children[index]
