@@ -137,7 +137,7 @@ Namespaces
 """"""""""
 
 PyXOM supports the interpretation of `Namespaces in XML
-<http://www.w3.org/TR/REC-xml-names/`_. Namespace prefixes and local names are
+<http://www.w3.org/TR/REC-xml-names/`_. Namespace prefix and local names are
 calculated from :class:`Element` and :class:`Attribute` names:
 
 >>> document[0].namespace_prefix == None
@@ -179,9 +179,12 @@ The namespace prefixes active on an element are available as the iterator
 True
 >>> print(u', '.join(prefixes[1:]))
 foo, t
+>>> document[0][-1][0].get_namespace_uri(u'foo') == u'foo://bar'
+True
 >>> print(list(document[0].namespace_prefixes))
 [None]
-
+>>> document[0].get_namespace_uri(None) == u'http://www.w3.org/1999/xhtml/'
+True
 
 If an element or attribute is in no namespace, ``namespace_uri`` is
 :const:`None`:

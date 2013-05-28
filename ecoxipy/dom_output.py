@@ -45,18 +45,9 @@ Usage Example:
 True
 '''
 
-import io
 from xml.dom import minidom, Node
 
-from ecoxipy import Output, _python2
-
-
-if _python2:
-    _create_xml_fragment_doc = lambda text: minidom.parseString(
-        '<ROOT>{}</ROOT>'.format(text.encode('UTF-8')))
-else:
-    _create_xml_fragment_doc = lambda text: minidom.parseString(
-        '<ROOT>{}</ROOT>'.format(text))
+from ecoxipy import Output
 
 
 class DOMOutput(Output):
