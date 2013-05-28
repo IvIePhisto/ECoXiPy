@@ -210,8 +210,8 @@ All :class:`XMLNode` instances have attributes which allow for modification.
 their contents like sequences.
 
 
-Duplication and Equality
-""""""""""""""""""""""""
+Duplication and Comparisons
+"""""""""""""""""""""""""""
 
 Use :meth:`duplicate` to create a deep copy of a XML node:
 
@@ -644,6 +644,10 @@ class ContainerNode(XMLNode, collections.MutableSequence):
 
     def _unwire_child(self, child):
         try:
+            child._clear_namespace_uri()
+        except AttributeError:
+            pass
+        try:
             del child._parent
         except AttributeError:
             pass
@@ -1016,17 +1020,27 @@ class Document(ContainerNode):
 
 class NamespaceNameMixin(object):
     __metaclass__ = abc.ABCMeta
-    _namespace_name_slots__ = ('_namespace_prefix', '_local_name')
+    _namespace_name_slots__ = ('_namespace_prefix', '_local_name',
+        '_v_namespace_uri', '_v_namespace_source')
 
     def _set_namespace_properties(self, index):
-        components = _helpers.get_qualified_name_components(
-            self.name)
+        components = _helpers.get_qualified_name_components(self.name)
         self._namespace_prefix, self._local_name = components
         return components[index]
+
+    def _clear_namespace_uri(self):
+        try:
+            del self._v_namespace_uri
+        except AttributeError:
+            pass
+        else:
+            self._v_namespace_source._remove_namespace_target(self)
+            del self._v_namespace_source
 
     def _clear_namespace_properties(self):
         del self._namespace_prefix
         del self._local_name
+        self._clear_namespace_uri()
 
     @property
     def namespace_prefix(self):
@@ -1044,7 +1058,20 @@ class NamespaceNameMixin(object):
 
     @property
     def namespace_uri(self):
-        raise NotImplementedError()
+        try:
+            return self._v_namespace_uri
+        except AttributeError:
+            if isinstance(self, Attribute):
+                namespace_source = self.parent.parent
+            else:
+                namespace_source = self
+            namespace_source, namespace_uri = namespace_source._get_namespace(
+                self.namespace_prefix)
+            if namespace_source is not None:
+                namespace_source._register_namespace_target(self)
+            self._v_namespace_source = namespace_source
+            self._v_namespace_uri = namespace_uri
+            return namespace_uri
 
 
 class Attribute(NamespaceNameMixin):
@@ -1138,13 +1165,6 @@ class Attribute(NamespaceNameMixin):
         self._update_namespace_uri()
         self._value = value
 
-    @NamespaceNameMixin.namespace_uri.getter
-    def namespace_uri(self):
-        attributes = self.parent
-        if attributes is None:
-            return False
-        return attributes.parent.get_namespace_uri(self.namespace_prefix)
-
     def __repr__(self):
         return 'ecoxipy.pyxom.Attribute({}, {})'.format(
             _string_repr(self._name), _string_repr(self._value))
@@ -1193,6 +1213,7 @@ class Attributes(collections.Mapping):
     def __delitem__(self, name):
         name = _unicode(name)
         item = self._attributes[name]
+        item._clear_namespace_uri()
         del self._attributes[name]
         del item._parent
 
@@ -1213,6 +1234,7 @@ class Attributes(collections.Mapping):
             raise KeyError(
                 u'An attribute with name "{}" already exists.'.format(name))
         parent = attribute.parent
+        attribute._clear_namespace_uri()
         if parent is not None:
             parent.remove(attribute)
         self._attributes[attribute.name] = attribute
@@ -1262,7 +1284,9 @@ class Element(ContainerNode, NamespaceNameMixin):
         ``name`` is not a valid XML name.
     '''
     __slots__ = NamespaceNameMixin._namespace_name_slots__ + (
-        '_name', '_attributes', '_check_well_formedness', '_namespaces')
+        '_name', '_attributes', '_check_well_formedness',
+        '_namespace_prefix_to_uri', '_namespace_targets',
+        '_namespace_prefix_to_target')
 
     def __init__(self, name, children, attributes,
             check_well_formedness=False):
@@ -1270,7 +1294,9 @@ class Element(ContainerNode, NamespaceNameMixin):
             _helpers.enforce_valid_xml_name(name)
         ContainerNode.__init__(self, children)
         self._name = name
-        self._namespaces = {}
+        self._namespace_prefix_to_uri = {}
+        self._namespace_targets = {}
+        self._namespace_prefix_to_target = {}
         self._attributes = Attributes(self, attributes, check_well_formedness)
         self._check_well_formedness = check_well_formedness
 
@@ -1304,29 +1330,59 @@ class Element(ContainerNode, NamespaceNameMixin):
             }, True)
 
     def _set_namespace(self, prefix, value):
-        self._namespaces[prefix] = value
+        self._namespace_prefix_to_uri[prefix] = value
 
     def _remove_namespace(self, prefix):
-        del self._namespaces[prefix]
+        del self._namespace_prefix_to_uri[prefix]
+        prefix_targets = self._namespace_prefix_to_target[prefix]
+        for target_id in prefix_targets:
+            target = self._namespace_targets[target_id]
+            target._clear_namespace_uri()
+
+    def _register_namespace_target(self, target):
+        prefix = target.namespace_prefix
+        target_id = id(target)
+        self._namespace_targets[target_id] = target
+        try:
+            prefix_targets = self._namespace_prefix_to_target[prefix]
+        except KeyError:
+            prefix_targets = set()
+            self._namespace_prefix_to_target[prefix] = prefix_targets
+        prefix_targets.add(target_id)
+
+    def _remove_namespace_target(self, target):
+        prefix = target.namespace_prefix
+        target_id = id(target)
+        del self._namespace_targets[target_id]
+        prefix_targets = self._namespace_prefix_to_target[prefix]
+        prefix_targets.remove(target_id)
+        if len(prefix_targets) == 0:
+            del self._namespace_prefix_to_target[prefix]
 
     @property
     def namespace_prefixes(self):
         def iterator():
             current = self
             while isinstance(current, Element):
-                for prefix in current._namespaces:
+                for prefix in current._namespace_prefix_to_uri:
                     yield prefix
                 current = current.parent
         return iterator()
 
-    def get_namespace_uri(self, prefix):
+    def _get_namespace(self, prefix):
         current = self
         while isinstance(current, Element):
             try:
-                return current._namespaces[prefix]
+                return current, current._namespace_prefix_to_uri[prefix]
             except KeyError:
                 current = current.parent
-        return False
+        return None, False
+
+    def get_namespace_prefix_element(self, prefix):
+        return self._get_namespace(prefix)[0]
+
+    def get_namespace_uri(self, prefix):
+        return self._get_namespace(prefix)[1]
 
     @property
     def name(self):
@@ -1342,10 +1398,6 @@ class Element(ContainerNode, NamespaceNameMixin):
             _helpers.enforce_valid_xml_name(name)
         self._name = name
         self._clear_namespace_properties()
-
-    @NamespaceNameMixin.namespace_uri.getter
-    def namespace_uri(self):
-        return self.get_namespace_uri(self.namespace_prefix)
 
     @property
     def attributes(self):
