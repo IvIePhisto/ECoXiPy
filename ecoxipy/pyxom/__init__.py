@@ -255,6 +255,8 @@ True
 False
 >>> foo_attr.parent == None
 True
+>>> foo_attr.namespace_uri == False
+True
 >>> document_copy[0][0].attributes.add(foo_attr)
 >>> 'foo' in document_copy[0][0].attributes
 True
@@ -1029,18 +1031,17 @@ class NamespaceNameMixin(object):
         return components[index]
 
     def _clear_namespace_uri(self):
-        try:
+        if hasattr(self, '_v_namespace_uri'):
+            namespace_source = self._v_namespace_source
+            if namespace_source is not None:
+                namespace_source._remove_namespace_target(self)
             del self._v_namespace_uri
-        except AttributeError:
-            pass
-        else:
-            self._v_namespace_source._remove_namespace_target(self)
             del self._v_namespace_source
 
     def _clear_namespace_properties(self):
+        self._clear_namespace_uri()
         del self._namespace_prefix
         del self._local_name
-        self._clear_namespace_uri()
 
     @property
     def namespace_prefix(self):
@@ -1061,14 +1062,18 @@ class NamespaceNameMixin(object):
         try:
             return self._v_namespace_uri
         except AttributeError:
-            if isinstance(self, Attribute):
-                namespace_source = self.parent.parent
+            if self.parent is None:
+                namespace_source = None
+                namespace_uri = False
             else:
-                namespace_source = self
-            namespace_source, namespace_uri = namespace_source._get_namespace(
-                self.namespace_prefix)
-            if namespace_source is not None:
-                namespace_source._register_namespace_target(self)
+                if isinstance(self, Attribute):
+                    namespace_source = self.parent.parent
+                else:
+                    namespace_source = self
+                namespace_source, namespace_uri = namespace_source._get_namespace(
+                    self.namespace_prefix)
+                if namespace_source is not None:
+                    namespace_source._register_namespace_target(self)
             self._v_namespace_source = namespace_source
             self._v_namespace_uri = namespace_uri
             return namespace_uri
