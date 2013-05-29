@@ -6,6 +6,9 @@ PyXOM - Pythonic XML Object Model
 This module implements a pythonic object model for the representation of XML
 structures. To create PyXOM data conveniently use :mod:`ecoxipy.pyxom.output`.
 
+
+.. _ecoxipy.pyxom.examples:
+
 Examples
 --------
 
@@ -57,7 +60,7 @@ take care of conversion.
 Enforcing Well-Formedness
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Using the :meth:`create` methods or supplying the parameter
+Using the :meth:`create` methods or passing the parameter
 ``check_well_formedness`` as :const:`True` to the appropriate constructors
 enforces that the element, attribute and document type names are valid XML
 names, and that processing instruction target and content as well as comment
@@ -69,20 +72,24 @@ contents conform to their constraints:
 ...         return cls.create(*args, **kargs)
 ...     except XMLWellFormednessException as e:
 ...         print(e)
+
 >>> t = catch_not_well_formed(Document, [], doctype_name='1nvalid-xml-name')
 The value "1nvalid-xml-name" is not a valid XML name.
 >>> t = catch_not_well_formed(Document, [], doctype_name='html', doctype_publicid='"')
 The value "\\"" is not a valid document type public ID.
 >>> t = catch_not_well_formed(Document, [], doctype_name='html', doctype_systemid='"\\'')
 The value "\\"'" is not a valid document type system ID.
+
 >>> t = catch_not_well_formed(Element, '1nvalid-xml-name', [], {})
 The value "1nvalid-xml-name" is not a valid XML name.
 >>> t = catch_not_well_formed(Element, 't', [], attributes={'1nvalid-xml-name': 'content'})
 The value "1nvalid-xml-name" is not a valid XML name.
+
 >>> t = catch_not_well_formed(ProcessingInstruction, '1nvalid-xml-name')
 The value "1nvalid-xml-name" is not a valid XML processing instruction target.
 >>> t = catch_not_well_formed(ProcessingInstruction, 'target', 'invalid PI content ?>')
 The value "invalid PI content ?>" is not a valid XML processing instruction content because it contains "?>".
+
 >>> t = catch_not_well_formed(Comment, 'invalid XML comment --')
 The value "invalid XML comment --" is not a valid XML comment because it contains "--".
 
@@ -115,18 +122,22 @@ You can retrieve iterators for navigation through the tree:
 
 >>> list(document[0][0].ancestors)
 [ecoxipy.pyxom.Element['article', {...}], ecoxipy.pyxom.Document[ecoxipy.pyxom.DocumentType('article', None, None), True, 'UTF-8']]
+
 >>> list(document[0][1].children())
 [ecoxipy.pyxom.Text('Hello'), ecoxipy.pyxom.Element['em', {...}], ecoxipy.pyxom.Text('!')]
 >>> list(document[0][1].children(True))
 [ecoxipy.pyxom.Text('!'), ecoxipy.pyxom.Element['em', {...}], ecoxipy.pyxom.Text('Hello')]
+
 >>> list(document[0][1].descendants())
 [ecoxipy.pyxom.Text('Hello'), ecoxipy.pyxom.Element['em', {...}], ecoxipy.pyxom.Text(' World'), ecoxipy.pyxom.Text('!')]
 >>> list(document[0][1].descendants(True))
 [ecoxipy.pyxom.Text('!'), ecoxipy.pyxom.Element['em', {...}], ecoxipy.pyxom.Text(' World'), ecoxipy.pyxom.Text('Hello')]
+
 >>> list(document[0][-2].preceding_siblings)
 [ecoxipy.pyxom.ProcessingInstruction('pi-target', '<PI content>'), ecoxipy.pyxom.Comment('<This is a comment!>'), ecoxipy.pyxom.Element['div', {...}], ecoxipy.pyxom.Element['p', {...}], ecoxipy.pyxom.Element['h1', {...}]]
 >>> list(document[0][2][-1].preceding)
 [ecoxipy.pyxom.Text('4'), ecoxipy.pyxom.Text('3'), ecoxipy.pyxom.Text('2'), ecoxipy.pyxom.Text('1'), ecoxipy.pyxom.Text('0'), ecoxipy.pyxom.Element['br', {...}], ecoxipy.pyxom.Text('Some Text'), ecoxipy.pyxom.Element['p', {...}], ecoxipy.pyxom.Element['data-element', {...}], ecoxipy.pyxom.Element['p', {...}], ecoxipy.pyxom.Element['h1', {...}]]
+
 >>> list(document[0][0].following_siblings)
 [ecoxipy.pyxom.Element['p', {...}], ecoxipy.pyxom.Element['div', {...}], ecoxipy.pyxom.Comment('<This is a comment!>'), ecoxipy.pyxom.ProcessingInstruction('pi-target', '<PI content>'), ecoxipy.pyxom.ProcessingInstruction('pi-without-content', None), ecoxipy.pyxom.Element['foo:somexml', {...}]]
 >>> list(document[0][1][0].following)
@@ -137,7 +148,7 @@ Namespaces
 """"""""""
 
 PyXOM supports the interpretation of `Namespaces in XML
-<http://www.w3.org/TR/REC-xml-names/`_. Namespace prefix and local names are
+<http://www.w3.org/TR/REC-xml-names/>`_. Namespace prefix and local names are
 calculated from :class:`Element` and :class:`Attribute` names:
 
 >>> document[0].namespace_prefix == None
@@ -157,7 +168,8 @@ bar
 
 The namespace URI is available as :attr:`Element.namespace_uri` and
 :attr:`Attribute.namespace_uri`, these properties look up the namespace
-prefix of the node in the parent elements:
+prefix of the node in the parent elements (this information is cached, so
+don't fear multiple retrieval):
 
 >>> xhtml_namespace_uri = u'http://www.w3.org/1999/xhtml/'
 >>> document[0][1].namespace_uri == xhtml_namespace_uri
@@ -185,6 +197,7 @@ True
 [None]
 >>> document[0].get_namespace_uri(None) == u'http://www.w3.org/1999/xhtml/'
 True
+
 
 If an element or attribute is in no namespace, ``namespace_uri`` is
 :const:`None`:
@@ -232,7 +245,7 @@ Attributes
 """"""""""
 
 The attributes of an :class:`Element` instance are available as
-:property:`Element.attributes`. This is an :class:`Attributes` instance which
+:attr:`Element.attributes`. This is an :class:`Attributes` instance which
 contains :class:`Attribute` instances:
 
 >>> document_copy[0][0].attributes['data']
@@ -424,6 +437,36 @@ True
 
 Classes
 -------
+
+Element
+^^^^^^^
+
+..autoclass:: Element
+..autoclass:: Attribute
+..autoclass:: Attributes
+
+
+Document
+^^^^^^^^
+
+..autoclass:: Document
+..autoclass:: DocumentType
+
+
+Other Nodes
+^^^^^^^^^^^
+
+..autoclass:: Text
+..autoclass:: Comment
+..autoclass:: ProcessingInstruction
+
+
+Base Classes
+^^^^^^^^^^^^
+
+..autoclass:: XMLNode
+..autoclass:: NamespaceNameMixin
+..autoclass:: ContentNode
 '''
 
 from ._common import XMLNode

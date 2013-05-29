@@ -69,7 +69,7 @@ class PyXOMOutput(Output):
     :class:`ecoxipy.pyxom.XMLNode` instances and Unicode string instances.
 
     :param check_well_formedness: The property
-        :property:`check_well_formedness` is determined by this value.
+        :attr:`check_well_formedness` is determined by this value.
     :type check_well_formedness: :func:`bool`
     '''
     def __init__(self, check_well_formedness=False):
@@ -99,7 +99,7 @@ class PyXOMOutput(Output):
         :returns: The element created.
         :rtype: :class:`ecoxipy.pyxom.Element`
         :raises ecoxipy.XMLWellFormednessException: If
-            :property:`check_well_formedness` is :const:`True` and the
+            :attr:`check_well_formedness` is :const:`True` and the
             ``name`` is not a valid XML name.
         '''
         return pyxom.Element(name, children, attributes,
@@ -120,7 +120,7 @@ class PyXOMOutput(Output):
         :returns: The created comment.
         :rtype: :class:`ecoxipy.pyxom.Comment`
         :raises ecoxipy.XMLWellFormednessException: If
-            :property:`check_well_formedness` is :const:`True` and ``content``
+            :attr:`check_well_formedness` is :const:`True` and ``content``
             is not valid.
         '''
         return pyxom.Comment(content, self._check_well_formedness)
@@ -132,7 +132,7 @@ class PyXOMOutput(Output):
         :returns: The created processing instruction.
         :rtype: :class:`ecoxipy.pyxom.ProcessingInstruction`
         :raises ecoxipy.XMLWellFormednessException: If
-            :property:`check_well_formedness` is :const:`True` and
+            :attr:`check_well_formedness` is :const:`True` and
             either the ``target`` or the``content`` are not valid.
         '''
         return pyxom.ProcessingInstruction(target, content,
@@ -146,10 +146,10 @@ class PyXOMOutput(Output):
         :returns: The created document representation.
         :rtype: :class:`ecoxipy.pyxom.Document`
         :raises ecoxipy.XMLWellFormednessException: If
-            :property:`check_well_formedness` is :const:`True` and
-                ``doctype_name`` is not a valid XML name, ``doctype_publicid``
-                is not a valid public ID or ``doctype_systemid`` is not a
-                valid system ID.
+            :attr:`check_well_formedness` is :const:`True` and
+            ``doctype_name`` is not a valid XML name, ``doctype_publicid``
+            is not a valid public ID or ``doctype_systemid`` is not a
+            valid system ID.
         '''
         return pyxom.Document(doctype_name, doctype_publicid,
             doctype_systemid, children, omit_xml_declaration, encoding,

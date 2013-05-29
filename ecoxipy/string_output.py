@@ -70,7 +70,7 @@ class StringOutput(Output):
     :param entities: A mapping of characters to text to replace them with
         when escaping.
     :param check_well_formedness: The property
-        :property:`check_well_formedness` is determined by this value.
+        :attr:`check_well_formedness` is determined by this value.
     :type check_well_formedness: :func:`bool`
     '''
     def __init__(self, entities=None, check_well_formedness=False):
@@ -138,7 +138,7 @@ class StringOutput(Output):
         :returns: The element created.
         :rtype: :class:`XMLFragment`
         :raises ecoxipy.XMLWellFormednessException: If
-            :property:`check_well_formedness` is :const:`True` and the
+            :attr:`check_well_formedness` is :const:`True` and the
             ``name`` is not a valid XML name.
         '''
         self._check_name(name)
@@ -169,7 +169,7 @@ class StringOutput(Output):
         :returns: The created comment.
         :rtype: :class:`XMLFragment`
         :raises ecoxipy.XMLWellFormednessException: If
-            :property:`check_well_formedness` is :const:`True` and
+            :attr:`check_well_formedness` is :const:`True` and
             ``content`` is not valid.
         '''
         self._check_comment(content)
@@ -183,7 +183,7 @@ class StringOutput(Output):
         :returns: The created processing instruction.
         :rtype: :class:`XMLFragment`
         :raises ecoxipy.XMLWellFormednessException: If
-            :property:`check_well_formedness` is :const:`True` and
+            :attr:`check_well_formedness` is :const:`True` and
             either the ``target`` or the ``content`` are not valid.
         '''
         self._check_pi_target(target)
@@ -201,7 +201,7 @@ class StringOutput(Output):
         :returns: The created document.
         :rtype: :class:`XMLDocument`
         :raises ecoxipy.XMLWellFormednessException: If
-            :property:`check_well_formedness` is :const:`True` and the
+            :attr:`check_well_formedness` is :const:`True` and the
             document type's document element name is not a valid XML name,
             ``doctype_publicid`` is not a valid public ID or
             ``doctype_systemid`` is not a valid system ID.

@@ -42,7 +42,11 @@ DOM Creation
 
 Create :mod:`ecoxipy.pyxom` structures
 
-    :ref:`ecoxipy.pyxom_output <ecoxipy.pyxom_output.examples>`
+    :ref:`ecoxipy.pyxom.output <ecoxipy.pyxom.output.examples>`
+
+Use :mod:`ecoxipy.pyxom` structures
+
+    :ref:`ecoxipy.pyxom <ecoxipy.pyxom.examples>`
 
 
 
