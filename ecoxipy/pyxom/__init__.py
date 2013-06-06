@@ -126,13 +126,8 @@ You can retrieve iterators for navigation through the tree:
 
 >>> list(document[0][1].children())
 [ecoxipy.pyxom.Text('Hello'), ecoxipy.pyxom.Element['em', {...}], ecoxipy.pyxom.Text('!')]
->>> list(document[0][1].children(True))
-[ecoxipy.pyxom.Text('!'), ecoxipy.pyxom.Element['em', {...}], ecoxipy.pyxom.Text('Hello')]
-
 >>> list(document[0][1].descendants())
 [ecoxipy.pyxom.Text('Hello'), ecoxipy.pyxom.Element['em', {...}], ecoxipy.pyxom.Text(' World'), ecoxipy.pyxom.Text('!')]
->>> list(document[0][1].descendants(True))
-[ecoxipy.pyxom.Text('!'), ecoxipy.pyxom.Element['em', {...}], ecoxipy.pyxom.Text(' World'), ecoxipy.pyxom.Text('Hello')]
 
 >>> list(document[0][-2].preceding_siblings)
 [ecoxipy.pyxom.ProcessingInstruction('pi-target', '<PI content>'), ecoxipy.pyxom.Comment('<This is a comment!>'), ecoxipy.pyxom.Element['div', {...}], ecoxipy.pyxom.Element['p', {...}], ecoxipy.pyxom.Element['h1', {...}]]
@@ -143,6 +138,23 @@ You can retrieve iterators for navigation through the tree:
 [ecoxipy.pyxom.Element['p', {...}], ecoxipy.pyxom.Element['div', {...}], ecoxipy.pyxom.Comment('<This is a comment!>'), ecoxipy.pyxom.ProcessingInstruction('pi-target', '<PI content>'), ecoxipy.pyxom.ProcessingInstruction('pi-without-content', None), ecoxipy.pyxom.Element['foo:somexml', {...}]]
 >>> list(document[0][1][0].following)
 [ecoxipy.pyxom.Element['em', {...}], ecoxipy.pyxom.Text('!'), ecoxipy.pyxom.Element['div', {...}], ecoxipy.pyxom.Comment('<This is a comment!>'), ecoxipy.pyxom.ProcessingInstruction('pi-target', '<PI content>'), ecoxipy.pyxom.ProcessingInstruction('pi-without-content', None), ecoxipy.pyxom.Element['foo:somexml', {...}]]
+
+
+Descendants and children can also be retrieved in reverse document order:
+
+>>> list(document[0][1].children(True))
+[ecoxipy.pyxom.Text('!'), ecoxipy.pyxom.Element['em', {...}], ecoxipy.pyxom.Text('Hello')]
+>>> list(document[0][1].descendants(True))
+[ecoxipy.pyxom.Text('!'), ecoxipy.pyxom.Element['em', {...}], ecoxipy.pyxom.Text(' World'), ecoxipy.pyxom.Text('Hello')]
+
+
+Normally :meth:`ContainerNode.descendants` traverses the XML tree depth-first,
+but you can also use breadth-first traversal:
+
+>>> list(document[0][1].descendants(depth_first=False))
+[ecoxipy.pyxom.Text('Hello'), ecoxipy.pyxom.Element['em', {...}], ecoxipy.pyxom.Text('!'), ecoxipy.pyxom.Text(' World')]
+>>> list(document[0][1].descendants(True, False))
+[ecoxipy.pyxom.Text('!'), ecoxipy.pyxom.Element['em', {...}], ecoxipy.pyxom.Text('Hello'), ecoxipy.pyxom.Text(' World')]
 
 
 Namespaces

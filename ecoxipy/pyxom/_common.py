@@ -222,15 +222,20 @@ class ContainerNode(XMLNode, collections.MutableSequence):
         '''
         return self._children_rec(reverse)
 
-    def descendants(self, reverse=False):
+    def descendants(self, reverse=False, depth_first=True):
         '''\
         Returns an iterator over all descendants.
 
         :param reverse: If this is :const:`True` the descendants are returned
             in reverse document order.
+        :param depth_first: If this is :const:`True` the descendants are
+            returned depth-first, if it is :const:`False` breadth-first
+            traversal is used.
         :returns: An iterator over the descendants.
         '''
-        return self._descendants_rec(reverse)
+        if depth_first:
+            return self._descendants_depth_first(reverse)
+        return self._descendants_breadth_first(reverse)
 
     def _children_rec(self, reverse):
         def iterator():
@@ -238,12 +243,24 @@ class ContainerNode(XMLNode, collections.MutableSequence):
                 yield child
         return iterator()
 
-    def _descendants_rec(self, reverse):
+    def _descendants_depth_first(self, reverse):
         def iterator():
             for child in self._children_rec(reverse):
                 yield child
                 if isinstance(child, ContainerNode):
-                    for descendant in child._descendants_rec(reverse):
+                    for descendant in child._descendants_depth_first(reverse):
+                        yield descendant
+        return iterator()
+
+    def _descendants_breadth_first(self, reverse):
+        def iterator():
+            children = list(self._children_rec(reverse))
+            for child in children:
+                yield child
+            for child in children:
+                if isinstance(child, ContainerNode):
+                    for descendant in child._descendants_breadth_first(
+                            reverse):
                         yield descendant
         return iterator()
 
