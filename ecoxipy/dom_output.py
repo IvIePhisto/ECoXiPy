@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
 u'''\
 
-:mod:`ecoxipy.dom_output` - DOM Creation
-========================================
+:mod:`ecoxipy.dom_output` - Building DOM Data
+=============================================
 
-:class:`DOMOutput` creates `DOM <http://www.w3.org/DOM/>`_ (implemented in
-Python by :mod:`xml.dom`) structures.
+:class:`DOMOutput` creates `*Document Object Model* (DOM)
+<http://www.w3.org/DOM/>`_ (implemented in Python by :mod:`xml.dom`)
+structures.
 
 
 .. _ecoxipy.dom_output.examples:
@@ -33,14 +34,7 @@ Usage Example:
 ...         attr='\\'"<&>'
 ...     )
 ... )
->>> val = xml_doc.toxml()
 >>> document_string = u"""<?xml version="1.0" ?><!DOCTYPE section><section attr="'&quot;&lt;&amp;&gt;"><p>Hello World!</p><p>äöüß</p><p>&lt;&amp;&gt;</p><raw/>text<br/>012345<br/><!--<This is a comment!>--><?pi-target <PI content>?><?pi-without-content ?></section>"""
->>> for i in range(len(val)):
-...     if val[i] != document_string[i]:
-...         print(val[i:])
-...         print()
-...         print(document_string[i:])
-...         break
 >>> xml_doc.toxml() == document_string
 True
 '''

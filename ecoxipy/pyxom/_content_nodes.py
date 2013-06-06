@@ -68,6 +68,9 @@ class Text(ContentNode):
     def duplicate(self):
         return Text(self.content)
 
+    def __hash__(self):
+        return object.__hash__(self)
+
 
 class Comment(ContentNode):
     '''\
@@ -129,6 +132,9 @@ class Comment(ContentNode):
         if self._check_well_formedness:
             _helpers.enforce_valid_comment(content)
         self._content = content
+
+    def __hash__(self):
+        return object.__hash__(self)
 
 
 class ProcessingInstruction(ContentNode):
@@ -222,5 +228,7 @@ class ProcessingInstruction(ContentNode):
     def duplicate(self):
         return ProcessingInstruction(self._target, self.content)
 
+    def __hash__(self):
+        return object.__hash__(self)
 
 del abc

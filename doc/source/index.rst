@@ -12,12 +12,13 @@ Modules
 .. toctree::
 
     base
+    decorators
+    parsing
     string_output
     dom_output
     pyxom
     pyxom_output
-    decorators
-    parsing
+    pyxom_indexing
 
 
 TL;DR [#f1]_
@@ -47,6 +48,10 @@ Create :mod:`ecoxipy.pyxom` structures
 Use :mod:`ecoxipy.pyxom` structures
 
     :ref:`ecoxipy.pyxom <ecoxipy.pyxom.examples>`
+
+Index :mod:`ecoxipy.pyxom` structures
+
+    :ref:`ecoxipy.pyxom.indexing <ecoxipy.pyxom.indexing.examples>`
 
 
 

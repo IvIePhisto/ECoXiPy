@@ -241,9 +241,10 @@ class MarkupBuilder(object):
         if key.start is None: # Document
             doctype = key.stop
             if doctype is None:
-                raise ValueError(
-                    'Doctype (slice end) must not be "None".')
-            if isinstance(doctype, tuple):
+                doctype_name = None
+                doctype_publicid = None
+                doctype_systemid = None
+            elif isinstance(doctype, tuple):
                 doctype_name, doctype_publicid, doctype_systemid = doctype
                 if doctype_name is None:
                     raise ValueError(

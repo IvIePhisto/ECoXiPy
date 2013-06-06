@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 u'''\
-PyXOM - Pythonic XML Object Model
-=================================
+:mod:`ecoxipy.pyxom` - Pythonic XML Object Model (PyXOM)
+========================================================
 
-This module implements a pythonic object model for the representation of XML
-structures. To create PyXOM data conveniently use :mod:`ecoxipy.pyxom.output`.
+This module implements the *Pythonic XML Object Model* (PyXOM) for the
+representation of XML structures. To conveniently create PyXOM data structures
+use :mod:`ecoxipy.pyxom.output`.
 
 
 .. _ecoxipy.pyxom.examples:
@@ -441,35 +442,36 @@ Classes
 Element
 ^^^^^^^
 
-..autoclass:: Element
-..autoclass:: Attribute
-..autoclass:: Attributes
+.. autoclass:: Element
+.. autoclass:: Attribute
+.. autoclass:: Attributes
 
 
 Document
 ^^^^^^^^
 
-..autoclass:: Document
-..autoclass:: DocumentType
+.. autoclass:: Document
+.. autoclass:: DocumentType
 
 
 Other Nodes
 ^^^^^^^^^^^
 
-..autoclass:: Text
-..autoclass:: Comment
-..autoclass:: ProcessingInstruction
+.. autoclass:: Text
+.. autoclass:: Comment
+.. autoclass:: ProcessingInstruction
 
 
 Base Classes
 ^^^^^^^^^^^^
 
-..autoclass:: XMLNode
-..autoclass:: NamespaceNameMixin
-..autoclass:: ContentNode
+.. autoclass:: XMLNode
+.. autoclass:: NamespaceNameMixin
+.. autoclass:: ContentNode
+.. autoclass:: ContainerNode
 '''
 
-from ._common import XMLNode
+from ._common import XMLNode, ContainerNode
 from ._attributes import NamespaceNameMixin, Attribute, Attributes
 from ._document import DocumentType, Document
 from ._element import Element

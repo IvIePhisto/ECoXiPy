@@ -1,11 +1,10 @@
 # -*- coding: utf-8 -*-
 u'''\
 
-:mod:`ecoxipy.string_output` - XML as Strings
-=============================================
+:mod:`ecoxipy.string_output` - Building XML Strings
+===================================================
 
-:class:`StringOutput` creates strings of XML and aims at high performance by
-using string concatenation.
+:class:`StringOutput` creates strings of XML.
 
 
 .. _ecoxipy.string_output.examples:
@@ -60,7 +59,7 @@ The value "invalid XML comment --" is not a valid XML comment because it contain
 
 from xml.sax.saxutils import quoteattr, escape
 
-from ecoxipy import Output, _unicode, _helpers
+from ecoxipy import Output, _python2, _unicode, _helpers
 
 
 class StringOutput(Output):
@@ -258,7 +257,7 @@ class XMLFragment(_unicode):
 
     def __repr__(self):
         return u'ecoxipy.string_output.XMLFragment({})'.format(
-            unicode.__repr__(self))
+            _unicode.__repr__(self))
 
 
 class XMLDocument(XMLFragment):
@@ -270,7 +269,7 @@ class XMLDocument(XMLFragment):
 
     def __repr__(self):
         return u'ecoxipy.string_output.XMLDocument({}, {})'.format(
-            unicode.__repr__(self), repr(self._encoding))
+            _unicode.__repr__(self), repr(self._encoding))
 
     @classmethod
     def _create(cls, value, encoding):

@@ -177,6 +177,9 @@ class Attribute(NamespaceNameMixin):
             or self.name != other.name
             or self.value != other.value)
 
+    def __hash__(self):
+        return object.__hash__(self)
+
 
 class Attributes(collections.Mapping):
     '''\
@@ -262,5 +265,9 @@ class Attributes(collections.Mapping):
             attribute.name: attribute.value
             for attribute in self.values()
         }
+
+    def __hash__(self):
+        return object.__hash__(self)
+
 
 del abc, collections

@@ -234,6 +234,9 @@ class Document(ContainerNode):
         __str__ = __bytes__
         del __bytes__
 
+    def __hash__(self):
+        return object.__hash__(self)
+
     def create_sax_events(self, content_handler=None, out=None,
             out_encoding='UTF-8', indent_incr=None):
         return XMLNode.create_sax_events(self, content_handler, out,

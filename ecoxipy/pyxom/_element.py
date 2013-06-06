@@ -215,6 +215,9 @@ class Element(ContainerNode, NamespaceNameMixin):
                 return True
         return False
 
+    def __hash__(self):
+        return object.__hash__(self)
+
     def duplicate(self):
         return Element(self._name,
             [child.duplicate() for child in self],

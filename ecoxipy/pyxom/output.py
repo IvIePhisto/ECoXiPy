@@ -1,12 +1,10 @@
 # -*- coding: utf-8 -*-
 u'''\
-
-:mod:`ecoxipy.pyxom.output` - PyXOM Structures
-============================================================
+:mod:`ecoxipy.pyxom.output` - Building PyXOM Structures
+=======================================================
 
 :class:`PyXOMOutput` creates structures consisting of
-:class:`ecoxipy.pyxom` data, which is an alternative to
-:class:`xml.dom` structures.
+:class:`ecoxipy.pyxom` data.
 
 
 .. _ecoxipy.pyxom.output.examples:

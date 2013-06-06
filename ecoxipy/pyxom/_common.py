@@ -159,7 +159,7 @@ class XMLNode(object):
         return content_handler
 
     def __str__(self):
-        return self.create_str(encoding=None)
+        return _unicode(self.create_str(encoding=None))
 
     def __bytes__(self):
         return self.create_str(encoding='UTF-8')
@@ -168,6 +168,9 @@ class XMLNode(object):
         __unicode__ = __str__
         __str__ = __bytes__
         del __bytes__
+
+    def __hash__(self):
+        return object.__hash__(self)
 
     @abc.abstractmethod
     def duplicate(self, test=None):
