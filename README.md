@@ -1,9 +1,9 @@
 # ECoXiPy - Easy Creation of XML in Python
 
 This Python 2 and 3 project (tested with CPython 2.7 and 3.3  as well as PyPy
-2.0.0) allows for easy creation of [XML](http://www.w3.org/XML/). The
-hierarchical structure of XML is easy to spot and the code to create XML is
-much shorter than using SAX, DOM or similar APIs.
+2.0) allows for easy creation of [XML](http://www.w3.org/XML/). The
+hierarchical structure of XML is easy to spot and the code to create XML
+is much shorter than using SAX, DOM or similar APIs.
 
 This project uses the MIT License, so you may freely use, distribute and
 modify it, provided you include the content of `License.txt`.
@@ -38,7 +38,8 @@ This is a major release introducing new capabilities and Python 3 support.
 *   *Changed:* Renamed module `ecoxipy.element_output` to
     `ecoxipy.pyxom_output` and moved the XML representation classes to their
     own module `ecoxipy.pyxom` naming them *PyXOM* - **Pythonic XML Object
-    Model**. DOM creation was also removed from those classes.
+    Model** as well as adding new functionality. DOM creation was removed from
+    those classes.
 *   *Changed:* All XML data is internally handled as Unicode, a
     `ecoxipy.MarkupBuilder` instance converts byte strings from an encoding
     given on creation (defaults to UTF-8).
