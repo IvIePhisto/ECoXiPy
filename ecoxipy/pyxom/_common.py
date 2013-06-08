@@ -332,6 +332,9 @@ class ContainerNode(XMLNode, collections.MutableSequence):
         self._wire_child(index, child)
 
     def insert(self, index, child):
+        '''\
+        Insert ``child`` before ``index``.
+        '''
         self._remove_from_parent(child)
         self._children.insert(index, child)
         self._wire_child(index, child)
@@ -342,6 +345,9 @@ class ContainerNode(XMLNode, collections.MutableSequence):
         self._unwire_child(child)
 
     def remove(self, child):
+        '''\
+        Remove ``child``.
+        '''
         for index, current_child in enumerate(self._children):
             if child is current_child:
                 del self[index]
