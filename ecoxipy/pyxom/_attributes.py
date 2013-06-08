@@ -9,6 +9,10 @@ from ._common import _string_repr
 
 
 class NamespaceNameMixin(object):
+    '''\
+    Contains functionality implementing `Namespaces in XML
+    <http://www.w3.org/TR/REC-xml-names/>`_.
+    '''
     __metaclass__ = abc.ABCMeta
     _namespace_name_slots__ = ('_namespace_prefix', '_local_name',
         '_v_namespace_uri', '_v_namespace_source')
@@ -33,6 +37,9 @@ class NamespaceNameMixin(object):
 
     @property
     def namespace_prefix(self):
+        '''\
+        The namespace prefix (the part before ``:``) of the node's name.
+        '''
         try:
             return self._namespace_prefix
         except AttributeError:
@@ -40,6 +47,9 @@ class NamespaceNameMixin(object):
 
     @property
     def local_name(self):
+        '''\
+        The local name (the part after ``:``) of the node's name.
+        '''
         try:
             return self._local_name
         except AttributeError:
@@ -47,6 +57,11 @@ class NamespaceNameMixin(object):
 
     @property
     def namespace_uri(self):
+        '''\
+        The namespace URI the :attr:`namespace_prefix` refers to. It is
+        :const:`None` if there is no namespace prefix and it is :const:`False`
+        if the prefix lookup failed.
+        '''
         try:
             return self._v_namespace_uri
         except AttributeError:
@@ -73,6 +88,11 @@ class NamespaceNameMixin(object):
 
 
 class Attribute(NamespaceNameMixin):
+    '''\
+    Represents an item of an :class:`Element`'s :class:`Attributes`. It
+    inherits from :class:`NamespaceNameMixin` and should not be
+    instantiated on itself, rather use :meth:`Attributes.create_attribute`.
+    '''
     __slots__ = NamespaceNameMixin._namespace_name_slots__ + (
         '_parent', '_name', '_value', '_check_well_formedness',
         '_namespace_attribute_prefix')
@@ -132,6 +152,12 @@ class Attribute(NamespaceNameMixin):
 
     @property
     def name(self):
+        '''\
+        The attribute's name. On setting the value is converted to an
+        Unicode string, if there is already another attribute with the
+        same name on the :attr:`parent` :class:`Attributes` instance a
+        :class:`KeyError` is raised.
+        '''
         return self._name
 
     @name.setter
@@ -153,6 +179,9 @@ class Attribute(NamespaceNameMixin):
 
     @property
     def value(self):
+        '''\
+        The attribute's value.
+        '''
         return self._value
 
     @value.setter
@@ -183,8 +212,9 @@ class Attribute(NamespaceNameMixin):
 
 class Attributes(collections.Mapping):
     '''\
-    Represents the attributes of an :class:`Element`. It should not be
-    instantiated on itself.
+    This mapping, containing :class:`Attribute` instances identified by their
+    names, represents attributes of an :class:`Element`. It should not
+    be instantiated on itself.
     '''
     __slots__ = ('_parent', '_attributes', '_check_well_formedness')
 
@@ -219,6 +249,16 @@ class Attributes(collections.Mapping):
         del item._parent
 
     def create_attribute(self, name, value):
+        '''\
+        Create a new :class:`Attribute` as part of the instance.
+
+        :param name: the attribute's name
+        :param value: the attribute's value
+        :returns: the created attribute
+        :rtype: :class:`Attribute`
+        :raises KeyError: If an attribute with ``name`` already exists in the
+            instance.
+        '''
         name = _unicode(name)
         if name in self._attributes:
             raise KeyError(
@@ -229,6 +269,16 @@ class Attributes(collections.Mapping):
         return attribute
 
     def add(self, attribute):
+        '''\
+        Add an attribute to the instance. If the attribute is contained in an
+        :class:`Attributes` instance it is first removed from that.
+
+        :param attribute: the attribute to add
+        :type attribute: :class:`Attribute`
+        :raises ValueError: if attribute is no :class:`Attribute` instance
+        :raises KeyError: If an attribute with the ``attribute``'s name
+            already exists in the instance.
+        '''
         if not isinstance(attribute, Attribute):
             raise ValueError(
                 'The parameter "attribute" must be an "ecoxipy.pyxom.Attribute" instance.')
@@ -261,6 +311,11 @@ class Attributes(collections.Mapping):
             ', '.join([repr(attribute) for attribute in self.values()]))
 
     def to_dict(self):
+        '''\
+        Creates a :func:`dict` from the instance's :class:`Attribute`
+        instances. The keys are the attribute's names, identifying the
+        attribute's values.
+        '''
         return {
             attribute.name: attribute.value
             for attribute in self.values()

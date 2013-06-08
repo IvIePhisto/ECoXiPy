@@ -5,6 +5,7 @@ def test_suite():
     import ecoxipy.string_output
     import ecoxipy.etree_output
     import ecoxipy.pyxom
+    import ecoxipy.pyxom._document
     import ecoxipy.pyxom.output
     import ecoxipy.pyxom.indexing
     import ecoxipy.decorators
@@ -15,6 +16,7 @@ def test_suite():
     suite.addTests(doctest.DocTestSuite(ecoxipy.etree_output))
     suite.addTests(doctest.DocTestSuite(ecoxipy.string_output))
     suite.addTests(doctest.DocTestSuite(ecoxipy.pyxom))
+    suite.addTests(doctest.DocTestSuite(ecoxipy.pyxom._document))
     suite.addTests(doctest.DocTestSuite(ecoxipy.pyxom.output))
     suite.addTests(doctest.DocTestSuite(ecoxipy.pyxom.indexing))
     suite.addTests(doctest.DocTestSuite(ecoxipy.decorators))

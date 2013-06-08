@@ -12,7 +12,8 @@ from ._content_nodes import Text
 
 class Element(ContainerNode, NamespaceNameMixin):
     '''\
-    Represents a XML element.
+    Represents a XML element. It inherits from :class:`ContainerNode` and
+    :class:`NamespaceNameMixin`.
 
     :param name: The name of the element to create.
     :type name: Unicode string
@@ -106,6 +107,10 @@ class Element(ContainerNode, NamespaceNameMixin):
 
     @property
     def namespace_prefixes(self):
+        '''\
+        An iterator over all namespace prefixes defined in the element and
+        its parents. Duplicate values may be retrieved.
+        '''
         def iterator():
             current = self
             while isinstance(current, Element):
@@ -124,14 +129,27 @@ class Element(ContainerNode, NamespaceNameMixin):
         return None, False
 
     def get_namespace_prefix_element(self, prefix):
+        '''\
+        Calculates the element the namespace ``prefix`` is defined in, this
+        is :const:`None` if the prefix is not defined.
+        '''
         return self._get_namespace(prefix)[0]
 
     def get_namespace_uri(self, prefix):
+        '''\
+        Calculates the namespace URI for the ``prefix``, this is
+        :const:`False` if the prefix is not defined..
+        '''
         return self._get_namespace(prefix)[1]
 
     @property
     def name(self):
-        '''The name of the element.'''
+        '''\
+        The name of the element. On setting the value is converted to an
+        Unicode string; a :class:`ecoxipy.XMLWellFormednessException` is
+        thrown if it is not a valid XML name and :attr:`check_well_formedness`
+        is :const:`True`.
+        '''
         return self._name
 
     @name.setter
@@ -218,6 +236,7 @@ class Element(ContainerNode, NamespaceNameMixin):
     def __hash__(self):
         return object.__hash__(self)
 
+    @_helpers.inherit_docstring(ContainerNode)
     def duplicate(self):
         return Element(self._name,
             [child.duplicate() for child in self],

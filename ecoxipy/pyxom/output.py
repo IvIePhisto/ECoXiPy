@@ -66,7 +66,7 @@ class PyXOMOutput(Output):
     An :class:`Output` implementation which creates
     :class:`ecoxipy.pyxom.XMLNode` instances and Unicode string instances.
 
-    :param check_well_formedness: The property
+    :param check_well_formedness: The attribute
         :attr:`check_well_formedness` is determined by this value.
     :type check_well_formedness: :func:`bool`
     '''
@@ -92,7 +92,7 @@ class PyXOMOutput(Output):
 
     def element(self, name, children, attributes):
         '''\
-        Returns a :class:`ecoxipy.pyxom.Element`.
+        Returns an :class:`ecoxipy.pyxom.Element`.
 
         :returns: The element created.
         :rtype: :class:`ecoxipy.pyxom.Element`

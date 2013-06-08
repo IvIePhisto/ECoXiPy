@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import collections
 from xml.sax.xmlreader import AttributesImpl
 
 from ecoxipy import _python2, _unicode
@@ -41,7 +42,12 @@ class DocumentType(object):
     @property
     def name(self):
         '''\
-        The document element name.
+        The document element name  or :const:`None`. On setting if the value
+        is :const:`None`, :attr:`publicid` and :attr:`systemid` are also set
+        to :const:`None`. Otherwise the value is converted to an Unicode
+        string; a :class:`ecoxipy.XMLWellFormednessException` is thrown if it
+        is not a valid XML name and :attr:`check_well_formedness` is
+        :const:`True`.
         '''
         return self._name
 
@@ -59,7 +65,11 @@ class DocumentType(object):
     @property
     def publicid(self):
         '''\
-        The document type public ID or :const:`None`
+        The document type public ID or :const:`None`. On setting if the value
+        is not :const:`None` it is converted to a Unicode string; a
+        :class:`ecoxipy.XMLWellFormednessException` is thrown if it is not a
+        valid doctype public ID and :attr:`check_well_formedness` is
+        :const:`True`.
         '''
         return self._publicid
 
@@ -74,7 +84,12 @@ class DocumentType(object):
     @property
     def systemid(self):
         '''\
-        The document type system ID or :const:`None`
+
+        The document type system ID or :const:`None`. On setting if the value
+        is not :const:`None` it is converted to a Unicode string; a
+        :class:`ecoxipy.XMLWellFormednessException` is thrown if it is not a
+        valid doctype system ID and :attr:`check_well_formedness` is
+        :const:`True`.
         '''
         return self._systemid
 
@@ -107,10 +122,29 @@ class DocumentType(object):
             or self._systemid != other._systemid
         )
 
+    @staticmethod
+    def _parse_values(name, publicid, systemid):
+        if name is None:
+            publicid = None
+            systemid = None
+        else:
+            name = _unicode(name)
+            if publicid is not None:
+                publicid = _unicode(publicid)
+            if systemid is not None:
+                systemid = _unicode(systemid)
+        return name, publicid, systemid
+
+    @staticmethod
+    def _create(name, publicid, systemid, check_well_formedness):
+        name, publicid, systemid = DocumentType._parse_values(
+            name, publicid, systemid)
+        return DocumentType(name, publicid, systemid, check_well_formedness)
+
 
 class Document(ContainerNode):
     '''\
-    Represents a XML document.
+    A :class:`ContainerNode` representing a XML document.
 
     :param doctype_name: The document type root element name or :const:`None`
         if the document should not have document type declaration.
@@ -157,7 +191,7 @@ class Document(ContainerNode):
         :param children: The document root nodes. All items that are not
             :class:`XMLNode` instances create :class:`Text` nodes after they
             have been converted to Unicode strings.
-        :param kargs: The parameters as the constructor has (except
+        :param kargs: The same parameters as the constructor has (except
             ``children``) are recognized. The items ``doctype_name``,
             ``doctype_publicid``, ``doctype_systemid``, and ``encoding`` are
             converted to Unicode strings if they are not :const:`None`.
@@ -169,21 +203,15 @@ class Document(ContainerNode):
             ``doctype_systemid`` is not a valid system ID.
         '''
         doctype_name = kargs.get('doctype_name', None)
-        if doctype_name is not None:
-            doctype_name = _unicode(doctype_name)
         doctype_publicid = kargs.get('doctype_publicid', None)
-        if doctype_publicid is not None:
-            doctype_publicid = _unicode(doctype_publicid)
         doctype_systemid = kargs.get('doctype_systemid', None)
-        if doctype_systemid is not None:
-            doctype_systemid = _unicode(doctype_systemid)
+        doctype_name, doctype_publicid, doctype_systemid = DocumentType._parse_values(
+            doctype_name, doctype_publicid, doctype_systemid)
         omit_xml_declaration = kargs.get('omit_xml_declaration', None)
         omit_xml_declaration = bool(omit_xml_declaration)
         encoding = kargs.get('encoding', None)
         if encoding is not None:
             encoding = _unicode(encoding)
-        if len(children) == 0:
-            import pdb; pdb.set_trace()
         return Document(doctype_name, doctype_publicid, doctype_systemid,
             [
                 child if isinstance(child, XMLNode) else Text.create(child)
@@ -193,9 +221,85 @@ class Document(ContainerNode):
     @property
     def doctype(self):
         '''\
-        The :class:`DocumentType` instance of the document or :const:`None`.
+        The :class:`DocumentType` instance of the document.
+
+        On setting one of the following occurs:
+
+        1.  If the value is :const:`None`, the document type's attributes are
+            set to :const:`None`.
+
+        2.  If the value is a byte or Unicode string, the document type
+            document element name is set to this value (a byte string will be
+            converted to Unicode).
+
+        3.  If the value is a mapping, the items identified by the strings
+            ``'name'``, ``'publicid'`` or ``'systemid'`` define the respective
+            attributes of the document type.
+
+        4.  If the value is a sequence, the item at position zero defines the
+            document type document element name, the item at position one
+            defines the public ID and the item at position two defines the
+            system ID. If the sequence is shorter than three, non-available
+            items are assumed to be :const:`None`.
+
+        The document type values are converted to appropriate values and their
+        validity is checked if :attr:`check_well_formedness` is :const:`True`.
+
+        Example:
+
+        >>> doc = Document.create()
+        >>> doc.doctype
+        ecoxipy.pyxom.DocumentType(None, None, None)
+        >>> doc.doctype = {'name': 'test', 'systemid': 'foo bar'}
+        >>> doc.doctype
+        ecoxipy.pyxom.DocumentType('test', None, 'foo bar')
+        >>> doc.doctype = ('html', 'foo bar')
+        >>> doc.doctype
+        ecoxipy.pyxom.DocumentType('html', 'foo bar', None)
+        >>> doc.doctype = 'foo'
+        >>> doc.doctype
+        ecoxipy.pyxom.DocumentType('foo', None, None)
+        >>> doc.doctype = None
+        >>> doc.doctype
+        ecoxipy.pyxom.DocumentType(None, None, None)
         '''
         return self._doctype
+
+    @doctype.setter
+    def doctype(self, value):
+        if value is None:
+            name = None
+            publicid = None
+            systemid = None
+        else:
+            if isinstance(value, bytes):
+                value = _unicode(value)
+            if isinstance(value, collections.Mapping):
+                name = value.get('name', None)
+                publicid = value.get('publicid', None)
+                systemid = value.get('systemid', None)
+            elif isinstance(value, _unicode):
+                name = value
+                publicid = None
+                systemid = None
+            else:
+                if len(value) > 2:
+                    systemid = value[2]
+                else:
+                    systemid = None
+                if len(value) > 1:
+                    publicid = value[1]
+                else:
+                    publicid = None
+                if len(value) > 0:
+                    name = value[0]
+                else:
+                    name = None
+        name, publicid, systemid = DocumentType._parse_values(
+            name, publicid, systemid)
+        self._doctype.name = name
+        self._doctype.publicid = publicid
+        self._doctype.systemid = systemid
 
     @property
     def omit_xml_declaration(self):
@@ -211,16 +315,18 @@ class Document(ContainerNode):
     @property
     def encoding(self):
         '''\
-        The encoding of the document.
+        The encoding of the document. On setting if the value is
+        :const:`None` it is set to ``UTF-8``, otherwise it is converted to an
+        Unicode string.
         '''
         return self._encoding
 
     @encoding.setter
     def encoding(self, value):
-        if value is not None:
-            value = _unicode(value)
-        else:
+        if value is None:
             value = u'UTF-8'
+        else:
+            value = _unicode(value)
         self._encoding = value
 
     def __bytes__(self):
@@ -237,6 +343,7 @@ class Document(ContainerNode):
     def __hash__(self):
         return object.__hash__(self)
 
+    @_helpers.inherit_docstring(ContainerNode)
     def create_sax_events(self, content_handler=None, out=None,
             out_encoding='UTF-8', indent_incr=None):
         return XMLNode.create_sax_events(self, content_handler, out,
@@ -291,6 +398,7 @@ class Document(ContainerNode):
                 return True
         return False
 
+    @_helpers.inherit_docstring(ContainerNode)
     def duplicate(self):
         return Document(self._doctype.name, self._doctype.publicid,
             self._doctype.systemid,

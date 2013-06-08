@@ -17,7 +17,7 @@ XML Creation
 ^^^^^^^^^^^^
 
 If you use the constructors be sure to supply the right data types, otherwise
-use the :meth:`create` methods or use :class:`ecoxipy.MarkupBuilder` which
+use the :meth:`create` methods or use :class:`ecoxipy.MarkupBuilder`, which
 take care of conversion.
 
 >>> from ecoxipy import MarkupBuilder
@@ -239,7 +239,7 @@ their contents like sequences.
 Duplication and Comparisons
 """""""""""""""""""""""""""
 
-Use :meth:`duplicate` to create a deep copy of a XML node:
+Use :meth:`XMLNode.duplicate` to create a deep copy of a XML node:
 
 >>> document_copy = document.duplicate()
 >>> document is document_copy
@@ -451,19 +451,19 @@ True
 Classes
 -------
 
+Document
+^^^^^^^^
+
+.. autoclass:: Document
+.. autoclass:: DocumentType
+
+
 Element
 ^^^^^^^
 
 .. autoclass:: Element
 .. autoclass:: Attribute
 .. autoclass:: Attributes
-
-
-Document
-^^^^^^^^
-
-.. autoclass:: Document
-.. autoclass:: DocumentType
 
 
 Other Nodes
@@ -478,9 +478,9 @@ Base Classes
 ^^^^^^^^^^^^
 
 .. autoclass:: XMLNode
-.. autoclass:: NamespaceNameMixin
-.. autoclass:: ContentNode
 .. autoclass:: ContainerNode
+.. autoclass:: ContentNode
+.. autoclass:: NamespaceNameMixin
 '''
 
 from ._common import XMLNode, ContainerNode

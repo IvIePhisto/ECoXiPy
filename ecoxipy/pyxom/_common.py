@@ -134,12 +134,12 @@ class XMLNode(object):
         Creates SAX events.
 
         :param content_handler: If this is :const:`None` a
-            ``xml.sax.saxutils.XMLGenerator`` is created and used as the
+            :class:`xml.sax.saxutils.XMLGenerator` is created and used as the
             content handler. If in this case ``out`` is not :const:`None`,
             it is used for output.
         :type content_handler: :class:`xml.sax.ContentHandler`
         :param out: The output to write to if no ``content_handler`` is given.
-            It should have a ``write`` method like files.
+            It should have a :meth:`write` method like files.
         :param out_encoding: The output encoding or :const:`None` for
             Unicode output.
         :param indent_incr: If this is not :const:`None` this activates
@@ -201,6 +201,12 @@ class XMLNode(object):
 
 
 class ContainerNode(XMLNode, collections.MutableSequence):
+    '''\
+    A :class:`XMLNode` containing other nodes with sequence semantics.
+
+    :param children: The nodes contained of in the node.
+    :type children: :func:`list`
+    '''
     __metaclass__ = abc.ABCMeta
     __slots__ = ('_children')
 

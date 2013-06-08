@@ -12,9 +12,9 @@ from ._common import XMLNode, _string_repr
 
 class ContentNode(XMLNode):
     '''\
-    Represents a node with content.
+    A :class:`XMLNode` with content.
 
-    :param content: The content.
+    :param content: Becomes the :attr:`content` attribute.
     :type content: Unicode string
     '''
     __metaclass__ = abc.ABCMeta
@@ -38,7 +38,8 @@ class ContentNode(XMLNode):
     @property
     def content(self):
         '''\
-        The node content.
+        The node content. On setting the value is converted to an Unicode
+        string.
         '''
         return self._content
 
@@ -57,7 +58,7 @@ class ContentNode(XMLNode):
 
 class Text(ContentNode):
     '''\
-    Represents a node of text.
+    A :class:`ContentNode` representing a node of text.
     '''
     def __repr__(self):
         return 'ecoxipy.pyxom.Text({})'.format(_string_repr(self.content))
@@ -68,6 +69,7 @@ class Text(ContentNode):
     def _create_str(self, out):
         return out.text(self.content)
 
+    @_helpers.inherit_docstring(ContentNode)
     def duplicate(self):
         return Text(self.content)
 
@@ -77,10 +79,8 @@ class Text(ContentNode):
 
 class Comment(ContentNode):
     '''\
-    Represents a comment node.
+    A :class:`ContentNode` representing a comment node.
 
-    :param content: The content.
-    :type content: Unicode string
     :raises ecoxipy.XMLWellFormednessException: If ``check_well_formedness``
         is :const:`True` and ``content`` is not valid.
     '''
@@ -126,6 +126,7 @@ class Comment(ContentNode):
     def __repr__(self):
         return 'ecoxipy.pyxom.Comment({})'.format(_string_repr(self.content))
 
+    @_helpers.inherit_docstring(ContentNode)
     def duplicate(self):
         return Comment(self.content)
 
@@ -142,7 +143,7 @@ class Comment(ContentNode):
 
 class ProcessingInstruction(ContentNode):
     '''\
-    Represent a processing instruction.
+    A :class:`ContentNode` representing a processing instruction.
 
     :param target: The :attr:`target`.
     :param content: The :attr:`content` or :const:`None`.
@@ -232,6 +233,7 @@ class ProcessingInstruction(ContentNode):
             or self._target != other._target
             or self._content != other._content)
 
+    @_helpers.inherit_docstring(ContentNode)
     def duplicate(self):
         return ProcessingInstruction(self._target, self.content)
 

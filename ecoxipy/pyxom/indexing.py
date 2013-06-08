@@ -302,7 +302,6 @@ class UniqueValueIndexer(Indexer):
 
 class MultiValueIndexer(UniqueValueIndexer):
     '''\
-
     An abstract :class:`Indexer` base class which uses
     :class:`MultiValueIndex` as the index.
     '''
