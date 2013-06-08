@@ -46,7 +46,7 @@ class DocumentType(object):
         is :const:`None`, :attr:`publicid` and :attr:`systemid` are also set
         to :const:`None`. Otherwise the value is converted to an Unicode
         string; a :class:`ecoxipy.XMLWellFormednessException` is thrown if it
-        is not a valid XML name and :attr:`check_well_formedness` is
+        is not a valid XML name and ``check_well_formedness`` is
         :const:`True`.
         '''
         return self._name
@@ -68,7 +68,7 @@ class DocumentType(object):
         The document type public ID or :const:`None`. On setting if the value
         is not :const:`None` it is converted to a Unicode string; a
         :class:`ecoxipy.XMLWellFormednessException` is thrown if it is not a
-        valid doctype public ID and :attr:`check_well_formedness` is
+        valid doctype public ID and ``check_well_formedness`` is
         :const:`True`.
         '''
         return self._publicid
@@ -88,7 +88,7 @@ class DocumentType(object):
         The document type system ID or :const:`None`. On setting if the value
         is not :const:`None` it is converted to a Unicode string; a
         :class:`ecoxipy.XMLWellFormednessException` is thrown if it is not a
-        valid doctype system ID and :attr:`check_well_formedness` is
+        valid doctype system ID and ``check_well_formedness`` is
         :const:`True`.
         '''
         return self._systemid
@@ -245,7 +245,7 @@ class Document(ContainerNode):
             items are assumed to be :const:`None`.
 
         The document type values are converted to appropriate values and their
-        validity is checked if :attr:`check_well_formedness` is :const:`True`.
+        validity is checked if ``check_well_formedness`` is :const:`True`.
 
         Example:
 

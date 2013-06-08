@@ -30,9 +30,8 @@ class Element(ContainerNode, NamespaceNameMixin):
         ``name`` is not a valid XML name.
     '''
     __slots__ = NamespaceNameMixin._namespace_name_slots__ + (
-        '_name', '_attributes', '_check_well_formedness',
-        '_namespace_prefix_to_uri', '_namespace_targets',
-        '_namespace_prefix_to_target')
+        '_name', '_attributes',  '_namespace_prefix_to_uri',
+        '_namespace_targets', '_namespace_prefix_to_target')
 
     def __init__(self, name, children, attributes,
             check_well_formedness=False):
@@ -147,7 +146,7 @@ class Element(ContainerNode, NamespaceNameMixin):
         '''\
         The name of the element. On setting the value is converted to an
         Unicode string; a :class:`ecoxipy.XMLWellFormednessException` is
-        thrown if it is not a valid XML name and :attr:`check_well_formedness`
+        thrown if it is not a valid XML name and ``check_well_formedness``
         is :const:`True`.
         '''
         return self._name
