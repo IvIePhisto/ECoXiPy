@@ -16,6 +16,7 @@ Modules
     parsing
     string_output
     dom_output
+    etree_output
     pyxom
     pyxom_output
     pyxom_indexing

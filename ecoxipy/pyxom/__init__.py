@@ -127,7 +127,7 @@ You can retrieve iterators for navigation through the tree:
 >>> list(document[0][1].children())
 [ecoxipy.pyxom.Text('Hello'), ecoxipy.pyxom.Element['em', {...}], ecoxipy.pyxom.Text('!')]
 >>> list(document[0][2].descendants())
-[ecoxipy.pyxom.Element['data-element', {...}], ecoxipy.pyxom.Text('\xe4\xf6\xfc\xdf <&>'), ecoxipy.pyxom.Element['p', {...}], ecoxipy.pyxom.Text('raw content'), ecoxipy.pyxom.Text('Some Text'), ecoxipy.pyxom.Element['br', {...}], ecoxipy.pyxom.Text('0'), ecoxipy.pyxom.Text('1'), ecoxipy.pyxom.Text('2'), ecoxipy.pyxom.Text('3'), ecoxipy.pyxom.Text('4'), ecoxipy.pyxom.Text('5')]
+[ecoxipy.pyxom.Element['data-element', {...}], ecoxipy.pyxom.Text('\\xe4\\xf6\\xfc\\xdf <&>'), ecoxipy.pyxom.Element['p', {...}], ecoxipy.pyxom.Text('raw content'), ecoxipy.pyxom.Text('Some Text'), ecoxipy.pyxom.Element['br', {...}], ecoxipy.pyxom.Text('0'), ecoxipy.pyxom.Text('1'), ecoxipy.pyxom.Text('2'), ecoxipy.pyxom.Text('3'), ecoxipy.pyxom.Text('4'), ecoxipy.pyxom.Text('5')]
 
 >>> list(document[0][-2].preceding_siblings)
 [ecoxipy.pyxom.ProcessingInstruction('pi-target', '<PI content>'), ecoxipy.pyxom.Comment('<This is a comment!>'), ecoxipy.pyxom.Element['div', {...}], ecoxipy.pyxom.Element['p', {...}], ecoxipy.pyxom.Element['h1', {...}]]
@@ -145,16 +145,16 @@ Descendants and children can also be retrieved in reverse document order:
 >>> list(document[0][1].children(True)) == list(reversed(list(document[0][1].children())))
 True
 >>> list(document[0][2].descendants(True))
-[ecoxipy.pyxom.Text('5'), ecoxipy.pyxom.Text('4'), ecoxipy.pyxom.Text('3'), ecoxipy.pyxom.Text('2'), ecoxipy.pyxom.Text('1'), ecoxipy.pyxom.Text('0'), ecoxipy.pyxom.Element['br', {...}], ecoxipy.pyxom.Text('Some Text'), ecoxipy.pyxom.Element['p', {...}], ecoxipy.pyxom.Text('raw content'), ecoxipy.pyxom.Element['data-element', {...}], ecoxipy.pyxom.Text('\xe4\xf6\xfc\xdf <&>')]
+[ecoxipy.pyxom.Text('5'), ecoxipy.pyxom.Text('4'), ecoxipy.pyxom.Text('3'), ecoxipy.pyxom.Text('2'), ecoxipy.pyxom.Text('1'), ecoxipy.pyxom.Text('0'), ecoxipy.pyxom.Element['br', {...}], ecoxipy.pyxom.Text('Some Text'), ecoxipy.pyxom.Element['p', {...}], ecoxipy.pyxom.Text('raw content'), ecoxipy.pyxom.Element['data-element', {...}], ecoxipy.pyxom.Text('\\xe4\\xf6\\xfc\\xdf <&>')]
 
 
 Normally :meth:`ContainerNode.descendants` traverses the XML tree depth-first,
 but you can also use breadth-first traversal:
 
 >>> list(document[0][2].descendants(depth_first=False))
-[ecoxipy.pyxom.Element['data-element', {...}], ecoxipy.pyxom.Element['p', {...}], ecoxipy.pyxom.Text('Some Text'), ecoxipy.pyxom.Element['br', {...}], ecoxipy.pyxom.Text('0'), ecoxipy.pyxom.Text('1'), ecoxipy.pyxom.Text('2'), ecoxipy.pyxom.Text('3'), ecoxipy.pyxom.Text('4'), ecoxipy.pyxom.Text('5'), ecoxipy.pyxom.Text('\xe4\xf6\xfc\xdf <&>'), ecoxipy.pyxom.Text('raw content')]
+[ecoxipy.pyxom.Element['data-element', {...}], ecoxipy.pyxom.Element['p', {...}], ecoxipy.pyxom.Text('Some Text'), ecoxipy.pyxom.Element['br', {...}], ecoxipy.pyxom.Text('0'), ecoxipy.pyxom.Text('1'), ecoxipy.pyxom.Text('2'), ecoxipy.pyxom.Text('3'), ecoxipy.pyxom.Text('4'), ecoxipy.pyxom.Text('5'), ecoxipy.pyxom.Text('\\xe4\\xf6\\xfc\\xdf <&>'), ecoxipy.pyxom.Text('raw content')]
 >>> list(document[0][2].descendants(True, False))
-[ecoxipy.pyxom.Text('5'), ecoxipy.pyxom.Text('4'), ecoxipy.pyxom.Text('3'), ecoxipy.pyxom.Text('2'), ecoxipy.pyxom.Text('1'), ecoxipy.pyxom.Text('0'), ecoxipy.pyxom.Element['br', {...}], ecoxipy.pyxom.Text('Some Text'), ecoxipy.pyxom.Element['p', {...}], ecoxipy.pyxom.Element['data-element', {...}], ecoxipy.pyxom.Text('raw content'), ecoxipy.pyxom.Text('\xe4\xf6\xfc\xdf <&>')]
+[ecoxipy.pyxom.Text('5'), ecoxipy.pyxom.Text('4'), ecoxipy.pyxom.Text('3'), ecoxipy.pyxom.Text('2'), ecoxipy.pyxom.Text('1'), ecoxipy.pyxom.Text('0'), ecoxipy.pyxom.Element['br', {...}], ecoxipy.pyxom.Text('Some Text'), ecoxipy.pyxom.Element['p', {...}], ecoxipy.pyxom.Element['data-element', {...}], ecoxipy.pyxom.Text('raw content'), ecoxipy.pyxom.Text('\\xe4\\xf6\\xfc\\xdf <&>')]
 
 
 Namespaces
