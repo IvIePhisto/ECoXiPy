@@ -4,7 +4,7 @@ u'''\
 :mod:`ecoxipy.etree_output` - Building ElementTree Data
 =======================================================
 
-:class:`ETreeOutput` creates :mod:`xml.etree` structures.
+:class:`ETreeOutput` creates :mod:`xml.etree.ElementTree` structures.
 
 
 .. _ecoxipy.etree_output.examples:
@@ -44,11 +44,11 @@ from ecoxipy import Output, _unicode
 
 class ETreeOutput(Output):
     '''\
-    An :class:`Output` implementation which creates :mod:`xml.etree`
-    structures.
+    An :class:`Output` implementation which creates
+    :mod:`xml.etree.ElementTree` structures.
 
     :param element_factory: A :mod:`xml.etree.ElementTree`-compatible
-        factory. If this is :const:`None` :func:`xml.etree.ElementTree` is
+        factory. If this is :const:`None` :mod:`xml.etree.ElementTree` is
         used.
     '''
     def __init__(self, element_factory=None):
@@ -63,7 +63,7 @@ class ETreeOutput(Output):
         or not.
 
         :param content: The object to test.
-        :returns: :const:`True` for compatible :mod:`xml.etree` objects,
+        :returns: :const:`True` for compatible :mod:`xml.etree.ElementTree` objects,
             :const:`False` otherwise.
         '''
         return self._element_factory.iselement(content)
@@ -113,7 +113,7 @@ class ETreeOutput(Output):
         Creates an :mod:`xml.etree.ElementTree.ElementTree`-compatible
         wrapper.
 
-        As :mod:`xml.etree` lacks support for document type declarations the
+        As :mod:`xml.etree.ElementTree` lacks support for document type declarations the
         ``doctype_*`` parameters are ignored. Element tree wrappers do not
         allow specification of the output encoding and of the XML declaration,
         so ``encoding`` and ``omit_xml_declaration`` are also ignored. As

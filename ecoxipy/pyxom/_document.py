@@ -230,11 +230,13 @@ class Document(ContainerNode):
 
         2.  If the value is a byte or Unicode string, the document type
             document element name is set to this value (a byte string will be
-            converted to Unicode).
+            converted to Unicode). The document type public and system IDs
+            will be set to :const:`None`.
 
         3.  If the value is a mapping, the items identified by the strings
             ``'name'``, ``'publicid'`` or ``'systemid'`` define the respective
-            attributes of the document type.
+            attributes of the document type, the others are assumed to be
+            :const:`None`.
 
         4.  If the value is a sequence, the item at position zero defines the
             document type document element name, the item at position one

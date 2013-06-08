@@ -293,9 +293,19 @@ class Attributes(collections.Mapping):
         attribute._parent = self
 
     def remove(self, attribute):
+        '''\
+        Remove the given ``attribute``.
+
+        :param attribute: the attribute to remove
+        :type attribute: :class:`Attribute`
+        :raises KeyError: If no attribute with the name of ``attribute``
+            is contained in the instance.
+        :raises ValueError: If there is an attribute with the name of
+            ``attribute`` contained, but it is not ``attribute``.
+        '''
         self_attribute = self._attributes[attribute.name]
         if self_attribute is not attribute:
-            raise ValueError(
+            raise KeyError(
                 'The parameter "attribute" must be contained within object.')
         del self[attribute.name]
 
@@ -312,7 +322,7 @@ class Attributes(collections.Mapping):
 
     def to_dict(self):
         '''\
-        Creates a :func:`dict` from the instance's :class:`Attribute`
+        Creates a :class:`dict` from the instance's :class:`Attribute`
         instances. The keys are the attribute's names, identifying the
         attribute's values.
         '''

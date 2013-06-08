@@ -20,7 +20,7 @@ class Element(ContainerNode, NamespaceNameMixin):
     :param children: The children :class:`XMLNode` instances of the element.
     :type children: iterable of items
     :param attributes: Defines the attributes of the element. Must be usable
-        as the parameter of :func:`dict` and should contain only Unicode
+        as the parameter of :class:`dict` and should contain only Unicode
         strings as key and value definitions.
     :param check_well_formedness: If :const:`True` the element name and
         attribute names will be checked to be a valid XML name.
@@ -55,7 +55,7 @@ class Element(ContainerNode, NamespaceNameMixin):
             :class:`XMLNode` instances create :class:`Text` nodes after they
             have been converted to Unicode strings.
         :param kargs: The item ``attributes`` defines the attributes and must
-            have a method :meth:`items()` (like :func:`dict`) which returns
+            have a method :meth:`items()` (like :class:`dict`) which returns
             an iterable of 2-:func:`tuple` instances containing the attribute
             name as the first and the attribute value as the second item.
             Attribute names and values are converted to Unicode strings.
