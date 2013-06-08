@@ -37,6 +37,9 @@ class ContentNode(XMLNode):
 
     @property
     def content(self):
+        '''\
+        The node content.
+        '''
         return self._content
 
     @content.setter
@@ -141,8 +144,8 @@ class ProcessingInstruction(ContentNode):
     '''\
     Represent a processing instruction.
 
-    :param target: The processing instruction target.
-    :param content: The processing instruction content or :const:`None`.
+    :param target: The :attr:`target`.
+    :param content: The :attr:`content` or :const:`None`.
     :param check_well_formedness: If :const:`True` the target will be checked
         to be a valid XML name.
     :type check_well_formedness: :func:`bool`
@@ -167,9 +170,10 @@ class ProcessingInstruction(ContentNode):
         Creates a processing instruction node and converts the parameters to
         appropriate types.
 
-        :param target: The target, will be converted to an Unicode string.
-        :param content: The content, if it is not :const:`None` it will be
-            converted to an Unicode string.
+        :param target: The :attr:`target`, will be converted to an Unicode
+            string.
+        :param content: The :attr:`content`, if it is not :const:`None` it
+            will be converted to an Unicode string.
         :returns: The created processing instruction.
         :rtype: :class:`ProcessingInstruction`
         :raises ecoxipy.XMLWellFormednessException: If either the ``target``
@@ -182,6 +186,9 @@ class ProcessingInstruction(ContentNode):
 
     @property
     def target(self):
+        '''\
+        The processing instruction target.
+        '''
         return self._target
 
     @target.setter

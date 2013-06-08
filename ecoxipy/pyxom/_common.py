@@ -88,14 +88,14 @@ class XMLNode(object):
         return self._attribute_iterator('_next')
 
     def _attribute_climbing_iterator(self, attribute):
-        siblings = self._attribute_iterator(attribute)
-        for sibling in siblings:
-            yield sibling
-        parent = self.parent
-        if parent is not None:
-            for parent_sibling in parent._attribute_climbing_iterator(
-                    attribute):
-                yield parent_sibling
+        nodes = list(self._attribute_iterator(attribute))
+        while nodes:
+            current = nodes.pop(0)
+            yield current
+            if len(nodes) == 0:
+                parent = current.parent
+                if parent is not None:
+                    nodes.extend(parent._attribute_iterator(attribute))
 
     @property
     def preceding(self):
@@ -234,34 +234,24 @@ class ContainerNode(XMLNode, collections.MutableSequence):
         :returns: An iterator over the descendants.
         '''
         if depth_first:
-            return self._descendants_depth_first(reverse)
-        return self._descendants_breadth_first(reverse)
+            child_reverse = not reverse
+            pop_position = -1
+        else:
+            child_reverse = reverse
+            pop_position = 0
+        nodes = list(self._children_rec(child_reverse))
+        def iterator():
+            while nodes:
+                current = nodes.pop(pop_position)
+                yield current
+                if isinstance(current, ContainerNode):
+                    nodes.extend(current._children_rec(child_reverse))
+        return iterator()
 
     def _children_rec(self, reverse):
         def iterator():
             for child in (reversed(self) if reverse else self):
                 yield child
-        return iterator()
-
-    def _descendants_depth_first(self, reverse):
-        def iterator():
-            for child in self._children_rec(reverse):
-                yield child
-                if isinstance(child, ContainerNode):
-                    for descendant in child._descendants_depth_first(reverse):
-                        yield descendant
-        return iterator()
-
-    def _descendants_breadth_first(self, reverse):
-        def iterator():
-            children = list(self._children_rec(reverse))
-            for child in children:
-                yield child
-            for child in children:
-                if isinstance(child, ContainerNode):
-                    for descendant in child._descendants_breadth_first(
-                            reverse):
-                        yield descendant
         return iterator()
 
     def _unwire_child(self, child):

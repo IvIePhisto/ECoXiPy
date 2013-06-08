@@ -40,21 +40,8 @@ from tinkerpy import LexicalHandler
 
 from ecoxipy import _unicode
 
+from ecoxipy._helpers import inherit_docstring
 
-def _inherit_docstring(base):
-    def decorator(attr):
-        name = attr.__name__
-        if attr.__doc__ is None:
-            try:
-                original_attr = getattr(base, name)
-            except AttributeError:
-                pass
-            else:
-                original_doc = original_attr.__doc__
-                if original_doc is not None:
-                    attr.__doc__ = original_doc
-        return attr
-    return decorator
 
 
 class MarkupHandler(ContentHandler, DTDHandler, LexicalHandler):
@@ -142,21 +129,21 @@ class MarkupHandler(ContentHandler, DTDHandler, LexicalHandler):
         self._current_children = self._children_stack[-1]
         self._append_node(node)
 
-    @_inherit_docstring(DTDHandler)
+    @inherit_docstring(DTDHandler)
     def notationDecl(self, name, publicId, systemId):
         self._doctype_name = _unicode(name)
         self._doctype_publicid = _unicode(publicId)
         self._doctype_systemid = _unicode(systemId)
 
-    @_inherit_docstring(DTDHandler)
+    @inherit_docstring(DTDHandler)
     def unparsedEntityDecl(self, name, publicId, systemId, ndata):
         self.notationDecl(name, publicId, systemId)
 
-    @_inherit_docstring(ContentHandler)
+    @inherit_docstring(ContentHandler)
     def startDocument(self):
         self._enter_node()
 
-    @_inherit_docstring(ContentHandler)
+    @inherit_docstring(ContentHandler)
     def endDocument(self):
         self._document = self._output.document(self._doctype_name,
             self._doctype_publicid, self._doctype_systemid,
@@ -164,12 +151,12 @@ class MarkupHandler(ContentHandler, DTDHandler, LexicalHandler):
         self._leave_node(self._document)
         self.reset()
 
-    @_inherit_docstring(ContentHandler)
+    @inherit_docstring(ContentHandler)
     def startElement(self, name, attrs):
         self._enter_node()
         self._element_stack.append((name, attrs))
 
-    @_inherit_docstring(ContentHandler)
+    @inherit_docstring(ContentHandler)
     def endElement(self, name):
         _name, attrs = self._element_stack.pop()
         assert name == _name
@@ -180,22 +167,22 @@ class MarkupHandler(ContentHandler, DTDHandler, LexicalHandler):
         })
         self._leave_node(element)
 
-    @_inherit_docstring(ContentHandler)
+    @inherit_docstring(ContentHandler)
     def characters(self, content):
         text = self._output.text(_unicode(content))
         self._append_node(text)
 
-    @_inherit_docstring(ContentHandler)
+    @inherit_docstring(ContentHandler)
     def ignorableWhitespace(self, content):
         return self.characters(content)
 
-    @_inherit_docstring(ContentHandler)
+    @inherit_docstring(ContentHandler)
     def processingInstruction(self, target, data):
         pi = self._output.processing_instruction(_unicode(target),
             _unicode(data))
         self._append_node(pi)
 
-    @_inherit_docstring(LexicalHandler)
+    @inherit_docstring(LexicalHandler)
     def comment(self, content):
         comment = self._output.comment(_unicode(content))
         self._append_node(comment)
@@ -242,7 +229,7 @@ class XMLFragmentParser(MarkupHandler):
         except (SAXNotRecognizedException, SAXNotSupportedException):
             pass
 
-    @_inherit_docstring(MarkupHandler)
+    @inherit_docstring(MarkupHandler)
     def endElement(self, name):
         if len(self._element_stack) == 1:
             xml_fragment = self._current_children
@@ -270,4 +257,4 @@ class XMLFragmentParser(MarkupHandler):
         finally:
             byte_stream.close()
 
-del ContentHandler, DTDHandler, LexicalHandler
+del ContentHandler, DTDHandler, LexicalHandler, inherit_docstring

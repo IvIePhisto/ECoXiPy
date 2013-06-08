@@ -78,3 +78,19 @@ def get_qualified_name_components(name):
             prefix = None
             local_name = name
     return prefix, local_name
+
+
+def inherit_docstring(base):
+    def decorator(attr):
+        name = attr.__name__
+        if attr.__doc__ is None:
+            try:
+                original_attr = getattr(base, name)
+            except AttributeError:
+                pass
+            else:
+                original_doc = original_attr.__doc__
+                if original_doc is not None:
+                    attr.__doc__ = original_doc
+        return attr
+    return decorator

@@ -153,8 +153,6 @@ from abc import ABCMeta, abstractmethod
 _python2 = sys.version_info[0] <= 2
 _unicode = unicode if _python2 else str
 
-from ecoxipy.parsing import XMLFragmentParser
-
 
 class MarkupBuilder(object):
     u'''\
@@ -231,6 +229,7 @@ class MarkupBuilder(object):
         try:
             xml_fragment_parser = self.__dict__['_v_xml_fragment_parser']
         except KeyError:
+            from ecoxipy.parsing import XMLFragmentParser
             xml_fragment_parser = XMLFragmentParser(
                 self._output, self._parser)
             self._v_xml_fragment_parser = xml_fragment_parser
