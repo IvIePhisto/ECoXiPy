@@ -5,7 +5,9 @@ u'''\
 
 This module implements the *Pythonic XML Object Model* (PyXOM) for the
 representation of XML structures. To conveniently create PyXOM data structures
-use :mod:`ecoxipy.pyxom.output`.
+use :mod:`ecoxipy.pyxom.output`, for indexing use
+:mod:`ecoxipy.pyxom.indexing` (if :attr:`Document.element_by_id` and
+:attr:`Document.elements_by_name` are not enough for you).
 
 
 .. _ecoxipy.pyxom.examples:
@@ -51,7 +53,7 @@ take care of conversion.
 ...             b['somexml']({'xmlns': ''}),
 ...             b['bar:somexml'],
 ...             {'xmlns:foo': 'foo://bar', 'xmlns:t': '',
-...                 'foo:bar': 'Hello'}
+...                 'foo:bar': 'Hello', 'id': 'foo'}
 ...         ),
 ...         {'xmlns': 'http://www.w3.org/1999/xhtml/'}
 ...     ), doctype_name='article', omit_xml_declaration=True
@@ -157,6 +159,15 @@ but you can also use breadth-first traversal:
 [ecoxipy.pyxom.Text('5'), ecoxipy.pyxom.Text('4'), ecoxipy.pyxom.Text('3'), ecoxipy.pyxom.Text('2'), ecoxipy.pyxom.Text('1'), ecoxipy.pyxom.Text('0'), ecoxipy.pyxom.Element['br', {...}], ecoxipy.pyxom.Text('Some Text'), ecoxipy.pyxom.Element['p', {...}], ecoxipy.pyxom.Element['data-element', {...}], ecoxipy.pyxom.Text('raw content'), ecoxipy.pyxom.Text('\\xe4\\xf6\\xfc\\xdf <&>')]
 
 
+On :class:`Document` instances :attr:`Document.element_by_id` and
+:attr:`Document.elements_by_name` are available, which use indexes for fast
+retrieval (after initially building the index):
+
+>>> document.element_by_id['foo'] is document[0][-1]
+True
+>>> list(document.elements_by_name['h1'])[0] is document[0][0]
+True
+
 Namespaces
 """"""""""
 
@@ -180,9 +191,10 @@ bar
 
 
 The namespace URI is available as :attr:`Element.namespace_uri` and
-:attr:`Attribute.namespace_uri`, these properties look up the namespace
-prefix of the node in the parent elements (this information is cached, so
-don't fear multiple retrieval):
+:attr:`Attribute.namespace_uri` (originally defined as
+:attr:`NamespaceNameMixin.namespace_uri`), these properties look up the
+namespace prefix of the node in the parent elements (this information is
+cached, so don't fear multiple retrieval):
 
 >>> xhtml_namespace_uri = u'http://www.w3.org/1999/xhtml/'
 >>> document[0][1].namespace_uri == xhtml_namespace_uri

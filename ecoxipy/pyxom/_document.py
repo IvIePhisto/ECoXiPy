@@ -7,6 +7,8 @@ from ecoxipy import _helpers
 
 from ._common import XMLNode, ContainerNode, _string_repr
 from ._content_nodes import Text
+from .indexing import (IndexDescriptor, ElementByUniqueAttributeValueIndexer,
+    ElementsByNameIndexer)
 
 
 class DocumentType(object):
@@ -406,3 +408,45 @@ class Document(ContainerNode):
             self._doctype.systemid,
             [child.duplicate() for child in self],
             self._omit_xml_declaration, self._encoding)
+
+    element_by_id = IndexDescriptor(ElementByUniqueAttributeValueIndexer())
+    '''\
+    A :class:`ecoxipy.pyxom.indexing.IndexDescriptor` instance using a
+    :class:`ecoxipy.pyxom.indexing.ElementByUniqueAttributeValueIndexer`
+    for indexing.
+
+    Use it like a mapping to retrieve the element having an attribute ``id``
+    with the value being equal to the requested key, possibly throwing a
+    :class:`KeyError` if such an element does not exist.
+
+    **Important:** If the document's childs are relevantly modified (i.e. an
+    ``id`` attribute was created, modified or deleted), :meth:`delete_indexes`
+    should be called or this attribute should be deleted on the instance,
+    which deletes the index.
+    '''
+
+    elements_by_name = IndexDescriptor(ElementsByNameIndexer())
+    '''\
+    A :class:`ecoxipy.pyxom.indexing.IndexDescriptor` instance using a
+    :class:`ecoxipy.pyxom.indexing.ElementsByNameIndexer` for indexing.
+
+    Use it like a mapping to retrieve an iterator over elements having a name
+    equal to the requested key, possibly throwing a :class:`KeyError` if such
+    an element does not exist.
+
+    **Important:** If the document's childs are relevantly modified (i.e. new
+    elements were added or deleted, elements' names were modified),
+    :meth:`delete_indexes` should be called or this attribute should be
+    deleted on the instance, which deletes the index.
+    '''
+
+    def delete_indexes(self):
+        '''\
+        A shortcut to delete the indexes of :attr:`element_by_id` and
+        :attr:`elements_by_name`.
+        '''
+        del self.element_by_id
+        del self.elements_by_name
+
+del (IndexDescriptor, ElementByUniqueAttributeValueIndexer,
+    ElementsByNameIndexer)

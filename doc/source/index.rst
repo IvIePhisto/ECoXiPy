@@ -34,7 +34,7 @@ HTML5:
 
     :ref:`ecoxipy.decorators <ecoxipy.decorators.examples>`
 
-XML as Strings
+XML-String Creation
 
     :ref:`ecoxipy.string_output <ecoxipy.string_output.examples>`
 
@@ -42,17 +42,13 @@ DOM Creation
 
     :ref:`ecoxipy.dom_output <ecoxipy.dom_output.examples>`
 
-Create :mod:`ecoxipy.pyxom` structures
+:mod:`ecoxipy.pyxom` Examples
 
-    :ref:`ecoxipy.pyxom.output <ecoxipy.pyxom.output.examples>`
+    Creation: :ref:`ecoxipy.pyxom.output <ecoxipy.pyxom.output.examples>`
 
-Use :mod:`ecoxipy.pyxom` structures
+    Usage: :ref:`ecoxipy.pyxom <ecoxipy.pyxom.examples>`
 
-    :ref:`ecoxipy.pyxom <ecoxipy.pyxom.examples>`
-
-Index :mod:`ecoxipy.pyxom` structures
-
-    :ref:`ecoxipy.pyxom.indexing <ecoxipy.pyxom.indexing.examples>`
+    Indexing: :ref:`ecoxipy.pyxom.indexing <ecoxipy.pyxom.indexing.examples>`
 
 
 

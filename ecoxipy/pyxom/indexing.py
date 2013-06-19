@@ -35,6 +35,9 @@ Two ready-to-use indexer implementations are provided:
     :class:`ElementsByNameIndexer`.
 
 
+The :class:`IndexDescriptor` makes index access and deletion more convenient.
+
+
 .. _ecoxipy.pyxom.indexing.examples:
 
 Examples
@@ -110,8 +113,8 @@ Abstract Base Classes
 
 .. _ecoxipy.pyxom.indexing.implementations:
 
-Indexer and Index Implementations
----------------------------------
+Indexing-related Classes
+------------------------
 
 .. autoclass:: ElementByUniqueAttributeValueIndexer
 
@@ -121,6 +124,7 @@ Indexer and Index Implementations
 
 .. autoclass:: MultiValueIndex
 
+.. autoclass:: IndexDescriptor
 '''
 
 import abc
@@ -221,7 +225,8 @@ class Indexer(object):
 class UniqueValueIndex(collections.Mapping):
     '''\
     A read-only-semantics mapping enforcing only one value is registered under
-    a specific key. Entries can be set using :meth:`register`.
+    a specific key. Entries can be set using :meth:`register`. Value access
+    and containment tests convert the key to a Unicode string first.
     '''
     def __init__(self):
         self._index = {}
@@ -231,6 +236,7 @@ class UniqueValueIndex(collections.Mapping):
         Set the entry for ``key`` to ``value``.
 
         :param key: the identifier
+        :type key: Unicode string
         :param value: the entry's value
         :raises ValueError: if a value for ``key`` is already registered.
         '''
@@ -240,9 +246,11 @@ class UniqueValueIndex(collections.Mapping):
         self._index[key] = value
 
     def __getitem__(self, key):
+        key = _unicode(key)
         return self._index[key]
 
     def __contains__(self, key):
+        key = _unicode(key)
         return key in self._index
 
     def __len__(self):
@@ -261,6 +269,8 @@ class MultiValueIndex(UniqueValueIndex):
     '''\
     A read-only-semantics mapping holding a :class:`set` of values under a
     specific key. Values can be added to an key's set using :meth:`register`.
+    Value access and containment tests convert the key to a Unicode string
+    first.
     '''
     def register(self, key, value):
         '''\
@@ -400,5 +410,60 @@ class ElementsByNameIndexer(MultiValueIndexer):
         return (node.name, node)
 
 
+class IndexDescriptor(object):
+    '''\
+    A descriptor handling index creation using a given :class:`Indexer`.
+
+    :param indexer: The indexer to use for indexing, this becomes
+        :attr:`indexer`.
+    :type indexer: :class:`Indexer`.
+
+    On value retrieval this descriptor returns itself on classes, on instances
+    it returns an index created by the indexer. If such does not yet exist,
+    first a new one is created.
+
+    Attribute setting is not allowed by the descriptor. Deletion deletes the
+    index for the instance.
+
+    **Important:** This class does not hold track of changes in the indexed
+    structures for performance reasons. It is the responsibility of using
+    code to ensure the index is deleted after an instance is modified.
+
+    This descriptor does not modify the indexed instance, instead it holds a
+    :class:`weakref.WeakValueDictionary`, mapping instance IDs (as generated
+    by :func:`id`) to the generated index for the instance.
+    '''
+    def __init__(self, indexer):
+        self._indexer = indexer
+        from weakref import WeakValueDictionary
+        self._indexes = WeakValueDictionary()
+
+    @property
+    def indexer(self):
+        '''\
+        The :class:`Indexer` instance used for index creation.
+        '''
+        return self._indexer
+
+    def __get__(self, instance, owner):
+        if instance is None:
+            return self
+        instance_id = id(instance)
+        try:
+            index = self._indexes[instance_id]
+        except KeyError:
+            index = self._indexer(instance)
+            self._indexes[instance_id] = index
+        return index
+
+    def __set__(self, instance, value):
+        raise AttributeError('No setting allowed.')
+
+    def __delete__(self, instance):
+        instance_id = id(instance)
+        try:
+            del self._indexes[instance_id]
+        except KeyError:
+            pass
 
 del abc, collections
