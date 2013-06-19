@@ -159,14 +159,19 @@ but you can also use breadth-first traversal:
 [ecoxipy.pyxom.Text('5'), ecoxipy.pyxom.Text('4'), ecoxipy.pyxom.Text('3'), ecoxipy.pyxom.Text('2'), ecoxipy.pyxom.Text('1'), ecoxipy.pyxom.Text('0'), ecoxipy.pyxom.Element['br', {...}], ecoxipy.pyxom.Text('Some Text'), ecoxipy.pyxom.Element['p', {...}], ecoxipy.pyxom.Element['data-element', {...}], ecoxipy.pyxom.Text('raw content'), ecoxipy.pyxom.Text('\\xe4\\xf6\\xfc\\xdf <&>')]
 
 
-On :class:`Document` instances :attr:`Document.element_by_id` and
-:attr:`Document.elements_by_name` are available, which use indexes for fast
+On :class:`Document` instances :attr:`~Document.element_by_id` and
+:attr:`~Document.elements_by_name` are available, which use indexes for fast
 retrieval (after initially building the index):
 
 >>> document.element_by_id['foo'] is document[0][-1]
 True
->>> list(document.elements_by_name['h1'])[0] is document[0][0]
+>>> 'bar' in document.element_by_id
+False
+>>> document[0][-1] in list(document.elements_by_name['foo:somexml'])
 True
+>>> 'html' in document.elements_by_name
+False
+
 
 Namespaces
 """"""""""
@@ -375,6 +380,22 @@ False
 True
 >>> print(document[0][-1].local_name)
 foo
+
+
+Indexes and Manipulation
+""""""""""""""""""""""""
+
+If a document is modified, the indexes should be deleted. This can be done
+using :builtin:`del` on the index attribute :attr:`~Document.element_by_id`
+and :attr:`~Document.elements_by_name` or calling
+:meth:`~Document.delete_indexes`.
+
+>>> del document_copy[0][-1]
+>>> document_copy.delete_indexes()
+>>> 'foo' in document_copy.element_by_id
+False
+>>> 'foo:somexml' in document_copy.elements_by_name
+False
 
 
 XML Serialization

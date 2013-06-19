@@ -288,6 +288,7 @@ class MultiValueIndex(UniqueValueIndex):
         values.add(value)
 
     def __getitem__(self, key):
+        key = _unicode(key)
         return (node for node in self._index[key])
 
 
