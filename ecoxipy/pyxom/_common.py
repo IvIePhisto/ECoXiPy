@@ -228,30 +228,50 @@ class ContainerNode(XMLNode, collections.MutableSequence):
         '''
         return self._children_rec(reverse)
 
-    def descendants(self, reverse=False, depth_first=True):
+    def descendants(self, reverse=False, depth_first=True, max_depth=None):
         '''\
         Returns an iterator over all descendants.
 
         :param reverse: If this is :const:`True` the descendants are returned
             in reverse document order.
+        :type max_depth: :func:`bool`
         :param depth_first: If this is :const:`True` the descendants are
             returned depth-first, if it is :const:`False` breadth-first
             traversal is used.
+        :type max_depth: :func:`bool`
+        :param max_depth: The maximum depth, if this is :const:`None` all
+            descendants will be returned.
+        :type max_depth: :func:`int`
         :returns: An iterator over the descendants.
         '''
+        reverse = bool(reverse)
+        depth_first = bool(depth_first)
         if depth_first:
             child_reverse = not reverse
             pop_position = -1
         else:
             child_reverse = reverse
             pop_position = 0
-        nodes = list(self._children_rec(child_reverse))
+        if max_depth is None:
+            below_max_depth = lambda depth: True
+            add_children = lambda current, depth: ((child, None)
+                for child in current._children_rec(child_reverse))
+        else:
+            max_depth = int(max_depth)
+            if max_depth < 1:
+                raise ValueError(
+                    'The argument "max_depth" must be greater than zero.')
+            below_max_depth = lambda depth: depth < max_depth
+            add_children = lambda current, depth: ((child, depth+1)
+                for child in current._children_rec(child_reverse))
+        nodes = list(add_children(self, 0))
         def iterator():
             while nodes:
-                current = nodes.pop(pop_position)
+                current, depth = nodes.pop(pop_position)
                 yield current
-                if isinstance(current, ContainerNode):
-                    nodes.extend(current._children_rec(child_reverse))
+                if (isinstance(current, ContainerNode)
+                        and below_max_depth(depth)):
+                    nodes.extend(add_children(current, depth))
         return iterator()
 
     def _children_rec(self, reverse):

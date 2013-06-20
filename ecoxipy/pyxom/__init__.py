@@ -150,13 +150,21 @@ True
 [ecoxipy.pyxom.Text('5'), ecoxipy.pyxom.Text('4'), ecoxipy.pyxom.Text('3'), ecoxipy.pyxom.Text('2'), ecoxipy.pyxom.Text('1'), ecoxipy.pyxom.Text('0'), ecoxipy.pyxom.Element['br', {...}], ecoxipy.pyxom.Text('Some Text'), ecoxipy.pyxom.Element['p', {...}], ecoxipy.pyxom.Text('raw content'), ecoxipy.pyxom.Element['data-element', {...}], ecoxipy.pyxom.Text('\\xe4\\xf6\\xfc\\xdf <&>')]
 
 
-Normally :meth:`ContainerNode.descendants` traverses the XML tree depth-first,
+Normally :meth:`~ContainerNode.descendants` traverses the XML tree depth-first,
 but you can also use breadth-first traversal:
 
 >>> list(document[0][2].descendants(depth_first=False))
 [ecoxipy.pyxom.Element['data-element', {...}], ecoxipy.pyxom.Element['p', {...}], ecoxipy.pyxom.Text('Some Text'), ecoxipy.pyxom.Element['br', {...}], ecoxipy.pyxom.Text('0'), ecoxipy.pyxom.Text('1'), ecoxipy.pyxom.Text('2'), ecoxipy.pyxom.Text('3'), ecoxipy.pyxom.Text('4'), ecoxipy.pyxom.Text('5'), ecoxipy.pyxom.Text('\\xe4\\xf6\\xfc\\xdf <&>'), ecoxipy.pyxom.Text('raw content')]
 >>> list(document[0][2].descendants(True, False))
 [ecoxipy.pyxom.Text('5'), ecoxipy.pyxom.Text('4'), ecoxipy.pyxom.Text('3'), ecoxipy.pyxom.Text('2'), ecoxipy.pyxom.Text('1'), ecoxipy.pyxom.Text('0'), ecoxipy.pyxom.Element['br', {...}], ecoxipy.pyxom.Text('Some Text'), ecoxipy.pyxom.Element['p', {...}], ecoxipy.pyxom.Element['data-element', {...}], ecoxipy.pyxom.Text('raw content'), ecoxipy.pyxom.Text('\\xe4\\xf6\\xfc\\xdf <&>')]
+
+
+Normally :meth:`~ContainerNode.descendants` can also be given a depth limit:
+
+>>> list(document[0].descendants(max_depth=2))
+[ecoxipy.pyxom.Element['h1', {...}], ecoxipy.pyxom.Text('<Example>'), ecoxipy.pyxom.Element['p', {...}], ecoxipy.pyxom.Text('Hello'), ecoxipy.pyxom.Element['em', {...}], ecoxipy.pyxom.Text('!'), ecoxipy.pyxom.Element['div', {...}], ecoxipy.pyxom.Element['data-element', {...}], ecoxipy.pyxom.Element['p', {...}], ecoxipy.pyxom.Text('Some Text'), ecoxipy.pyxom.Element['br', {...}], ecoxipy.pyxom.Text('0'), ecoxipy.pyxom.Text('1'), ecoxipy.pyxom.Text('2'), ecoxipy.pyxom.Text('3'), ecoxipy.pyxom.Text('4'), ecoxipy.pyxom.Text('5'), ecoxipy.pyxom.Comment('<This is a comment!>'), ecoxipy.pyxom.ProcessingInstruction('pi-target', '<PI content>'), ecoxipy.pyxom.ProcessingInstruction('pi-without-content', None), ecoxipy.pyxom.Element['foo:somexml', {...}], ecoxipy.pyxom.Element['foo:somexml', {...}], ecoxipy.pyxom.Element['somexml', {...}], ecoxipy.pyxom.Element['bar:somexml', {...}]]
+>>> list(document[0].descendants(depth_first=False, max_depth=2))
+[ecoxipy.pyxom.Element['h1', {...}], ecoxipy.pyxom.Element['p', {...}], ecoxipy.pyxom.Element['div', {...}], ecoxipy.pyxom.Comment('<This is a comment!>'), ecoxipy.pyxom.ProcessingInstruction('pi-target', '<PI content>'), ecoxipy.pyxom.ProcessingInstruction('pi-without-content', None), ecoxipy.pyxom.Element['foo:somexml', {...}], ecoxipy.pyxom.Text('<Example>'), ecoxipy.pyxom.Text('Hello'), ecoxipy.pyxom.Element['em', {...}], ecoxipy.pyxom.Text('!'), ecoxipy.pyxom.Element['data-element', {...}], ecoxipy.pyxom.Element['p', {...}], ecoxipy.pyxom.Text('Some Text'), ecoxipy.pyxom.Element['br', {...}], ecoxipy.pyxom.Text('0'), ecoxipy.pyxom.Text('1'), ecoxipy.pyxom.Text('2'), ecoxipy.pyxom.Text('3'), ecoxipy.pyxom.Text('4'), ecoxipy.pyxom.Text('5'), ecoxipy.pyxom.Element['foo:somexml', {...}], ecoxipy.pyxom.Element['somexml', {...}], ecoxipy.pyxom.Element['bar:somexml', {...}]]
 
 
 On :class:`Document` instances :attr:`~Document.element_by_id` and
