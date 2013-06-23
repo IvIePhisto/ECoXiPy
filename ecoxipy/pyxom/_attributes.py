@@ -73,6 +73,12 @@ class NamespaceNameMixin(object):
                     if self.namespace_prefix is None:
                         namespace_source = None
                         namespace_uri = None
+                    elif self.namespace_prefix == u'xml':
+                        namespace_source = None
+                        namespace_uri = u'http://www.w3.org/XML/1998/namespace'
+                    elif self.namespace_prefix == u'xmlns':
+                        namespace_source = None
+                        namespace_uri = u'http://www.w3.org/2000/xmlns/'
                     else:
                         namespace_source = self.parent.parent
                 else:
@@ -130,6 +136,14 @@ class Attribute(NamespaceNameMixin):
             prefix = None
         elif name.startswith(u'xmlns:') and len(name) > 6:
             prefix = name[6:]
+            if self._check_well_formedness:
+                if prefix == u'xmlns':
+                    raise ecoxipy.XMLWellFormednessException(
+                        u'The namespace prefix "xmlns" must not be redefined.'
+                    )
+                if prefix == u'xml':
+                    raise ecoxipy.XMLWellFormednessException(
+                        u'The namespace prefix "xml" must not be redefined.')
         else:
             prefix = False
         old_prefix = self._namespace_attribute_prefix

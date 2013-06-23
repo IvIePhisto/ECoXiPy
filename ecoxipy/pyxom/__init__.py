@@ -167,20 +167,6 @@ Normally :meth:`~ContainerNode.descendants` can also be given a depth limit:
 [ecoxipy.pyxom.Element['h1', {...}], ecoxipy.pyxom.Element['p', {...}], ecoxipy.pyxom.Element['div', {...}], ecoxipy.pyxom.Comment('<This is a comment!>'), ecoxipy.pyxom.ProcessingInstruction('pi-target', '<PI content>'), ecoxipy.pyxom.ProcessingInstruction('pi-without-content', None), ecoxipy.pyxom.Element['foo:somexml', {...}], ecoxipy.pyxom.Text('<Example>'), ecoxipy.pyxom.Text('Hello'), ecoxipy.pyxom.Element['em', {...}], ecoxipy.pyxom.Text('!'), ecoxipy.pyxom.Element['data-element', {...}], ecoxipy.pyxom.Element['p', {...}], ecoxipy.pyxom.Text('Some Text'), ecoxipy.pyxom.Element['br', {...}], ecoxipy.pyxom.Text('0'), ecoxipy.pyxom.Text('1'), ecoxipy.pyxom.Text('2'), ecoxipy.pyxom.Text('3'), ecoxipy.pyxom.Text('4'), ecoxipy.pyxom.Text('5'), ecoxipy.pyxom.Element['foo:somexml', {...}], ecoxipy.pyxom.Element['somexml', {...}], ecoxipy.pyxom.Element['bar:somexml', {...}]]
 
 
-On :class:`Document` instances :attr:`~Document.element_by_id` and
-:attr:`~Document.elements_by_name` are available, which use indexes for fast
-retrieval (after initially building the index):
-
->>> document.element_by_id['foo'] is document[0][-1]
-True
->>> 'bar' in document.element_by_id
-False
->>> document[0][-1] in list(document.elements_by_name['foo:somexml'])
-True
->>> 'html' in document.elements_by_name
-False
-
-
 Namespaces
 """"""""""
 
@@ -252,6 +238,58 @@ If an undefined namespace prefix is used, the ``namespace_uri`` is
 >>> document[0][-1][2].namespace_uri == False
 True
 
+
+Indexes
+"""""""
+
+On :class:`Document` instances :attr:`~Document.element_by_id`,
+:attr:`~Document.elements_by_name` and :attr:`~Document.nodes_by_namespace`
+are available, which use indexes for fast retrieval (after initially
+building the index):
+
+>>> document.element_by_id['foo'] is document[0][-1]
+True
+>>> 'bar' in document.element_by_id
+False
+>>> document[0][-1] in list(document.elements_by_name['foo:somexml'])
+True
+>>> 'html' in document.elements_by_name
+False
+>>> from functools import reduce
+>>> set(document.nodes_by_namespace()) == set(
+...     filter(lambda node: node.namespace_uri is not False, set(
+...         filter(lambda node: isinstance(node, Element),
+...             document.descendants()
+...         )).union(
+...             reduce(lambda x, y: x.union(y),
+...                 map(lambda node: set(node.attributes.values()),
+...                     filter(lambda node: isinstance(node, Element),
+...                         document.descendants()
+...                 )
+...             )
+...         )
+...     ))
+... )
+True
+>>> set(document.nodes_by_namespace('foo://bar')) == set(filter(
+...     lambda node: node.namespace_uri == u'foo://bar',
+...     set(
+...         filter(lambda node: isinstance(node, Element),
+...             document.descendants()
+...         )
+...     ).union(
+...         reduce(lambda x, y: x.union(y),
+...             map(lambda node: set(node.attributes.values()),
+...                 filter(lambda node: isinstance(node, Element),
+...                     document.descendants()
+...                 )
+...             )
+...         )
+...     )
+... ))
+True
+>>> list(document.nodes_by_namespace(local_name='bar')) == list(document.nodes_by_namespace('foo://bar', 'bar'))
+True
 
 Manipulation and Equality
 ^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -394,8 +432,7 @@ Indexes and Manipulation
 """"""""""""""""""""""""
 
 If a document is modified, the indexes should be deleted. This can be done
-using :builtin:`del` on the index attribute :attr:`~Document.element_by_id`
-and :attr:`~Document.elements_by_name` or calling
+using :builtin:`del` on the index attribute or calling
 :meth:`~Document.delete_indexes`.
 
 >>> del document_copy[0][-1]

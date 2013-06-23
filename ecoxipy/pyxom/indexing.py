@@ -124,6 +124,11 @@ Indexing-related Classes
 
 .. autoclass:: MultiValueIndex
 
+.. autoclass:: NamespaceIndex
+
+.. autoclass:: NamespaceIndexer
+    :special-members: __call__
+
 .. autoclass:: IndexDescriptor
 '''
 
@@ -264,6 +269,21 @@ class UniqueValueIndex(collections.Mapping):
             self.__class__.__name__, repr(self._index))
 
 
+class _MultiDict(dict):
+    def __setitem__(self, key, value):
+        try:
+            values = dict.__getitem__(self, key)
+        except KeyError:
+            values = set()
+            dict.__setitem__(self, key, values)
+        values.add(value)
+
+    def __getitem__(self, key):
+        return (value for value in dict.__getitem__(self, key))
+
+    def __call__(self, key):
+        return dict.__getitem__(self, key)
+
 
 class MultiValueIndex(UniqueValueIndex):
     '''\
@@ -272,24 +292,19 @@ class MultiValueIndex(UniqueValueIndex):
     Value access and containment tests convert the key to a Unicode string
     first.
     '''
+    def __init__(self):
+        self._index = _MultiDict()
+
     def register(self, key, value):
         '''\
-        Add ``value`` to the :class:`set` identified by ``key``. If no such
-        set exists first a new one is created and registered under ``key``.
+        Add ``value`` to the set identified by ``key``.
 
         :param key: the identifier
-        :param value: the value to add to the entries :class:`set`
+        :type key: Unicode string
+        :param value: the entry's value
         '''
-        try:
-            values = self._index[key]
-        except KeyError:
-            values = set()
-            UniqueValueIndex.register(self, key, values)
-        values.add(value)
-
-    def __getitem__(self, key):
         key = _unicode(key)
-        return (node for node in self._index[key])
+        self._index[key] = value
 
 
 class UniqueValueIndexer(Indexer):
@@ -409,6 +424,89 @@ class ElementsByNameIndexer(MultiValueIndexer):
         and ``node`` as second item.
         '''
         return (node.name, node)
+
+
+class NamespaceIndex(object):
+    '''\
+    An index holding XML namespace information.
+
+    Nodes are retrieved by calling an instance.
+    '''
+    def __init__(self):
+        self._by_namespace_uri = _MultiDict()
+        self._by_local_name = _MultiDict()
+
+    def register(self, namespace_uri, local_name, node):
+        '''\
+        Registers the node with the namespace information.
+
+        :param namespace_uri: The namespace URI of the node.
+        :param local_name: The local name of the node.
+        :param node: The node to register.
+        '''
+        self._by_namespace_uri[namespace_uri] = node
+        self._by_local_name[local_name] = node
+
+    def __call__(self, uri=True, local_name=True):
+        '''\
+        Retrieve an iterator over the nodes with the namespace information
+        specified by the arguments.
+
+        :param uri: The namespace URI to match. If this is :const:`True` all
+            nodes with a
+            :attr:`~ecoxipy.pyxom.NamespaceNameMixin.namespace_uri` different
+            from :const:`False` (i.e. invalid namespace information) will
+            be matched. Otherwise only those nodes with a namespace URI equal
+            to this value will be matched.
+        :param local_name: The local name to match. If this is :const:`True`
+            the :attr:`~ecoxipy.pyxom.NamespaceNameMixin.local_name` value is
+            not taken into account. Otherwise those nodes with the local name
+            equal to this value will be matched.
+        :raises KeyError: If either a non-:const:`True` ``uri`` or
+            ``local_name`` cannot be found.
+        '''
+        if uri is not True and uri is not False:
+            uri = _unicode(uri)
+        if local_name is not True:
+            local_name = _unicode(local_name)
+        def all():
+            for namespace_uri in self._by_namespace_uri:
+                if namespace_uri is not False:
+                    for node in self._by_namespace_uri[namespace_uri]:
+                        yield node
+        if uri is True:
+            if local_name is True:
+                return all()
+            return self._by_local_name[local_name]
+        if local_name is True:
+            return self._by_namespace_uri[uri]
+        return iter(self._by_namespace_uri(uri).intersection(
+            self._by_local_name(local_name)))
+
+
+class NamespaceIndexer(Indexer):
+    def __init__(self):
+        from ._element import Element
+        self._node_class = Element
+
+    def new_index(self):
+        return NamespaceIndex()
+
+    def node_predicate(self, node):
+        return isinstance(node, self._node_class)
+
+    def extract_items(self, node):
+        create_item = lambda node: ((node.namespace_uri, node.local_name),
+            node)
+        def iterator():
+            yield create_item(node)
+            for attribute in node.attributes.values():
+                yield create_item(attribute)
+        return iterator()
+
+    def register(self, index, key, value):
+        namespace_uri, local_name = key
+        index.register(namespace_uri, local_name, value)
 
 
 class IndexDescriptor(object):

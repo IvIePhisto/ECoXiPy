@@ -8,7 +8,7 @@ from ecoxipy import _helpers
 from ._common import XMLNode, ContainerNode, _string_repr
 from ._content_nodes import Text
 from .indexing import (IndexDescriptor, ElementByUniqueAttributeValueIndexer,
-    ElementsByNameIndexer)
+    ElementsByNameIndexer, NamespaceIndexer)
 
 
 class DocumentType(object):
@@ -440,6 +440,17 @@ class Document(ContainerNode):
     deleted on the instance, which deletes the index.
     '''
 
+    nodes_by_namespace = IndexDescriptor(NamespaceIndexer())
+    '''\
+    A :class:`ecoxipy.pyxom.indexing.IndexDescriptor` instance using a
+    :class:`ecoxipy.pyxom.indexing.NamespaceIndexer` for indexing.
+
+    **Important:** If the document's childs are relevantly modified (i.e. new
+    elements/attributes were added or deleted, elements'/attributes' names
+    were modified), :meth:`delete_indexes` should be called or this attribute
+    should be deleted on the instance, which deletes the index.
+    '''
+
     def delete_indexes(self):
         '''\
         A shortcut to delete the indexes of :attr:`element_by_id` and
@@ -447,6 +458,7 @@ class Document(ContainerNode):
         '''
         del self.element_by_id
         del self.elements_by_name
+        del self.nodes_by_namespace
 
 del (IndexDescriptor, ElementByUniqueAttributeValueIndexer,
-    ElementsByNameIndexer)
+    ElementsByNameIndexer, NamespaceIndexer)

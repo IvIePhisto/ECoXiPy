@@ -12,11 +12,12 @@ don't an instance of :class:`ecoxipy.pyxom.output.PyXOMOutput` is created)
 does all the actual work and creates data in its XML representation. This way
 the same code can create XML as:
 
-*   Low-footprint data structures using :mod:`ecoxipy.pyxom.output`, those
-    can create :mod:`xml.sax` events or can be serialized to byte or
-    Unicode strings, besides being easily navigateable object structures.
-*   Byte strings using :mod:`ecoxipy.string_output`.
+*   :mod:`ecoxipy.pyxom` structures, those can create :mod:`xml.sax` events or
+    can be serialized to byte or Unicode strings, besides being easily
+    navigateable.
+*   Strings using :mod:`ecoxipy.string_output`.
 *   :mod:`xml.dom` structures using :mod:`ecoxipy.dom_output`.
+*   :mod:`xml.etree` structures using :mod:`ecoxipy.etree_output`.
 *   Any other data you can think of by implementing your own :class:`Output`
     class.
 
