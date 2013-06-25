@@ -245,50 +245,61 @@ Indexes
 On :class:`Document` instances :attr:`~Document.element_by_id`,
 :attr:`~Document.elements_by_name` and :attr:`~Document.nodes_by_namespace`
 are available, which use indexes for fast retrieval (after initially
-building the index):
+building the index).
+
+Use :attr:`~Document.element_by_id` to get elements by the value of their
+``id`` attribute:
 
 >>> document.element_by_id['foo'] is document[0][-1]
 True
 >>> 'bar' in document.element_by_id
 False
+
+
+:attr:`~Document.elements_by_name` allows retrieval of elements by their name:
+
 >>> document[0][-1] in list(document.elements_by_name['foo:somexml'])
 True
 >>> 'html' in document.elements_by_name
 False
+
+
+Retrieve elements and attributes by their namespace data by using
+:attr:`~Document.nodes_by_namespace`:
+
 >>> from functools import reduce
->>> set(document.nodes_by_namespace()) == set(
-...     filter(lambda node: node.namespace_uri is not False, set(
-...         filter(lambda node: isinstance(node, Element),
-...             document.descendants()
-...         )).union(
-...             reduce(lambda x, y: x.union(y),
-...                 map(lambda node: set(node.attributes.values()),
-...                     filter(lambda node: isinstance(node, Element),
-...                         document.descendants()
-...                 )
-...             )
-...         )
-...     ))
-... )
-True
->>> set(document.nodes_by_namespace('foo://bar')) == set(filter(
-...     lambda node: node.namespace_uri == u'foo://bar',
-...     set(
-...         filter(lambda node: isinstance(node, Element),
-...             document.descendants()
-...         )
-...     ).union(
-...         reduce(lambda x, y: x.union(y),
-...             map(lambda node: set(node.attributes.values()),
-...                 filter(lambda node: isinstance(node, Element),
-...                     document.descendants()
-...                 )
+>>> elements_and_attributes = set(
+...     filter(lambda node: isinstance(node, Element),
+...         document.descendants()
+...     )
+... ).union(
+...     reduce(lambda x, y: x.union(y),
+...         map(lambda node: set(node.attributes.values()),
+...             filter(lambda node: isinstance(node, Element),
+...                 document.descendants()
 ...             )
 ...         )
 ...     )
+... )
+>>> set(document.nodes_by_namespace()) == set(filter(
+...     lambda node: node.namespace_uri is not False,
+...     elements_and_attributes
 ... ))
 True
->>> list(document.nodes_by_namespace(local_name='bar')) == list(document.nodes_by_namespace('foo://bar', 'bar'))
+>>> set(document.nodes_by_namespace('foo://bar')) == set(filter(
+...     lambda node: node.namespace_uri == u'foo://bar',
+...     elements_and_attributes
+... ))
+True
+>>> set(document.nodes_by_namespace(local_name='bar')) == set(filter(
+...     lambda node: node.local_name == u'bar',
+...     elements_and_attributes
+... ))
+True
+>>> set(document.nodes_by_namespace('foo://bar', 'bar')) == set(filter(
+...     lambda node: node.namespace_uri == u'foo://bar' and node.local_name == u'bar',
+...     elements_and_attributes
+... ))
 True
 
 Manipulation and Equality
