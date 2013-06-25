@@ -242,10 +242,9 @@ True
 Indexes
 """""""
 
-On :class:`Document` instances :attr:`~Document.element_by_id`,
-:attr:`~Document.elements_by_name` and :attr:`~Document.nodes_by_namespace`
-are available, which use indexes for fast retrieval (after initially
-building the index).
+On :class:`Document` instances :class:`ecoxipy.pyxom.indexing.IndexDescriptor`
+attributes are defined for fast retrieval (after initially building the
+index).
 
 Use :attr:`~Document.element_by_id` to get elements by the value of their
 ``id`` attribute:
@@ -353,6 +352,10 @@ True
 >>> document != document_copy
 False
 
+
+:class:`Attributes` instances allow for creation of :class:`Attribute`
+instances:
+
 >>> somexml = document_copy[0][-1]
 >>> foo_attr = somexml[0].attributes.create_attribute('foo:foo', 'bar')
 >>> foo_attr is somexml[0].attributes['foo:foo']
@@ -366,6 +369,9 @@ True
 >>> foo_attr.namespace_uri == u'foo://bar'
 True
 
+
+Attributes may be removed:
+
 >>> somexml[0].attributes.remove(foo_attr)
 >>> 'foo:foo' in somexml[0].attributes
 False
@@ -373,6 +379,10 @@ False
 True
 >>> foo_attr.namespace_uri == False
 True
+
+
+You can also add an attribute to an element's attributes, it is automatically
+moved if it belongs to another element's attributes:
 
 >>> somexml[0].attributes.add(foo_attr)
 >>> 'foo:foo' in somexml[0].attributes
@@ -386,7 +396,6 @@ True
 >>> del somexml[0].attributes['foo:foo']
 >>> 'foo:foo' in somexml[0].attributes
 False
-
 >>> attr = document[0][-1].attributes['foo:bar']
 >>> attr.name = 'test'
 >>> attr.namespace_prefix is None
@@ -395,8 +404,8 @@ True
 test
 
 
-Other Nodes
-"""""""""""
+Documents and Elements
+""""""""""""""""""""""
 
 >>> document_copy[0].insert(1, document_copy[0][0])
 >>> document_copy[0][0] == document[0][1]
@@ -443,7 +452,7 @@ Indexes and Manipulation
 """"""""""""""""""""""""
 
 If a document is modified, the indexes should be deleted. This can be done
-using :builtin:`del` on the index attribute or calling
+using :func:`del` on the index attribute or calling
 :meth:`~Document.delete_indexes`.
 
 >>> del document_copy[0][-1]
