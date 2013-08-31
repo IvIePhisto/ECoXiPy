@@ -36,7 +36,7 @@ This is a major release introducing new capabilities and Python 3 support.
 *   *Added:* The module `ecoxipy.parsing` contains SAX to ECoXiPy parsing
     facilities.
 *   *Changed:* Renamed module `ecoxipy.element_output` to
-    `ecoxipy.pyxom_output` and moved the XML representation classes to their
+    `ecoxipy.pyxom.output` and moved the XML representation classes to their
     own module `ecoxipy.pyxom` naming them *PyXOM* - **Pythonic XML Object
     Model** as well as adding new functionality. DOM creation was removed from
     those classes.
@@ -187,7 +187,7 @@ Execute unit tests:
 Setup
 :   The same XHTML5 document is created with different APIs. All output
     implementations of EcoXiPy (in `ecoxipy.string_output`,
-    `ecoxipy.dom_output` and `ecoxipy.pyxom_output`) are tested as well as
+    `ecoxipy.dom_output` and `ecoxipy.pyxom.output`) are tested as well as
     `xml.sax` and `xml.dom.minidom`. For each of the APIs one test creates its
     native representation and one test transforms this into an UTF-8 encoded
     byte string, as as most XML will ultimately be serialised in this form.
@@ -216,9 +216,9 @@ Running
 
 
 These `timeit` tests show that if string output is wanted, `ecoxipy.string_output` is
-faster than all others, followed by `xml.sax`, `ecoxipy.pyxom_output`,
+faster than all others, followed by `xml.sax`, `ecoxipy.pyxom.output`,
 `xml.dom.minidom` with `ecoxipy.dom_output` at the end. If the data structures
-should not be converted to a string, `ecoxipy.pyxom_output` is the fastest,
+should not be converted to a string, `ecoxipy.pyxom.output` is the fastest,
 closely followed by `xml.dom.minidom`; `ecoxipy.string_output` is quite a bit
 slower, followed by `ecoxipy.dom_output` and `xml.sax`.
 
