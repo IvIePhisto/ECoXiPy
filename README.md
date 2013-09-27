@@ -202,15 +202,14 @@ Running
 
         python -m tests.performance.timeit_tests <string output> <repetitions> <data count> [<CSV output path>]
 
-    Use no arguments to get help.
+:   Use no arguments to get help.
 
-    To run a batch of tests with CPython 2.7, CPython 3.3 and PyPy, once to
+:   To run a batch of tests with CPython 2.7, CPython 3.3 and PyPy, once to
     create native structutres and once to create byte strings, writing the
     results to the file `timeit.csv`, execute the Bash script
     `run_timeit_tests`.
 
-
-    Running [cProfile](http://docs.python.org/2/library/profile.html) tests:
+:   Running [cProfile](http://docs.python.org/2/library/profile.html) tests:
 
         python tests/performance/profiling_tests.py
 
