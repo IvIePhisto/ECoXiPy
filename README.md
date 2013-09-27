@@ -184,35 +184,35 @@ Execute unit tests:
 
 ### Performance Tests
 
-Setup
-:   The same XHTML5 document is created with different APIs. All output
-    implementations of EcoXiPy (in `ecoxipy.string_output`,
-    `ecoxipy.dom_output` and `ecoxipy.pyxom.output`) are tested as well as
-    `xml.sax` and `xml.dom.minidom`. For each of the APIs one test creates its
-    native representation and one test transforms this into an UTF-8 encoded
-    byte string, as as most XML will ultimately be serialised in this form.
-    The SAX tests create byte strings in both test types.
+**Setup**
 
-Platform
-:   2.4 GHz Intel Core 2 Duo, 8 GB RAM on Mac OS X 10.8.3
+The same XHTML5 document is created with different APIs. All output
+implementations of EcoXiPy (in `ecoxipy.string_output`, `ecoxipy.dom_output`
+and `ecoxipy.pyxom.output`) are tested as well as `xml.sax` and
+`xml.dom.minidom`. For each of the APIs one test creates its native
+representation and one test transforms this into an UTF-8 encoded byte string,
+as as most XML will ultimately be serialised in this form. The SAX tests
+create byte strings in both test types.
 
-Running
-:   To run the [timeit](http://docs.python.org/2/library/timeit.html) tests
-    execute in a terminal from the project's root directory:
+**Running**
 
-        python -m tests.performance.timeit_tests <string output> <repetitions> <data count> [<CSV output path>]
+To run the [timeit](http://docs.python.org/2/library/timeit.html) tests
+execute in a terminal from the project's root directory:
 
-:   Use no arguments to get help.
+    python -m tests.performance.timeit_tests <string output> <repetitions> <data count> [<CSV output path>]
 
-:   To run a batch of tests with CPython 2.7, CPython 3.3 and PyPy, once to
-    create native structutres and once to create byte strings, writing the
-    results to the file `timeit.csv`, execute the Bash script
-    `run_timeit_tests`.
+Use no arguments to get help.
 
-:   Running [cProfile](http://docs.python.org/2/library/profile.html) tests:
+To run a batch of tests with CPython 2.7, CPython 3.3 and PyPy, once to create
+native structutres and once to create byte strings, writing the results to the
+file `timeit.csv`, execute the Bash script `run_timeit_tests`.
 
-        python tests/performance/profiling_tests.py
+Running [cProfile](http://docs.python.org/2/library/profile.html) tests:
 
+    python tests/performance/profiling_tests.py
+
+
+**Results**
 
 These `timeit` tests show that if string output is wanted, `ecoxipy.string_output` is
 faster than all others, followed by `xml.sax`, `ecoxipy.pyxom.output`,
