@@ -3,9 +3,9 @@ REPETITIONS=1000
 DOC_SIZE=15
 OUT_FILE=timeit.csv
 
-pypy -m tests.performance.timeit_tests true $REPETITIONS $DOC_SIZE $OUT_FILE
-python3.3 -m tests.performance.timeit_tests true $REPETITIONS $DOC_SIZE $OUT_FILE
-python2.7 -m tests.performance.timeit_tests true $REPETITIONS $DOC_SIZE $OUT_FILE
-pypy -m tests.performance.timeit_tests false $REPETITIONS $DOC_SIZE $OUT_FILE
-python3.3 -m tests.performance.timeit_tests false $REPETITIONS $DOC_SIZE $OUT_FILE
-python2.7 -m tests.performance.timeit_tests false $REPETITIONS $DOC_SIZE $OUT_FILE
+pypy -OO -m tests.performance.timeit_tests true $REPETITIONS $DOC_SIZE $OUT_FILE
+python3.3 -OO -m tests.performance.timeit_tests true $REPETITIONS $DOC_SIZE $OUT_FILE
+python2.7 -OO -m tests.performance.timeit_tests true $REPETITIONS $DOC_SIZE $OUT_FILE
+pypy -OO -m tests.performance.timeit_tests false $REPETITIONS $DOC_SIZE $OUT_FILE
+python3.3 -OO -m tests.performance.timeit_tests false $REPETITIONS $DOC_SIZE $OUT_FILE
+python2.7 -OO -m tests.performance.timeit_tests false $REPETITIONS $DOC_SIZE $OUT_FILE

@@ -129,7 +129,7 @@ def markup_builder_namespace(output, builder_name, *element_names, **kargs):
     instance of the given ``output`` class.
 
     :param output: The output class to use.
-    :type output: :class:`Output`
+    :type output: :class:`ecoxipy.Output`
     :param builder_name: The name the :class:`MarkupBuilder` instance is
         available under.
     :param element_names: The names to bind to the appropriate `virtual`
