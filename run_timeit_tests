@@ -3,9 +3,17 @@ REPETITIONS=1000
 DOC_SIZE=15
 OUT_FILE=timeit.csv
 
+printf 'Running timeit tests...\n'
+printf '\t_..... [1/6] native output, PyPy 2  \r'
 pypy -OO -m tests.performance.timeit_tests true $REPETITIONS $DOC_SIZE $OUT_FILE
-python3.3 -OO -m tests.performance.timeit_tests true $REPETITIONS $DOC_SIZE $OUT_FILE
-python2.7 -OO -m tests.performance.timeit_tests true $REPETITIONS $DOC_SIZE $OUT_FILE
+printf '\tX_.... [2/6] native output, Python 3\r'
+python3 -OO -m tests.performance.timeit_tests true $REPETITIONS $DOC_SIZE $OUT_FILE
+printf '\tXX_... [3/6] native output, Python 2\r'
+python2 -OO -m tests.performance.timeit_tests true $REPETITIONS $DOC_SIZE $OUT_FILE
+printf '\tXXX_.. [4/6] string output, PyPy 2  \r'
 pypy -OO -m tests.performance.timeit_tests false $REPETITIONS $DOC_SIZE $OUT_FILE
+printf '\tXXXX_. [5/6] string output, Python 3\r'
 python3.3 -OO -m tests.performance.timeit_tests false $REPETITIONS $DOC_SIZE $OUT_FILE
+printf '\tXXXXX_ [6/6] string output, Python 2\r'
 python2.7 -OO -m tests.performance.timeit_tests false $REPETITIONS $DOC_SIZE $OUT_FILE
+printf '\tfinished!                           \r\n'

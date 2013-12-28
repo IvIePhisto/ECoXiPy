@@ -169,9 +169,8 @@ class Element(ContainerNode, NamespaceNameMixin):
         return self._attributes
 
     def _create_str(self, out):
-        return out.element(self.name, [
-                child._create_str(out) for child in self
-            ], self._attributes.to_dict())
+        return out.element(self.name, self._children_strings(out),
+            self._attributes._attribute_value_mapping())
 
     def _create_sax_events(self, content_handler, indent):
         if indent:

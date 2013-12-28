@@ -186,6 +186,8 @@ class MarkupBuilder(object):
         self._in_encoding = in_encoding
         self._parser = parser
 
+    _queue = collections.deque
+
     def _prepare_text(self, content):
         try:
             return _unicode(content)
@@ -266,7 +268,7 @@ class MarkupBuilder(object):
             else:
                 encoding = _unicode(key.step)
             def create_document(*children):
-                new_children = []
+                new_children = self._queue()
                 for child in children:
                     self._preprocess(child, new_children)
                 return self._output.document(doctype_name,
@@ -285,7 +287,7 @@ class MarkupBuilder(object):
     def _item(self, key):
         key = self._prepare_text(key)
         def build(*children, **attributes):
-            new_children = []
+            new_children = self._queue()
             new_attributes = {}
             for child in children:
                 self._preprocess(child, new_children, new_attributes)
@@ -331,12 +333,12 @@ class MarkupBuilder(object):
             representation.
         :returns: Objects of the output representation.
         '''
-        processed_content = []
+        processed_content = self._queue()
+        text_handler = lambda text, target_list: target_list.extend(
+            self._parse_xml_fragment(text))
         for content_element in content:
             self._preprocess(content_element, processed_content, None,
-                lambda text, target_list: target_list.extend(
-                    self._parse_xml_fragment(text))
-            )
+                text_handler)
         return processed_content
 
     def __and__(self, content):

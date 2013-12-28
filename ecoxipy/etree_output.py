@@ -125,7 +125,7 @@ class ETreeOutput(Output):
         elif len(children) > 1:
             raise ValueError('Only one root element is allowed.')
         else:
-            root_element = children[0]
+            root_element = children.popleft()
         return self._element_factory.ElementTree(root_element)
 
 

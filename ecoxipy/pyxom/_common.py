@@ -208,9 +208,10 @@ class ContainerNode(XMLNode, collections.MutableSequence):
     :type children: :func:`list`
     '''
     __metaclass__ = abc.ABCMeta
-    __slots__ = ('_children')
+    __slots__ = ('_children',)
 
     def __init__(self, children):
+        children = [child for child in children]
         self._children = children
         for i, child in enumerate(children):
             child._parent = self
@@ -227,6 +228,9 @@ class ContainerNode(XMLNode, collections.MutableSequence):
         :returns: An iterator over the children.
         '''
         return self._children_rec(reverse)
+
+    def _children_strings(self, out):
+        return collections.deque(child._create_str(out) for child in self)
 
     def descendants(self, reverse=False, depth_first=True, max_depth=None):
         '''\
@@ -275,10 +279,8 @@ class ContainerNode(XMLNode, collections.MutableSequence):
         return iterator()
 
     def _children_rec(self, reverse):
-        def iterator():
-            for child in (reversed(self) if reverse else self):
-                yield child
-        return iterator()
+        for child in (reversed(self) if reverse else self):
+            yield child
 
     def _unwire_child(self, child):
         try:
@@ -375,4 +377,4 @@ class ContainerNode(XMLNode, collections.MutableSequence):
         raise ValueError(child)
 
 
-del abc, collections
+del abc

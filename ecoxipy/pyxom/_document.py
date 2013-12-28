@@ -355,9 +355,8 @@ class Document(ContainerNode):
 
     def _create_str(self, out):
         return out.document(self._doctype.name, self._doctype.publicid,
-            self._doctype.systemid, [
-                child._create_str(out) for child in self
-            ], self._omit_xml_declaration, self._encoding)
+            self._doctype.systemid, self._children_strings(out),
+            self._omit_xml_declaration, self._encoding)
 
     def _create_sax_events(self, content_handler, indent):
         content_handler.startDocument()

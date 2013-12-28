@@ -345,8 +345,32 @@ class Attributes(collections.Mapping):
             for attribute in self.values()
         }
 
+    def _attribute_value_mapping(self):
+        return _AttributeValueMapping(self)
+
     def __hash__(self):
         return object.__hash__(self)
+
+
+class _AttributeValueMapping(collections.Mapping):
+    __slots__ = ('_attributes',)
+
+    def __init__(self, attributes):
+        self._attributes = attributes
+
+    def __getitem__(self, name):
+        return self._attributes[name].value
+
+    def __len__(self):
+        return len(self._attributes)
+
+    def __iter__(self):
+        for name in self._attributes:
+            yield name
+
+    def items(self):
+        for name in self._attributes:
+            yield name, self._attributes[name].value
 
 
 del abc, collections
