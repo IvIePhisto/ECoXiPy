@@ -1,12 +1,20 @@
 import cProfile
+import sys
 
 from tests.performance import ecoxipy_pyxom_output
 from tests.performance import ecoxipy_string_output
 from tests.performance import ecoxipy_dom_output
+from tests.performance.timeit_tests import LOREM_IPSUM
 
-from timeit_tests import TIMEIT_NUMBER, TIMEIT_DATA_COUNT
+TIMEIT_NUMBER, TIMEIT_DATA_COUNT = sys.argv[1:]
 
-create_test_run = lambda module: "for i in xrange({1}): {0}.create_testdoc('Test Page', 'Hello World!', {2})".format(module.__name__, TIMEIT_NUMBER, TIMEIT_DATA_COUNT)
+def create_test_run(module):
+    format_str = '''\
+import {0}
+for i in xrange({1}):
+    {0}.create_testdoc('Test Page', 'Hello World!', {2}, u'{3}')
+'''
+    return format_str.format(module.__name__, TIMEIT_NUMBER, TIMEIT_DATA_COUNT, LOREM_IPSUM)
 
 if __name__ == '__main__':
     print '''

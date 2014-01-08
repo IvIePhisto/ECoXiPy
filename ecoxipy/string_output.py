@@ -128,7 +128,7 @@ class StringOutput(Output):
         :returns: :const:`True` for :class:`XMLFragment` instances,
             :const:`False` otherwise.
         '''
-        return isinstance(content, XMLFragment)
+        return content.__class__ is XMLFragment
 
     def element(self, name, children, attributes):
         '''\

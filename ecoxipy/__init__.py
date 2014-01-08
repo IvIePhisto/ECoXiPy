@@ -194,39 +194,49 @@ class MarkupBuilder(object):
         except UnicodeDecodeError:
             return content.decode(self._in_encoding)
 
-    def _preprocess(self, content, target_list, target_attributes=None,
-            handle_text=None):
+    def _append_text(self, text, target_list):
+        target_list.append(self._output.text(text))
+
+    def _append_xml(self, text, target_list):
+        target_list.extend(self._parse_xml_fragment(text))
+
+    def _preprocess(self, content, target_list, target_attributes,
+            handle_text):
         if content is None:
             return
         if self._output.is_native_type(content):
             target_list.append(content)
             return
-        if handle_text is None:
-            handle_text = lambda text, target_list: target_list.append(
-                self._output.text(text))
         if isinstance(content, bytes):
             content = self._prepare_text(content)
         if isinstance(content, _unicode):
             handle_text(content, target_list)
-        elif (target_attributes is not None
+            return
+        if (target_attributes is not None
                 and isinstance(content, collections.Mapping)):
-            for attr_name, attr_value in content.items():
-                attr_name = self._prepare_text(attr_name)
-                if attr_value is not None:
-                    attr_value = self._prepare_text(attr_value)
-                    target_attributes[attr_name] = attr_value
-        elif isinstance(content,
-                (collections.Sequence, collections.Iterable)):
+            # attributes-defining mapping
+            for attr_name in content:
+                attr_value = content[attr_name]
+                attr_value = self._prepare_text(attr_value)
+                target_attributes[attr_name] = attr_value
+            return
+        try: # iterable
             for value in content:
                 self._preprocess(value, target_list, target_attributes,
                     handle_text)
-        elif isinstance(content, collections.Callable):
+            return
+        except TypeError:
+            pass
+        try: # callable
             value = content()
             self._preprocess(value, target_list, target_attributes,
                 handle_text)
-        else:
-            value = _unicode(content)
-            handle_text(value, target_list)
+            return
+        except TypeError:
+            pass
+        # everything else
+        value = _unicode(content)
+        handle_text(value, target_list)
 
     def _parse_xml_fragment(self, xml_fragment):
         try:
@@ -270,7 +280,8 @@ class MarkupBuilder(object):
             def create_document(*children):
                 new_children = self._queue()
                 for child in children:
-                    self._preprocess(child, new_children)
+                    self._preprocess(child, new_children, None,
+                        self._append_text)
                 return self._output.document(doctype_name,
                     doctype_publicid, doctype_systemid, new_children,
                     omit_xml_declaration, encoding)
@@ -290,7 +301,8 @@ class MarkupBuilder(object):
             new_children = self._queue()
             new_attributes = {}
             for child in children:
-                self._preprocess(child, new_children, new_attributes)
+                self._preprocess(child, new_children, new_attributes,
+                    self._append_text)
             for attr_name, value in attributes.items():
                 new_attributes[_unicode(attr_name)] = self._prepare_text(value)
             return self._output.element(key, new_children, new_attributes)
@@ -334,11 +346,9 @@ class MarkupBuilder(object):
         :returns: Objects of the output representation.
         '''
         processed_content = self._queue()
-        text_handler = lambda text, target_list: target_list.extend(
-            self._parse_xml_fragment(text))
         for content_element in content:
             self._preprocess(content_element, processed_content, None,
-                text_handler)
+                self._append_xml)
         return processed_content
 
     def __and__(self, content):
