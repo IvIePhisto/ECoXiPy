@@ -25,6 +25,11 @@ You might also be interested in:
 
 ## Release History
 
+**0.3.1**
+
+*   *Improved*: Performance – more duck-typing and less `isinstance`, using
+    `collections.queue` instead of `list` for children handling.
+
 **0.3.0**
 
 This is a major release introducing new capabilities and Python 3 support.
@@ -214,12 +219,11 @@ Running [cProfile](http://docs.python.org/2/library/profile.html) tests:
 
 **Results**
 
-These `timeit` tests show that if string output is wanted, `ecoxipy.string_output` is
-faster than all others, followed by `xml.sax`, `ecoxipy.pyxom.output`,
-`xml.dom.minidom` with `ecoxipy.dom_output` at the end. If the data structures
-should not be converted to a string, `ecoxipy.pyxom.output` is the fastest,
-closely followed by `xml.dom.minidom`; `ecoxipy.string_output` is quite a bit
-slower, followed by `ecoxipy.dom_output` and `xml.sax`.
+These `timeit` tests show that the overhead of using ECoXiPy is minimal and
+the differences between using different APIs depend on the used Python
+platform. If encoded strings are wanted as output `ecoxipy.string_output` is a
+viable alternative to using `xml.sax`. If a traversable output representation
+is needed, the penalty for using ECoXiPy minimal.
 
 Run the tests on your own or see my testing results in the repository under
 [doc/perf_test_results/timeit.pdf](https://raw.github.com/IvIePhisto/ECoXiPy/master/doc/perf_test_results/timeit.pdf).

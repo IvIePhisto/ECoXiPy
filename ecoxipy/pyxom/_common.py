@@ -25,6 +25,7 @@ class XMLNode(object):
     __slots__ = ('_parent', '_next', '_previous')
 
     _string_output = StringOutput()
+    _IS_PYXOM_NODE = True
 
     def _attribute_node(self, attribute):
         try:

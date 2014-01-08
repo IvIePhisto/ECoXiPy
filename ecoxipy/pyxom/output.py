@@ -81,17 +81,15 @@ class PyXOMOutput(Output):
     @staticmethod
     def is_native_type(content):
         '''\
-        Tests if an has the attributes ``parent``, ``previous`` and ``next``.
+        Tests if an object has the attribute ``_IS_PYXOM_NODE`` and that this
+        is :const:`True`.
 
         :param content: The object to test.
-        :returns: :const:`True` if the object has the attributes,
-            :const:`False` otherwise.
+        :returns: :const:`True` if the object has the attribute
+            ``_IS_PYXOM_NODE`` being :const`True`, :const:`False` otherwise.
         '''
         try:
-            content.parent
-            content.previous
-            content.next
-            return True
+            return content._IS_PYXOM_NODE is True
         except AttributeError:
             return False
 
