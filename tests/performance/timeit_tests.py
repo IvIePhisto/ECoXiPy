@@ -4,9 +4,11 @@ import timeit
 
 from tests.performance import xml_sax
 from tests.performance import xml_dom_minidom
+from tests.performance import xml_etree
 from tests.performance import ecoxipy_pyxom_output
 from tests.performance import ecoxipy_string_output
 from tests.performance import ecoxipy_dom_output
+from tests.performance import ecoxipy_etree_output
 
 LOREM_IPSUM = u'Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.'
 
@@ -50,9 +52,11 @@ arguments: <string output> <repetitions> <data_count> [<file path>]
         number=repetitions)
     sax_time = timeit_run(xml_sax)
     dom_time = timeit_run(xml_dom_minidom)
+    etree_time = timeit_run(xml_etree)
     element_out_time = timeit_run(ecoxipy_pyxom_output)
     string_out_time = timeit_run(ecoxipy_string_output)
     dom_out_time = timeit_run(ecoxipy_dom_output)
+    etree_out_time = timeit_run(ecoxipy_etree_output)
     python_version = platform.python_version()
     python_platform = platform.python_implementation()
     try:
@@ -89,27 +93,32 @@ Running Times:
 |------------------------|-------------|------------------------|
 | xml.sax                {}
 | xml.dom.minidom        {}
-| ecoxipy.dom_output     {}
+| xml.etree              {}
 | ecoxipy.pyxom.output   {}
-| ecoxipy.string_output  {}\
+| ecoxipy.string_output  {}
+| ecoxipy.dom_output     {}
+| ecoxipy.etree_output   {}
+\
 '''.format(
             python_version, python_platform,
             output_name, repetitions, data_count,
             min_time, max_time, max_time - min_time,
             create_percent(sax_time),
             create_percent(dom_time),
-            create_percent(dom_out_time),
+            create_percent(etree_time),
             create_percent(element_out_time),
             create_percent(string_out_time),
+            create_percent(dom_out_time),
+            create_percent(etree_out_time),
         ))
     else:
         path = sys.argv[4]
         import os.path
         if not os.path.isfile(path):
             with open(path, 'w') as f:
-                f.write('Output,Python Platform,Python Version,xml.sax,xml.dom.minidom,ecoxipy.dom_output,ecoxipy.pyxom.output,ecoxipy.string_output,Repetitions,Data Count\n')
+                f.write('Output,Python Platform,Python Version,xml.sax,xml.etree,xml.dom.minidom,ecoxipy.dom_output,ecoxipy.etree_output,ecoxipy.pyxom.output,ecoxipy.string_output,Repetitions,Data Count\n')
         with open(path, 'a') as f:
-            f.write('{},{},{},{},{},{},{},{},{},{}\n'.format(
+            f.write('{},{},{},{},{},{},{},{},{},{},{},{}\n'.format(
                 output_name, python_platform, python_version,
-                sax_time, dom_time, dom_out_time, element_out_time,
-                string_out_time, repetitions, data_count))
+                sax_time, etree_time, dom_time, dom_out_time, etree_out_time,
+                element_out_time, string_out_time, repetitions, data_count))

@@ -29,6 +29,7 @@ You might also be interested in:
 
 *   *Improved*: Performance – more duck-typing and less `isinstance`, using
     `collections.queue` instead of `list` for children handling.
+*   *Fixed*: Text handling of `ecoxipy.etree_output.ETreeOutput`.
 
 **0.3.0**
 

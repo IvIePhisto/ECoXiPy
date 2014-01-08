@@ -1,9 +1,9 @@
 #!/bin/bash
-REPETITIONS=5000
-DOC_SIZE=10
+REPETITIONS=1000
+DOC_SIZE=15
 OUT_FILE=timeit.csv
 
-rm OUT_FILE
+rm $OUT_FILE
 printf 'Running timeit tests...\n'
 printf '\t_..... [1/6] native output, PyPy 2  \r'
 pypy -OO -m tests.performance.timeit_tests true $REPETITIONS $DOC_SIZE $OUT_FILE

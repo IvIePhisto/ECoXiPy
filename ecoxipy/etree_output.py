@@ -34,7 +34,7 @@ Usage Example:
 >>> from io import BytesIO
 >>> bytes_io = BytesIO()
 >>> xml_doc.write(bytes_io, 'utf-8', True)
->>> document_string = u"""<?xml version='1.0' encoding='utf-8'?>\\n<section attr="'&quot;&lt;&amp;&gt;"><p /><p /><p /><raw />text<br />012345<!--<This is a comment!>--><?pi-target <PI content>?><?pi-without-content?></section>"""
+>>> document_string = u"""<?xml version='1.0' encoding='utf-8'?>\\n<section attr="'&quot;&lt;&amp;&gt;"><p>Hello World!</p><p>äöüß</p><p>&lt;&amp;&gt;</p><raw />text<br />012345<!--<This is a comment!>--><?pi-target <PI content>?><?pi-without-content?></section>"""
 >>> bytes_io.getvalue() == document_string.encode('UTF-8')
 True
 '''
@@ -74,18 +74,21 @@ class ETreeOutput(Output):
         '''
         element = self._element_factory.Element(name, attributes)
         texts = []
+        def update_texts():
+            if len(texts) > 0:
+                text = u''.join(texts)
+                if len(element) == 0:
+                    element.text = text
+                else:
+                    element[-1].tail = text
+            del texts[:]
         for child in children:
             if isinstance(child, _unicode):
                 texts.append(child)
             else:
-                if len(texts) > 0:
-                    text = u''.join(texts)
-                    texts = []
-                    if len(element) == 0:
-                        element.text = text
-                    else:
-                        element[-1].tail = text
+                update_texts()
                 element.append(child)
+        update_texts()
         return element
 
     def text(self, content):
