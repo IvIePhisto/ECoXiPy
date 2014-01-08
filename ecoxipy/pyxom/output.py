@@ -81,14 +81,19 @@ class PyXOMOutput(Output):
     @staticmethod
     def is_native_type(content):
         '''\
-        Tests if an object of an type is to be decoded or converted to Unicode
-        or not.
+        Tests if an has the attributes ``parent``, ``previous`` and ``next``.
 
         :param content: The object to test.
-        :returns: :const:`True` for :`ecoxipy.pyxom.XMLNode` instances,
+        :returns: :const:`True` if the object has the attributes,
             :const:`False` otherwise.
         '''
-        return isinstance(content, pyxom.XMLNode)
+        try:
+            content.parent
+            content.previous
+            content.next
+            return True
+        except AttributeError:
+            return False
 
     def element(self, name, children, attributes):
         '''\

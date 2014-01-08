@@ -122,12 +122,11 @@ class StringOutput(Output):
     @staticmethod
     def is_native_type(content):
         '''\
-        Tests if an object of an type is to be decoded or converted to unicode
-        or not.
+        Tests if an object is a :class:`XMLFragment` instance.
 
         :param content: The object to test.
-        :returns: :const:`True` for :class:`XMLFragment` instances,
-            :const:`False` otherwise.
+        :returns: :const:`True` for instances having :class:`XMLFragment` as
+            their class, :const:`False` otherwise.
         '''
         return content.__class__ is XMLFragment
 

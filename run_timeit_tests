@@ -1,6 +1,6 @@
 #!/bin/bash
-REPETITIONS=1000
-DOC_SIZE=15
+REPETITIONS=2000
+DOC_SIZE=20
 OUT_FILE=timeit.csv
 
 printf 'Running timeit tests...\n'

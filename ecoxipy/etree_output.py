@@ -59,12 +59,12 @@ class ETreeOutput(Output):
 
     def is_native_type(self, content):
         '''\
-        Tests if an object of an type is to be decoded or converted to unicode
-        or not.
+        Tests if an object is a ``etree`` object by calling :meth:`iselement`
+        of the element factory.
 
         :param content: The object to test.
-        :returns: :const:`True` for compatible :mod:`xml.etree.ElementTree` objects,
-            :const:`False` otherwise.
+        :returns: :const:`True` for compatible :mod:`xml.etree.ElementTree`
+            objects, :const:`False` otherwise.
         '''
         return self._element_factory.iselement(content)
 

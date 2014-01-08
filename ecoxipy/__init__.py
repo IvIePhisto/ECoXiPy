@@ -207,10 +207,11 @@ class MarkupBuilder(object):
         if self._output.is_native_type(content):
             target_list.append(content)
             return
-        if isinstance(content, bytes):
-            content = self._prepare_text(content)
         if isinstance(content, _unicode):
             handle_text(content, target_list)
+            return
+        if isinstance(content, bytes):
+            handle_text(self._prepare_text(content), target_list)
             return
         try: # attributes-defining mapping
             attr_names = content.keys()
@@ -246,11 +247,10 @@ class MarkupBuilder(object):
             xml_fragment_parser = self.__dict__['_v_xml_fragment_parser']
         except KeyError:
             from ecoxipy.parsing import XMLFragmentParser
-            xml_fragment_parser = XMLFragmentParser(
-                self._output, self._parser)
+            xml_fragment_parser = XMLFragmentParser(self._output,
+                self._parser)
             self._v_xml_fragment_parser = xml_fragment_parser
-        parsed = xml_fragment_parser.parse(xml_fragment)
-        return parsed
+        return xml_fragment_parser.parse(xml_fragment)
 
     def _slice(self, key):
         if key.start is None: # Document
@@ -333,7 +333,7 @@ class MarkupBuilder(object):
         :returns: An element, a processing instruction or a document in the
             output representation.
         '''
-        if isinstance(key, slice):
+        if key.__class__ is slice:
             return self._slice(key)
         else:
             return self._item(key)
@@ -383,12 +383,11 @@ class Output(object):
     @abstractmethod
     def is_native_type(self, content):
         '''\
-        Tests if an object of an type is to be decoded or converted to unicode
-        or not.
+        Tests if an object is native to the output representation.
 
         :param content: The object to test.
-        :returns: :const:`True` for an object not to decode or convert to
-            Unicode, :const:`False` otherwise.
+        :returns: :const:`True` for an object native to the output
+            representation, :const:`False` otherwise.
         '''
 
     @abstractmethod

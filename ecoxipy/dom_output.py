@@ -63,11 +63,11 @@ class DOMOutput(Output):
     @staticmethod
     def is_native_type(content):
         '''\
-        Tests if an object of an type is to be decoded or converted to unicode
-        or not.
+        Tests if an object has the attribute ``nodeType`` and is thus a
+        ``xml.dom.Node`` instance.
 
         :param content: The object to test.
-        :returns: :const:`True` for objects having an attribute ``nodeType``.
+        :returns: :const:`True` for objects having the attribute ``nodeType``.
         '''
         return hasattr(content, 'nodeType')
 
