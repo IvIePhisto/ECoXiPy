@@ -78,8 +78,8 @@ class PyXOMOutput(Output):
         '''If :const:`True` the nodes will be checked for valid values.'''
         return self._check_well_formedness
 
-    @classmethod
-    def is_native_type(self, content):
+    @staticmethod
+    def is_native_type(content):
         '''\
         Tests if an object of an type is to be decoded or converted to Unicode
         or not.

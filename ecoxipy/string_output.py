@@ -119,7 +119,8 @@ class StringOutput(Output):
             quoteattr(value, self._entities)
         )
 
-    def is_native_type(self, content):
+    @staticmethod
+    def is_native_type(content):
         '''\
         Tests if an object of an type is to be decoded or converted to unicode
         or not.

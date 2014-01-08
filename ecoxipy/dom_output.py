@@ -60,17 +60,16 @@ class DOMOutput(Output):
         self._document = self._dom_implementation.createDocument(None, None,
                 None)
 
-    @classmethod
-    def is_native_type(self, content):
+    @staticmethod
+    def is_native_type(content):
         '''\
         Tests if an object of an type is to be decoded or converted to unicode
         or not.
 
         :param content: The object to test.
-        :returns: :const:`True` for :`xml.dom.Node` instances, :const:`False`
-            otherwise.
+        :returns: :const:`True` for objects having an attribute ``nodeType``.
         '''
-        return isinstance(content, Node)
+        return hasattr(content, 'nodeType')
 
     def element(self, name, children, attributes):
         '''\

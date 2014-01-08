@@ -212,14 +212,17 @@ class MarkupBuilder(object):
         if isinstance(content, _unicode):
             handle_text(content, target_list)
             return
-        if (target_attributes is not None
-                and isinstance(content, collections.Mapping)):
-            # attributes-defining mapping
-            for attr_name in content:
-                attr_value = content[attr_name]
-                attr_value = self._prepare_text(attr_value)
-                target_attributes[attr_name] = attr_value
-            return
+        try: # attributes-defining mapping
+            attr_names = content.keys()
+        except AttributeError:
+            pass
+        else:
+            if target_attributes is not None:
+                for attr_name in attr_names:
+                    attr_value = content[attr_name]
+                    attr_value = self._prepare_text(attr_value)
+                    target_attributes[attr_name] = attr_value
+                return
         try: # iterable
             for value in content:
                 self._preprocess(value, target_list, target_attributes,
