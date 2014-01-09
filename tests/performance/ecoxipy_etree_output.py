@@ -9,5 +9,4 @@ create_testdoc = markup_builder_namespace(
     ETreeOutput, '_b', *HTML5_ELEMENT_NAMES)(create_testdoc)
 
 
-create_testdoc_string = lambda *args: ET.tostring(
-    create_testdoc(*args).getroot(), 'utf-8')
+create_testdoc_string = lambda *args: ET.tostring(create_testdoc(*args).getroot(), 'utf-8')

@@ -186,7 +186,7 @@ class MarkupBuilder(object):
         self._in_encoding = in_encoding
         self._parser = parser
 
-    _queue = collections.deque
+    from collections import deque as _queue
 
     def _prepare_text(self, content):
         try:

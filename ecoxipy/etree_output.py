@@ -57,6 +57,8 @@ class ETreeOutput(Output):
             element_factory = ElementTree
         self._element_factory = element_factory
 
+    from collections import deque as _queue
+
     def is_native_type(self, content):
         '''\
         Tests if an object is a ``etree`` object by calling :meth:`iselement`
@@ -73,22 +75,27 @@ class ETreeOutput(Output):
         Creates an element.
         '''
         element = self._element_factory.Element(name, attributes)
-        texts = []
-        def update_texts():
-            if len(texts) > 0:
-                text = u''.join(texts)
-                if len(element) == 0:
-                    element.text = text
-                else:
-                    element[-1].tail = text
-            del texts[:]
+        texts = None
+        previous = None
+        def handle_texts():
+            if texts is None or len(texts) == 0:
+                return
+            joined_texts = u''.join(texts)
+            texts.clear()
+            if previous is None:
+                element.text = joined_texts
+            else:
+                previous.tail = joined_texts
         for child in children:
             if isinstance(child, _unicode):
+                if texts is None:
+                    texts = self._queue()
                 texts.append(child)
             else:
-                update_texts()
+                handle_texts()
                 element.append(child)
-        update_texts()
+                previous = child
+        handle_texts()
         return element
 
     def text(self, content):
@@ -116,12 +123,13 @@ class ETreeOutput(Output):
         Creates an :mod:`xml.etree.ElementTree.ElementTree`-compatible
         wrapper.
 
-        As :mod:`xml.etree.ElementTree` lacks support for document type declarations the
-        ``doctype_*`` parameters are ignored. Element tree wrappers do not
-        allow specification of the output encoding and of the XML declaration,
-        so ``encoding`` and ``omit_xml_declaration`` are also ignored. As
-        element trees only allow one root element, the length of ``children``
-        must be zero or one, otherwise a :class:`ValueError` is raised.
+        As :mod:`xml.etree.ElementTree` lacks support for document type
+        declarations, the ``doctype_*`` parameters are ignored. Element tree
+        wrappers do not allow specification of the output encoding and of the
+        XML declaration, so ``encoding`` and ``omit_xml_declaration`` are also
+        ignored. As element trees only allow one root element, the length of
+        ``children`` must be zero or one, otherwise a :class:`ValueError` is
+        raised.
         '''
         if len(children) == 0:
             root_element = None

@@ -27,9 +27,10 @@ You might also be interested in:
 
 **0.3.1**
 
-*   *Improved*: Performance – more duck-typing and less `isinstance`, using
+*   *Improved:* Performance – more duck-typing and less `isinstance`, using
     `collections.queue` instead of `list` for children handling.
-*   *Fixed*: Text handling of `ecoxipy.etree_output.ETreeOutput`.
+*   *Fixed:* Text handling of `ecoxipy.etree_output.ETreeOutput`.
+*   *Added:* Performance tests for `ecoxipy.etree_output.ETreeOutput`.
 
 **0.3.0**
 
@@ -220,11 +221,10 @@ Running [cProfile](http://docs.python.org/2/library/profile.html) tests:
 
 **Results**
 
-These `timeit` tests show that the overhead of using ECoXiPy is minimal and
+These `timeit` tests show that the overhead of using ECoXiPy is not great and
 the differences between using different APIs depend on the used Python
-platform. If encoded strings are wanted as output `ecoxipy.string_output` is a
-viable alternative to using `xml.sax`. If a traversable output representation
-is needed, the penalty for using ECoXiPy minimal.
+platform. If encoded strings are wanted as output, `ecoxipy.string_output` is
+a viable alternative to using `xml.sax`.
 
 Run the tests on your own or see my testing results in the repository under
 [doc/perf_test_results/timeit.pdf](https://raw.github.com/IvIePhisto/ECoXiPy/master/doc/perf_test_results/timeit.pdf).
