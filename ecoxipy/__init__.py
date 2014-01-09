@@ -396,8 +396,8 @@ class Output(object):
         Creates an element representation.
 
         :param name: The name of the element to create.
-        :param children: The list of children to add to the element to
-            create.
+        :param children: The `collections.deque` instance of children to add
+            to the element to create.
         :type children: :func:`list`
         :param attributes: The mapping of attributes of the element to create.
         :type attributes: :class:`dict`
@@ -443,8 +443,8 @@ class Output(object):
         :param doctype_name:  The document element name.
         :param doctype_publicid:  The document type system ID.
         :param doctype_systemid:  The document type system ID.
-        :param children: The list of children to add to the document to
-            create.
+        :param children: The `collections.deque` instance of children to add
+            to the document to create.
         :type children: :func:`list`
         :param omit_xml_declaration: If :const:`True` the XML declaration is
             omitted.

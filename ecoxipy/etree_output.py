@@ -75,6 +75,16 @@ class ETreeOutput(Output):
         Creates an element.
         '''
         element = self._element_factory.Element(name, attributes)
+        if len(children) < 2:
+            try:
+                child = children.popleft()
+                if child.__class__ is _unicode:
+                    element.text = child
+                else:
+                    element.append(child)
+            except IndexError:
+                pass
+            return element
         texts = None
         previous = None
         def handle_texts():

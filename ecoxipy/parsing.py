@@ -56,6 +56,8 @@ class MarkupHandler(ContentHandler, DTDHandler, LexicalHandler):
         self._output = output
         self.reset()
 
+    from collections import deque as _deque
+
     def reset(self):
         '''\
         Reset the current state. This should be called before parsing a new
@@ -65,8 +67,8 @@ class MarkupHandler(ContentHandler, DTDHandler, LexicalHandler):
         self._doctype_name = None
         self._doctype_publicid = None
         self._doctype_systemid = None
-        self._element_stack = []
-        self._children_stack = []
+        self._element_stack = self._deque()
+        self._children_stack = self._deque()
         self._enter_node()
 
     def parse(self, source, parser=None):
@@ -121,7 +123,7 @@ class MarkupHandler(ContentHandler, DTDHandler, LexicalHandler):
         self._current_children.append(node)
 
     def _enter_node(self):
-        self._current_children = []
+        self._current_children = self._deque()
         self._children_stack.append(self._current_children)
 
     def _leave_node(self, node):
