@@ -174,7 +174,7 @@ class MarkupBuilder(object):
     :param parser:
 
         The SAX parser to use for parsing XML. If it is :const:`None` the
-        default of :class:`ecoxipy.XMLFragmentParser` is used.
+        default of :class:`ecoxipy.parsing.XMLFragmentParser` is used.
 
     :type parser: :class:`xml.sax.xmlreader.XMLReader`
     '''
@@ -186,7 +186,7 @@ class MarkupBuilder(object):
         self._in_encoding = in_encoding
         self._parser = parser
 
-    from collections import deque as _queue
+    from collections import deque as _deque
 
     def _prepare_text(self, content):
         try:
@@ -207,13 +207,13 @@ class MarkupBuilder(object):
         if self._output.is_native_type(content):
             target_list.append(content)
             return
-        if isinstance(content, _unicode):
+        if content.__class__ is _unicode:
             handle_text(content, target_list)
             return
-        if isinstance(content, bytes):
+        if content.__class__ is bytes:
             handle_text(self._prepare_text(content), target_list)
             return
-        try: # attributes-defining mapping
+        try: # mappings define attributes
             attr_names = content.keys()
         except AttributeError:
             pass
@@ -224,21 +224,21 @@ class MarkupBuilder(object):
                     attr_value = self._prepare_text(attr_value)
                     target_attributes[attr_name] = attr_value
                 return
-        try: # iterable
+        try: # iterables are unpacked
             for value in content:
                 self._preprocess(value, target_list, target_attributes,
                     handle_text)
             return
         except TypeError:
             pass
-        try: # callable
+        try: # callables without arguments are called
             value = content()
             self._preprocess(value, target_list, target_attributes,
                 handle_text)
             return
         except TypeError:
             pass
-        # everything else
+        # everything else is converted to Unicode
         value = _unicode(content)
         handle_text(value, target_list)
 
@@ -281,7 +281,7 @@ class MarkupBuilder(object):
             else:
                 encoding = _unicode(key.step)
             def create_document(*children):
-                new_children = self._queue()
+                new_children = self._deque()
                 for child in children:
                     self._preprocess(child, new_children, None,
                         self._append_text)
@@ -301,7 +301,7 @@ class MarkupBuilder(object):
     def _item(self, key):
         key = self._prepare_text(key)
         def build(*children, **attributes):
-            new_children = self._queue()
+            new_children = self._deque()
             new_attributes = {}
             for child in children:
                 self._preprocess(child, new_children, new_attributes,
@@ -348,7 +348,7 @@ class MarkupBuilder(object):
             representation.
         :returns: Objects of the output representation.
         '''
-        processed_content = self._queue()
+        processed_content = self._deque()
         for content_element in content:
             self._preprocess(content_element, processed_content, None,
                 self._append_xml)

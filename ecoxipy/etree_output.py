@@ -57,7 +57,7 @@ class ETreeOutput(Output):
             element_factory = ElementTree
         self._element_factory = element_factory
 
-    from collections import deque as _queue
+    from collections import deque as _deque
 
     def is_native_type(self, content):
         '''\
@@ -87,9 +87,9 @@ class ETreeOutput(Output):
             else:
                 previous.tail = joined_texts
         for child in children:
-            if isinstance(child, _unicode):
+            if child.__class__ is _unicode:
                 if texts is None:
-                    texts = self._queue()
+                    texts = self._deque()
                 texts.append(child)
             else:
                 handle_texts()
