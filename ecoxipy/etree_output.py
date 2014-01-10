@@ -65,10 +65,9 @@ class ETreeOutput(Output):
         of the element factory.
 
         :returns: :const:`True` for compatible :mod:`xml.etree.ElementTree`
-            objects and Unicode strings, :const:`False` otherwise.
+            objects, :const:`False` otherwise.
         '''
-        return (self._element_factory.iselement(content)
-            or content.__class__ is _unicode)
+        return self._element_factory.iselement(content)
 
     def element(self, name, children, attributes):
         '''\
