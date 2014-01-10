@@ -84,7 +84,6 @@ class PyXOMOutput(Output):
         Tests if an object has the attribute ``_IS_PYXOM_NODE`` and that this
         is :const:`True`.
 
-        :param content: The object to test.
         :returns: :const:`True` if the object has the attribute
             ``_IS_PYXOM_NODE`` being :const`True`, :const:`False` otherwise.
         '''
@@ -97,7 +96,6 @@ class PyXOMOutput(Output):
         '''\
         Returns an :class:`ecoxipy.pyxom.Element`.
 
-        :returns: The element created.
         :rtype: :class:`ecoxipy.pyxom.Element`
         :raises ecoxipy.XMLWellFormednessException: If
             :attr:`check_well_formedness` is :const:`True` and the
@@ -108,9 +106,9 @@ class PyXOMOutput(Output):
 
     def text(self, content):
         '''\
-        Creates a Unicode string.
+        Creates a :class:`ecoxipy.pyxom.Text` node.
 
-        :returns: The created Unicode string.
+        :rtype: :class:`ecoxipy.pyxom.Text`
         '''
         return pyxom.Text(content)
 
@@ -118,7 +116,6 @@ class PyXOMOutput(Output):
         '''\
         Creates a :class:`ecoxipy.pyxom.Comment`.
 
-        :returns: The created comment.
         :rtype: :class:`ecoxipy.pyxom.Comment`
         :raises ecoxipy.XMLWellFormednessException: If
             :attr:`check_well_formedness` is :const:`True` and ``content``
@@ -130,7 +127,6 @@ class PyXOMOutput(Output):
         '''\
         Creates a :class:`ecoxipy.pyxom.ProcessingInstruction`.
 
-        :returns: The created processing instruction.
         :rtype: :class:`ecoxipy.pyxom.ProcessingInstruction`
         :raises ecoxipy.XMLWellFormednessException: If
             :attr:`check_well_formedness` is :const:`True` and
@@ -144,7 +140,6 @@ class PyXOMOutput(Output):
         '''\
         Creates a :class:`ecoxipy.pyxom.Document` instance.
 
-        :returns: The created document representation.
         :rtype: :class:`ecoxipy.pyxom.Document`
         :raises ecoxipy.XMLWellFormednessException: If
             :attr:`check_well_formedness` is :const:`True` and

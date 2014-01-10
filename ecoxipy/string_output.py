@@ -124,7 +124,6 @@ class StringOutput(Output):
         '''\
         Tests if an object is a :class:`XMLFragment` instance.
 
-        :param content: The object to test.
         :returns: :const:`True` for instances having :class:`XMLFragment` as
             their class, :const:`False` otherwise.
         '''
@@ -280,16 +279,14 @@ class XMLDocument(XMLFragment):
     @property
     def encoding(self):
         '''\
-        The encoding of the document, is used if the byte string
-        representation is received.
+        The encoding of the document.
         '''
         return self._encoding
 
     @property
     def encoded(self):
         '''\
-        The document encoded with :attr:`encoding`, thus it is a byte
-        string.
+        The document encoded with :attr:`encoding`, a byte string.
 
         The data of this property is created on first access, further
         retrieval of this property yields the same object.

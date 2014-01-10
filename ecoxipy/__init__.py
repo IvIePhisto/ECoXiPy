@@ -30,55 +30,72 @@ You use instances of :class:`MarkupBuilder` to create XML, which use the
 subsections explain how to use the builder.
 
 
-.. _ecoxipy.MarkupBuilder.item_access:
+.. _ecoxipy.MarkupBuilder.elements:
 
 Attribute and Item Retrieval - Elements
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Each failed attribute retrieval on an instance of :class:`MarkupBuilder`
-returns a method, which on calling creates an element in the output
-representation determined by the used :class:`Output` subclass instance. The
-name of the element is the same as the name of the attribute. Its children are
-the positional arguments, the attributes are determined by the named
-attributes. These `virtual` (not in the C sense) methods have the following
-signature (with ``element_name`` being substituted by the name of the element
-to create):
 
+To create elements use attribute or item retrieval on a :class:`MarkupBuilder`
+instance, this returns a method which on calling creates an element in the
+output representation determined by the used :class:`Output` subclass
+instance. The name of the element is the attribute name, or the item key
+converted to a Unicode string for item retrieval respectively. The element
+children are the positional arguments of the method call, the attributes are
+determined by the named attributes and by children of a mapping type.
 
-.. method:: ecoxipy.MarkupBuilder.method_name(self, *children, **attributes)
+These `virtual` (not in the C sense) methods have the following signature
+(with ``element_name`` being substituted by the name of the element to
+create):
+
+.. method:: .method_name(self, *children, **attributes)
 
     Creates an element in the output representation with the name
     ``method_name``.
 
     :param children:
 
-        The children (text, elements, attribute mappings and children
-        lists) of the element.
+        The children of the element.
 
     :param attributes:
 
         Each entry of this mapping defines an attribute of the created
         element, the name being the key and the value being the value
-        identified by the key.
+        identified by the key. Keys and values are converted to Unicode, byte
+        strings are decoded using the input encoding.
 
-    Those items of ``children``, which are iterable mapping types
-    (``child[name] for name in child``) define attributes. The entries of
-    ``attributes`` overwrite entries from ``children`` items.
+Each item of ``children`` is preprocessed as follows, before it is given to
+the :class:`Output` instance:
 
-    Those other items of ``children``, which are iterable or iterators
-    are replaced with their items, callables are replaced with the
-    result of their call. The same is true for all items of those, thus
-    you have to make sure no indefinite recursion occurs.
+1.  If the item is native to the output representation, it is left unchanged.
 
-    All children which are not of the output type are converted to a
-    Unicode string (byte strings are decoded with the given input
-    encoding) and create text nodes.
+2.  If the item is a Unicode or byte string, it is replace by a text node
+    created from it. Byte strings are first decoded with the given input
+    encoding.
 
+3.  If the item is of a mapping type (i.e. it has a :meth:`keys` method and
+    supports item retrieval for the keys), the entries define attributes.
+    Entries from children mappings overwrite attributes defined by mappings
+    more to the left. The entries of ``attributes`` overwrite entries from
+    ``children`` items. Keys and values are converted to Unicode values, byte
+    strings are decoded with the input encoding.
 
-You should not create elements with names starting with ``_`` in this way, as
-:class:`MarkupBuilder` instances may have such attributes, and only elements
-with names conforming to the Python identifier syntax can be created using
-attribute access. For creating such elements use the subscript syntax for
-item access, which also returns an element-building function.
+4.  If the item is iterable, it is replaced with its items after they have
+    been preprocessed.
+
+5.  If the item is a callable allowing no arguments, it is replaced with the
+    result of its call, after this has been preprocessed.
+
+6.  All other items are converted to Unicode strings and create text nodes.
+
+It is the responsibility of the caller to ensure that no infinite recursion
+occurs in steps 4 and 5.
+
+Each failed attribute retrieval on an instance of :class:`MarkupBuilder`
+returns such a method, thus you should not create elements with names starting
+with ``_`` in this way, as :class:`MarkupBuilder` instances may have such
+attributes. Of course only elements with names conforming to the Python
+identifier syntax can be created using attribute access, for creating other
+elements use the subscript syntax for item access.
 
 
 .. _ecoxipy.MarkupBuilder.slicing:
@@ -95,18 +112,20 @@ becomes a processing instruction with target ``xml-stylesheet`` and content
 ``href="style.css"``.
 
 If the slicing start argument is not specified, a function creating a XML
-document is returned. The arguments of that function become the document
-root nodes. The slicing end argument (if specified) denotes the document
-type declaration content. It can either be a 3-:func:`tuple` containing
-the document element name, the public ID and the system ID or a single
-object to be used as the document element name. If the slicing step
-argument is :const:`True`, the XML declaration is omitted and the
-document encoding is `UTF-8`. Otherwise the slicing step denotes the
-document encoding and the XML declaration is not omitted. If no step is
-specified, the encoding is `UTF-8` and the XML declaration is not
-omitted. So the slice
-``[:('html', '-//W3C//DTD XHTML 1.0 Strict//EN', 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'):True]``
-creates a XHTML 1.0 Strict document without a XML declaration.
+document is returned. The arguments of that function become the document root
+nodes and are preprocessed the same as with :ref:`element
+<ecoxipy.MarkupBuilder.elements>` children, except for attribute handling. The
+slicing end argument (if specified) denotes the document type declaration
+content. It can either be a 3-:func:`tuple` containing the document element
+name, the public ID and the system ID or a single object to be used as the
+document element name. If the slicing step argument is
+:const:`True`, the XML declaration is omitted and the document encoding is
+`UTF-8`. Otherwise the slicing step denotes the document encoding and the XML
+declaration is not omitted. If no step is specified, the encoding is `UTF-8`
+and the XML declaration is not omitted. So the slice ``[:('html', '-//W3C//DTD
+XHTML 1.0 Strict//EN',
+'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'):True]`` creates a XHTML
+1.0 Strict document without a XML declaration.
 
 
 .. _ecoxipy.MarkupBuilder.calling:
@@ -114,11 +133,11 @@ creates a XHTML 1.0 Strict document without a XML declaration.
 Calling - XML Fragments
 ^^^^^^^^^^^^^^^^^^^^^^^
 You can also call :class:`MarkupBuilder` instances to parse XML fragments
-(lists of XML Nodes). As with the ``children`` argument of the builder's
-dynamic methods, the arguments are unpacked and converted to Unicode, but
-here each of the Unicode strings is parsed as XML using
-:class:`ecoxipy.parsing.XMLFragmentParser`. This will raise a
-:class:`xml.sax.SAXException` if the XML is not well-formed.
+(lists of XML Nodes). As with the :ref:`element
+<ecoxipy.MarkupBuilder.elements>` children, the arguments preprocessed, but
+here attribute creation is not handled and each of the Unicode strings is
+parsed as XML using :class:`ecoxipy.parsing.XMLFragmentParser` (this will
+raise a :class:`xml.sax.SAXException` if the XML is not well-formed).
 
 
 .. _ecoxipy.MarkupBuilder.operators:
@@ -314,7 +333,7 @@ class MarkupBuilder(object):
     def __getattr__(self, name):
         '''\
         Return an
-        :ref:`element-creating function <ecoxipy.MarkupBuilder.item_access>`.
+        :ref:`element-creating function <ecoxipy.MarkupBuilder.elements>`.
 
         :param name: The element name.
         :returns: An element in the output representation.
@@ -324,7 +343,7 @@ class MarkupBuilder(object):
     def __getitem__(self, key):
         '''\
         Return an
-        :ref:`element-creating function <ecoxipy.MarkupBuilder.item_access>`
+        :ref:`element-creating function <ecoxipy.MarkupBuilder.elements>`
         for item access or either a
         :ref:`processing instruction or a document <ecoxipy.MarkupBuilder.slicing>`
         for slicing.
@@ -383,7 +402,10 @@ class Output(object):
     @abstractmethod
     def is_native_type(self, content):
         '''\
-        Tests if an object is native to the output representation.
+        Tests if an object is native to the output representation. This is
+        used by :class:`MarkupBuilder` to test children of elements and
+        documents if they can be fed to the :class:`Output` implementation
+        without conversion.
 
         :param content: The object to test.
         :returns: :const:`True` for an object native to the output
@@ -396,10 +418,12 @@ class Output(object):
         Creates an element representation.
 
         :param name: The name of the element to create.
-        :param children: The `collections.deque` instance of children to add
-            to the element to create.
-        :type children: :func:`list`
+        :type name: Unicode string
+        :param children: The children to add to the element to create. This
+            contains only objects native to the output representation.
+        :type children: :class:`collections.deque`
         :param attributes: The mapping of attributes of the element to create.
+            Keys and values are Unicode strings.
         :type attributes: :class:`dict`
         :returns: The element representation created.
         '''
@@ -410,6 +434,7 @@ class Output(object):
         Creates a text node representation.
 
         :param content: The text.
+        :type content: Unicode string
         :returns: The created text representation.
         '''
 
@@ -419,8 +444,8 @@ class Output(object):
         Creates a comment representation.
 
         :param content: The content of the comment.
-        :returns:
-            The created comment representation.
+        :type content: Unicode string
+        :returns: The created comment representation.
         '''
 
     @abstractmethod
@@ -429,9 +454,10 @@ class Output(object):
         Creates a processing instruction representation.
 
         :param target: The target of the processing instruction.
+        :type target: Unicode string
         :param content: The content of the processing instruction.
-        :returns:
-            The created processing instruction representation.
+        :type content: Unicode string
+        :returns: The created processing instruction representation.
         '''
 
     @abstractmethod
@@ -441,11 +467,14 @@ class Output(object):
         Creates a XML document representation.
 
         :param doctype_name:  The document element name.
+        :type doctype_name: Unicode string
         :param doctype_publicid:  The document type system ID.
+        :type doctype_publicid: Unicode string
         :param doctype_systemid:  The document type system ID.
-        :param children: The `collections.deque` instance of children to add
-            to the document to create.
-        :type children: :func:`list`
+        :type doctype_systemid: Unicode string
+        :param children: The root nodes of the document to create. This
+            contains only objects are native to the output representation.
+        :type children: :class:`collections.deque`
         :param omit_xml_declaration: If :const:`True` the XML declaration is
             omitted.
         :type omit_xml_declaration: :func:`bool`

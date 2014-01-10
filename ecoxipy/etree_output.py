@@ -64,11 +64,11 @@ class ETreeOutput(Output):
         Tests if an object is a ``etree`` object by calling :meth:`iselement`
         of the element factory.
 
-        :param content: The object to test.
         :returns: :const:`True` for compatible :mod:`xml.etree.ElementTree`
-            objects, :const:`False` otherwise.
+            objects and Unicode strings, :const:`False` otherwise.
         '''
-        return self._element_factory.iselement(content)
+        return (self._element_factory.iselement(content)
+            or content.__class__ is _unicode)
 
     def element(self, name, children, attributes):
         '''\
@@ -110,7 +110,7 @@ class ETreeOutput(Output):
 
     def text(self, content):
         '''\
-        Creates a Unicode string.
+        Creates an Unicode string.
         '''
         return content
 
@@ -130,8 +130,8 @@ class ETreeOutput(Output):
     def document(self, doctype_name, doctype_publicid, doctype_systemid,
             children, omit_xml_declaration, encoding):
         '''\
-        Creates an :mod:`xml.etree.ElementTree.ElementTree`-compatible
-        wrapper.
+        Creates an :mod:`xml.etree.ElementTree.ElementTree`-compatible object
+        using the factory.
 
         As :mod:`xml.etree.ElementTree` lacks support for document type
         declarations, the ``doctype_*`` parameters are ignored. Element tree

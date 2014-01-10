@@ -4,7 +4,7 @@ u'''\
 :mod:`ecoxipy.dom_output` - Building DOM Data
 =============================================
 
-:class:`DOMOutput` creates `*Document Object Model* (DOM)
+:class:`DOMOutput` creates `Document Object Model (DOM)
 <http://www.w3.org/DOM/>`_ (implemented in Python by :mod:`xml.dom`)
 structures.
 
@@ -66,7 +66,6 @@ class DOMOutput(Output):
         Tests if an object has the attribute ``nodeType`` and is thus a
         ``xml.dom.Node`` instance.
 
-        :param content: The object to test.
         :returns: :const:`True` for objects having the attribute ``nodeType``.
         '''
         return hasattr(content, 'nodeType')
@@ -75,7 +74,6 @@ class DOMOutput(Output):
         '''\
         Returns a DOM element representing the created element.
 
-        :returns: The DOM element created.
         :rtype: :class:`xml.dom.Element`
         '''
         element = self._document.createElement(name)
@@ -89,7 +87,6 @@ class DOMOutput(Output):
         '''\
         Creates a DOM text node.
 
-        :returns: The created text node.
         :rtype: :class:`xml.dom.Text`
         '''
         return self._document.createTextNode(content)
@@ -98,7 +95,6 @@ class DOMOutput(Output):
         '''\
         Creates a DOM comment node.
 
-        :returns: The created comment node.
         :rtype: :class:`xml.dom.Comment`
         '''
         return self._document.createComment(content)
@@ -107,7 +103,6 @@ class DOMOutput(Output):
         '''\
         Creates a DOM processing instruction node.
 
-        :returns: The created processing instruction node.
         :rtype: :class:`xml.dom.ProcessingInstruction`
         '''
         if content is None:
@@ -121,7 +116,6 @@ class DOMOutput(Output):
         '''\
         Creates a DOM document node.
 
-        :returns: The created document node.
         :rtype: :class:`xml.dom.Document`
         '''
         if doctype_name is None:
