@@ -1,9 +1,9 @@
 # ECoXiPy - Easy Creation of XML in Python
 
 This Python 2 and 3 project (tested with CPython 2.7 and 3.3  as well as PyPy
-2.0 and 2.1) allows for easy creation of [XML](http://www.w3.org/XML/). The
-hierarchical structure of XML is easy to spot and the code to create XML
-is much shorter than using SAX, DOM or similar APIs.
+2) allows for easy creation of [XML](http://www.w3.org/XML/). The hierarchical
+structure of XML is easy to spot and the code to create XML is much shorter
+than using SAX, DOM or similar APIs.
 
 This project uses the MIT License, so you may freely use, distribute and
 modify it, provided you include the content of `License.txt`.

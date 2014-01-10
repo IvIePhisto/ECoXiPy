@@ -2,7 +2,7 @@ ECoXiPy - Easy Creation of XML in Python
 ========================================
 
 This Python 2 and 3 project (tested with CPython 2.7 and 3.3  as well as PyPy
-2.0 and 2.1) allows for easy creation of `XML <http://www.w3.org/XML/>`_. The
+2) allows for easy creation of `XML <http://www.w3.org/XML/>`_. The
 hierarchical structure of XML is easy to spot and the code to create XML
 is much shorter than using SAX, DOM or similar APIs.
 
@@ -15,15 +15,15 @@ Modules
     decorators
     parsing
     string_output
-    dom_output
     etree_output
+    dom_output
     pyxom
     pyxom_output
     pyxom_indexing
 
 
-TL;DR [#f1]_
-------------
+Examples
+--------
 
 If you want to jump right in, have a look at the examples...
 
@@ -37,6 +37,10 @@ HTML5:
 XML-String Creation
 
     :ref:`ecoxipy.string_output <ecoxipy.string_output.examples>`
+
+ElementTree Creation
+
+    :ref:`ecoxipy.etree_output <ecoxipy.etree_output.examples>`
 
 DOM Creation
 
@@ -142,6 +146,3 @@ Pretty-printing the result yields the following HTML::
         <!--This is a comment.-->
         <?pi-target PI content.?>
     </html>
-
-
-.. [#f1] "*Too long; didn't read*"
