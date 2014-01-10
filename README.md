@@ -194,12 +194,13 @@ Execute unit tests:
 **Setup**
 
 The same XHTML5 document is created with different APIs. All output
-implementations of EcoXiPy (in `ecoxipy.string_output`, `ecoxipy.dom_output`
-and `ecoxipy.pyxom.output`) are tested as well as `xml.sax` and
-`xml.dom.minidom`. For each of the APIs one test creates its native
-representation and one test transforms this into an UTF-8 encoded byte string,
-as as most XML will ultimately be serialised in this form. The SAX tests
-create byte strings in both test types.
+implementations of EcoXiPy (in `ecoxipy.string_output`, `ecoxipy.dom_output`,
+`ecoxipy.pyxom.output` and `ecoxipy.etree_output`) are tested as well as
+`xml.sax`, `xml.dom.minidom` and `xml.etree.ElementTree`. For each of the APIs
+one test creates its native representation and one test transforms this into
+an UTF-8 encoded byte string, as most XML will ultimately be serialised in
+this form. The SAX and `ecoxipy.string_output` tests create byte strings in
+both test types.
 
 **Running**
 
@@ -211,7 +212,7 @@ execute in a terminal from the project's root directory:
 Use no arguments to get help.
 
 To run a batch of tests with CPython 2.7, CPython 3.3 and PyPy, once to create
-native structutres and once to create byte strings, writing the results to the
+native structures and once to create byte strings, writing the results to the
 file `timeit.csv`, execute the Bash script `run_timeit_tests`.
 
 Running [cProfile](http://docs.python.org/2/library/profile.html) tests:
@@ -223,10 +224,10 @@ Running [cProfile](http://docs.python.org/2/library/profile.html) tests:
 
 These `timeit` tests show that the overhead of using ECoXiPy is not great and
 the differences between using different APIs depend on the used Python
-platform. If encoded strings are wanted as output, `ecoxipy.string_output` is
-a viable alternative to using `xml.sax`.
-
-Run the tests on your own or see my testing results in the repository under
-[doc/perf_test_results/timeit.pdf](https://raw.github.com/IvIePhisto/ECoXiPy/master/doc/perf_test_results/timeit.pdf).
+platform, with surprising results using PyPy. If encoded strings are wanted as
+output, `ecoxipy.string_output` is a viable alternative to using `xml.sax` or
+`xml.etree`. The [full
+results](https://raw.github.com/IvIePhisto/ECoXiPy/master/doc/perf_test_results/timeit.pdf)
+are available, see here the graph:
 
 ![Performance Testing Results Graph](https://raw.github.com/IvIePhisto/ECoXiPy/master/doc/perf_test_results/timeit.png)
