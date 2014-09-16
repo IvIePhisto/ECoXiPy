@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import abc
 from xml.sax.xmlreader import AttributesImpl
 from xml.sax.saxutils import XMLGenerator
 
@@ -17,8 +16,7 @@ class ContentNode(XMLNode):
     :param content: Becomes the :attr:`content` attribute.
     :type content: Unicode string
     '''
-    __metaclass__ = abc.ABCMeta
-    __slots__ = ('_content')
+    __slots__ = {'_content'}
 
     def __init__(self, content):
         self._content = content
@@ -84,7 +82,7 @@ class Comment(ContentNode):
     :raises ecoxipy.XMLWellFormednessException: If ``check_well_formedness``
         is :const:`True` and ``content`` is not valid.
     '''
-    __slots__ = ('_check_well_formedness')
+    __slots__ = {'_check_well_formedness'}
 
     def __init__(self, content, check_well_formedness=False):
         if check_well_formedness:
@@ -154,7 +152,7 @@ class ProcessingInstruction(ContentNode):
         is :const:`True` and either the ``target`` or the ``content`` are not
         valid.
     '''
-    __slots__ = ('_target', '_check_well_formedness')
+    __slots__ = {'_target', '_check_well_formedness'}
 
     def __init__(self, target, content, check_well_formedness=False):
         if check_well_formedness:
@@ -239,5 +237,3 @@ class ProcessingInstruction(ContentNode):
 
     def __hash__(self):
         return object.__hash__(self)
-
-del abc

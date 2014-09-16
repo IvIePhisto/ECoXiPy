@@ -3,7 +3,8 @@
 This Python 2 and 3 project (tested with CPython 2.7 and 3.3  as well as PyPy
 2) allows for easy creation of [XML](http://www.w3.org/XML/). The hierarchical
 structure of XML is easy to spot and the code to create XML is much shorter
-than using SAX, DOM or similar APIs.
+than using SAX, DOM or similar APIs. There is also functionality to efficiently
+validate and transform XML while it is being created.
 
 This project uses the MIT License, so you may freely use, distribute and
 modify it, provided you include the content of `License.txt`.
@@ -11,19 +12,41 @@ modify it, provided you include the content of `License.txt`.
 
 ## Getting Started
 
-Install using [setuptools](https://pypi.python.org/pypi/setuptools) (only
-Python 2) or [distribute](http://pythonhosted.org/distribute/):
+Install using [setuptools](https://pypi.python.org/pypi/setuptools):
 
     easy_install ecoxipy
 
 
-You might also be interested in:
-
-* [ECoXiPy on PyPi](https://pypi.python.org/pypi/ECoXiPy)
-* [ECoXiPy Documentation](http://pythonhosted.org/ECoXiPy/)
+The [ECoXiPy Documentation](http://pythonhosted.org/ECoXiPy/) and the source
+distribution are available from [its PyPi
+entry](https://pypi.python.org/pypi/ECoXiPy).
 
 
 ## Release History
+
+**0.4.0**
+
+*   *Added:* An output implementation may specify a method `fragment` with one
+    iterable argument, which is used to create a representation for a XML
+    fragment.
+*   *Added:* An output implementation may specify a method `preprocess` with one
+    argument. If such a method exists, it is called with each content object.
+*   *Added:* Module `ecoxipy.html`, moved `html5`, `HTML5_ELEMENTS` and
+    `HTML5_ELEMENT_NAMES` from `ecoxipy.decorators` here (THEY ARE NO LONGER
+    AVAILABLE THERE).
+*   *Added:* The decorator-creator `ecoxipy.html.html5_cats` makes
+    selected HTML5 categories available for XML creation.
+*   *Added:* The HTML5 template function `ecoxipy.html.html5_template`.
+*   *Added:* The module `ecoxipy.validation` provides a base for creating
+    only valid XML.
+*   *Added:* The module `ecoxipy.transformation` implements an API for
+    transformation of XML. Its class `MarkupTransformer` works as an
+    `ecoxipy.Output` implementation modifying XML before creating its output
+    representation.
+*   *Improved:* Preprocessing of content objects.
+*   *Changed:* No longer using abstract classes in `ecoxipy.pyxom`.
+*   *Changed:* Now classes are also abstract for Python 3 (by using
+    `tinkerpy.metaclass`).
 
 **0.3.1**
 
@@ -78,7 +101,7 @@ Here's a simple HTML5 document template function:
 # each HTML5 element a variable being a method of "_b", with the name of
 # element, variable and method all being equal.
 
-from ecoxipy.decorators import html5
+from ecoxipy.html import html5
 
 @html5
 def create_testdoc(title, subtitle, *content):

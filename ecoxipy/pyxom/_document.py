@@ -26,7 +26,7 @@ class DocumentType(object):
         will be checked to be a valid XML name.
     :type check_well_formedness: :func:`bool`
     '''
-    __slots__ = ('_name', '_publicid', '_systemid', '_check_well_formedness')
+    __slots__ = {'_name', '_publicid', '_systemid', '_check_well_formedness'}
 
     def __init__(self, name, publicid, systemid, check_well_formedness):
         if check_well_formedness:
@@ -172,7 +172,7 @@ class Document(ContainerNode):
         ``doctype_publicid`` is not a valid public ID or ``doctype_systemid``
         is not a valid system ID.
     '''
-    __slots__ = ('_doctype', '_omit_xml_declaration', '_encoding')
+    __slots__ = {'_doctype', '_omit_xml_declaration', '_encoding'}
 
     def __init__(self, doctype_name, doctype_publicid, doctype_systemid,
             children, omit_xml_declaration, encoding,
@@ -276,29 +276,30 @@ class Document(ContainerNode):
             publicid = None
             systemid = None
         else:
-            if isinstance(value, bytes):
+            if value.__class__ is bytes:
                 value = _unicode(value)
-            if isinstance(value, collections.Mapping):
+            try:
                 name = value.get('name', None)
                 publicid = value.get('publicid', None)
                 systemid = value.get('systemid', None)
-            elif isinstance(value, _unicode):
-                name = value
-                publicid = None
-                systemid = None
-            else:
-                if len(value) > 2:
-                    systemid = value[2]
-                else:
-                    systemid = None
-                if len(value) > 1:
-                    publicid = value[1]
-                else:
+            except AttributeError:
+                if value.__class__ is _unicode:
+                    name = value
                     publicid = None
-                if len(value) > 0:
-                    name = value[0]
+                    systemid = None
                 else:
-                    name = None
+                    if len(value) > 2:
+                        systemid = value[2]
+                    else:
+                        systemid = None
+                    if len(value) > 1:
+                        publicid = value[1]
+                    else:
+                        publicid = None
+                    if len(value) > 0:
+                        name = value[0]
+                    else:
+                        name = None
         name, publicid, systemid = DocumentType._parse_values(
             name, publicid, systemid)
         self._doctype.name = name

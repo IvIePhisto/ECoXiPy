@@ -7,6 +7,12 @@ u'''\
 The decorators in the module :mod:`ecoxipy.decorators` make the code to create
 XML using :class:`ecoxipy.MarkupBuilder` shorter.
 
+**Important:** The decorators use :func:`tinkerpy.namespace` to modify the
+globals of a function, so on certain Python runtimes (e.g. CPython 2.7) updates
+to the global dictionary after application of the decorator are not available in
+the function, on other runtimes (e.g. CPython 3.3 or PyPy) this restriction does
+not apply.
+
 
 .. _ecoxipy.decorators.examples:
 
@@ -59,62 +65,13 @@ using :class:`ecoxipy.string_output.StringOutput` as the
 True
 
 
-To create `HTML5 <http://www.w3.org/TR/html5/>`_ XML strings use the
-:func:`html5` decorator:
-
->>> @html5
-... def page(page_title, page_content):
-...     return html(
-...         head(
-...             title(page_title)
-...         ),
-...         body(
-...             h1(page_title),
-...             p(page_content),
-...             _b('<footer>Copyright</footer>')
-...         ),
-...     )
->>> page('Test', 'Hello World & Universe!') == u'<html><head><title>Test</title></head><body><h1>Test</h1><p>Hello World &amp; Universe!</p><footer>Copyright</footer></body></html>'
-True
-
-
 Decorator Creation
 ------------------
 
 .. autofunction:: markup_builder_namespace
 
 .. autofunction:: xml_string_namespace
-
-
-HTML5
------
-
-.. py:function:: html5()
-
-    This is a decorator created by a :func:`tinkerpy.namespace`
-    using :class:`ecoxipy.MarkupBuilder` with
-    :class:`ecoxipy.string_output.StringOutput`. The function/method it is
-    applied to is able to create `HTML5 <http://www.w3.org/TR/html5/>`_
-    content as UTF8-encoded :func:`str` objects.  The
-    :class:`ecoxipy.MarkupBuilder` instance is available as ``_b``.
-
-
-.. py:data:: HTML5_ELEMENTS
-
-    This :class:`tinkerpy.ImmutableDict` instance contains
-    :class:`frozenset` instances representing the categories of
-    elements defined by `HTML5 - The elements of HTML
-    <http://www.w3.org/TR/html5/semantics.html#semantics>`_. Each set contains
-    for each element contained in the respective category a :func:`str` equal
-    to the element's name.
-
-.. py:data:: HTML5_ELEMENT_NAMES
-
-    An :func:`frozenset` of all HTML5 element names as defined in
-    :data:`HTML5_ELEMENTS`.
-
 '''
-
 import tinkerpy
 
 from ecoxipy import MarkupBuilder
@@ -135,21 +92,24 @@ def markup_builder_namespace(output, builder_name, *element_names, **kargs):
     :param element_names: The names to bind to the appropriate `virtual`
         builder methods.
     :param kargs: Arguments passed to the ``output`` constructor.
-    :returns: The decorated function with it's namespace extented by the
-        element creators, as defined by ``element_names``.
+    :returns: The created decorater function. In its attribute ``builder`` the
+        builder created is accessible.
     '''
     builder = MarkupBuilder(output(**kargs))
-    return tinkerpy.namespace(builder,
+    namespace = tinkerpy.namespace(builder,
         *element_names,
         **{builder_name: builder}
     )
+    namespace.builder = builder
+    return namespace
 
 
 xml_string_namespace = lambda builder_name, vocabulary: markup_builder_namespace(
         StringOutput, builder_name, *vocabulary)
 '''\
-Uses :func:`markup_builder_namespace` to decorate the target
-function with the given ``vocabulary``.
+Uses :func:`markup_builder_namespace` with the given ``vocabulary`` and
+:class:`ecoxipy.string_output.StringOutput` to create a decorator, that
+allows for creation of UTF8-encoded XML strings.
 
 :param builder_name: The name the :class:`ecoxipy.MarkupBuilder` instance is
     available under.
@@ -158,42 +118,3 @@ function with the given ``vocabulary``.
     element creators defined by the ``vocabulary``.
 '''
 
-
-def HTML5_ELEMENTS():
-    return tinkerpy.ImmutableDict(dict(
-        root_element = frozenset({'html'}),
-        document_metadata = frozenset({'head', 'title', 'base', 'link', 'meta', 'style'}),
-        scripting = frozenset({'script', 'noscript'}),
-        sections = frozenset({'body', 'article', 'section', 'nav', 'aside', 'h1', 'h2',
-            'h3', 'h4', 'h5', 'h6', 'hgroup', 'header', 'footer', 'address'
-        }),
-        grouping_content = frozenset({'p', 'hr', 'pre', 'blockquote', 'ol', 'ul', 'li',
-            'dl', 'dt', 'dd', 'figure', 'figcaption', 'div'
-        }),
-        text_level_semantics = frozenset({'a', 'em', 'strong', 'small', 's', 'cite', 'q',
-            'dfn', 'abbr', 'data', 'time', 'code', 'var', 'samp', 'kbd', 'sub',
-            'sup', 'i', 'b', 'u', 'mark', 'ruby', 'rt', 'rp', 'bdi', 'bdo',
-            'span', 'br', 'wbr'
-        }),
-        edits = frozenset({'ins', 'del'}),
-        embedded_content = frozenset({'img', 'iframe', 'embded', 'object', 'param', 'video',
-            'audio', 'source', 'track', 'canvas', 'map', 'area'
-        }),
-        tabular_data = frozenset({'table', 'caption', 'colgroup', 'col', 'tbody', 'thead',
-            'tfoot', 'tr', 'td', 'th'
-        }),
-        forms = frozenset({'form', 'fieldset', 'legend', 'label', 'input', 'button',
-            'select', 'datalist', 'optgroup', 'option', 'textarea', 'keygen',
-            'output', 'progress', 'meter'
-        }),
-        interactive_elements = frozenset({'details', 'summary', 'command', 'menu', 'dialog'})
-    ))
-
-
-HTML5_ELEMENTS = HTML5_ELEMENTS()
-HTML5_ELEMENT_NAMES = frozenset(tinkerpy.flatten(HTML5_ELEMENTS))
-
-def html5():
-    return xml_string_namespace('_b', HTML5_ELEMENT_NAMES)
-
-html5 = html5()

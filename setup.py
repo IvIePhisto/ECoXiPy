@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 import sys, os
 
-version = '0.3.1'
+version = '0.4.0'
 
 setup(name='ECoXiPy',
       version=version,
@@ -10,7 +10,8 @@ setup(name='ECoXiPy',
       This Python 2 and 3 project (tested with CPython 2.7 and 3.3 as well as
       PyPy 2.0) allows for easy creation of XML. The hierarchical structure of
       XML is easy to spot and the code to create XML is much shorter than
-      using SAX, DOM or similar APIs.
+      using SAX, DOM or similar APIs. There is also functionality to efficiently
+      validate and transform XML while it is being created.
       """,
       classifiers=[
             'Development Status :: 5 - Production/Stable',
@@ -32,7 +33,7 @@ setup(name='ECoXiPy',
       include_package_data=False,
       zip_safe=True,
       install_requires=[
-          'TinkerPy>=0.2.1'
+          'TinkerPy>=0.2.3'
       ],
       test_suite='tests.test_suite'
 )

@@ -134,7 +134,7 @@ Calling - XML Fragments
 ^^^^^^^^^^^^^^^^^^^^^^^
 You can also call :class:`MarkupBuilder` instances to parse XML fragments
 (lists of XML Nodes). As with the :ref:`element
-<ecoxipy.MarkupBuilder.elements>` children, the arguments preprocessed, but
+<ecoxipy.MarkupBuilder.elements>` children, the arguments are preprocessed, but
 here attribute creation is not handled and each of the Unicode strings is
 parsed as XML using :class:`ecoxipy.parsing.XMLFragmentParser` (this will
 raise a :class:`xml.sax.SAXException` if the XML is not well-formed).
@@ -166,9 +166,12 @@ Classes
 .. autoclass:: XMLWellFormednessException
 '''
 
+# TODO: test method preprocess of an output
+
 import sys
 import collections
 from abc import ABCMeta, abstractmethod
+from tinkerpy import metaclass
 
 _python2 = sys.version_info[0] <= 2
 _unicode = unicode if _python2 else str
@@ -202,6 +205,14 @@ class MarkupBuilder(object):
             from ecoxipy.pyxom.output import PyXOMOutput
             output = PyXOMOutput()
         self._output = output
+        try:
+            self._output_preprocess = output.preprocess
+        except AttributeError:
+            self._output_preprocess = None
+        try:
+            self._output_fragment = output.fragment
+        except AttributeError:
+            self._output_fragment = None
         self._in_encoding = in_encoding
         self._parser = parser
 
@@ -221,6 +232,8 @@ class MarkupBuilder(object):
 
     def _preprocess(self, content, target_list, target_attributes,
             handle_text):
+        if self._output_preprocess is not None:
+            content = self._output_preprocess(content)
         if content is None:
             return
         if self._output.is_native_type(content):
@@ -243,20 +256,24 @@ class MarkupBuilder(object):
                     attr_value = self._prepare_text(attr_value)
                     target_attributes[attr_name] = attr_value
                 return
-        try: # iterables are unpacked
-            for value in content:
+        try:
+            # iterables are unpacked
+            iterator = content.__iter__()
+        except AttributeError:
+            pass
+        else:
+            for value in iterator:
                 self._preprocess(value, target_list, target_attributes,
                     handle_text)
             return
-        except TypeError:
-            pass
-        try: # callables without arguments are called
+        try:
+            # callables without arguments are called
             value = content()
-            self._preprocess(value, target_list, target_attributes,
-                handle_text)
-            return
         except TypeError:
             pass
+        else:
+            self._preprocess(value, target_list, target_attributes, handle_text)
+            return
         # everything else is converted to Unicode
         value = _unicode(content)
         handle_text(value, target_list)
@@ -371,7 +388,9 @@ class MarkupBuilder(object):
         for content_element in content:
             self._preprocess(content_element, processed_content, None,
                 self._append_xml)
-        return processed_content
+        if self._output_fragment is None:
+            return processed_content
+        return self._output_fragment(processed_content)
 
     def __and__(self, content):
         '''\
@@ -388,6 +407,7 @@ class MarkupBuilder(object):
         return self._output.comment(self._prepare_text(content))
 
 
+@metaclass(ABCMeta)
 class Output(object):
     '''\
     Abstract base class defining the :class:`MarkupBuilder` output interface.
@@ -396,8 +416,16 @@ class Output(object):
     create XML representations. All data is assumed to be given as Unicode
     strings if not otherwise stated, :class:`MarkupBuilder` takes care of
     that.
+
+    An output implementation may specify a preprocessing callable (e.g. a
+    method) in the attribute ``preprocess``, which is called with every content
+    object as the single argument. This attribute may also be :const:`None`.
+
+    An output implementation may specify a callable (e.g. a method) to create
+    XML fragments in the attribute ``fragment``, which is called with one
+    argument containing the content objects in a :class:`collections.deque`
+    instance. This attribute may also be :const:`None`.
     '''
-    __metaclass__ = ABCMeta
 
     @abstractmethod
     def is_native_type(self, content):
@@ -493,4 +521,4 @@ class XMLWellFormednessException(Exception):
     '''
 
 
-del ABCMeta, abstractmethod, sys
+del ABCMeta, abstractmethod, sys, metaclass

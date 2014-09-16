@@ -259,4 +259,5 @@ class XMLFragmentParser(MarkupHandler):
         finally:
             byte_stream.close()
 
+
 del ContentHandler, DTDHandler, LexicalHandler, inherit_docstring

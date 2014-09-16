@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 
-import abc
 import collections
 from xml.sax.xmlreader import AttributesImpl
 from xml.sax.saxutils import XMLGenerator
+
 
 from ecoxipy import _python2, _unicode
 from ecoxipy.string_output import StringOutput
@@ -13,7 +13,6 @@ from ecoxipy import _helpers
 _string_repr = lambda value: 'None' if value is None else "'{}'".format(
     value.encode('unicode_escape').decode().replace("'", "\\'"))
 
-
 class XMLNode(object):
     '''\
     Base class for XML node objects.
@@ -21,8 +20,7 @@ class XMLNode(object):
     Retrieving the byte string from an instance yields a byte string encoded
     as `UTF-8`.
     '''
-    __metaclass__ = abc.ABCMeta
-    __slots__ = ('_parent', '_next', '_previous')
+    __slots__ = {'_parent', '_next', '_previous'}
 
     _string_output = StringOutput()
     _IS_PYXOM_NODE = True
@@ -173,32 +171,12 @@ class XMLNode(object):
     def __hash__(self):
         return object.__hash__(self)
 
-    @abc.abstractmethod
     def duplicate(self, test=None):
         '''\
         Return a deep copy of the XML node, and its descendants if it is a
         :class:`ContainerNode` instance.
         '''
-
-    @abc.abstractmethod
-    def _create_str(self, out):
-        pass
-
-    @abc.abstractmethod
-    def _create_sax_events(self, content_handler, indent):
-        pass
-
-    @abc.abstractmethod
-    def __repr__(self):
-        pass
-
-    @abc.abstractmethod
-    def __eq__(self, other):
-        pass
-
-    @abc.abstractmethod
-    def __ne__(self, other):
-        pass
+        raise NotImplemented()
 
 
 class ContainerNode(XMLNode, collections.MutableSequence):
@@ -208,8 +186,7 @@ class ContainerNode(XMLNode, collections.MutableSequence):
     :param children: The nodes contained of in the node.
     :type children: :func:`list`
     '''
-    __metaclass__ = abc.ABCMeta
-    __slots__ = ('_children',)
+    __slots__ = {'_children'}
 
     def __init__(self, children):
         children = [child for child in children]
@@ -376,6 +353,3 @@ class ContainerNode(XMLNode, collections.MutableSequence):
                 del self[index]
                 return
         raise ValueError(child)
-
-
-del abc

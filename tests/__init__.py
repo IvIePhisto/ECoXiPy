@@ -10,6 +10,8 @@ def test_suite():
     import ecoxipy.pyxom.indexing
     import ecoxipy.decorators
     import ecoxipy.parsing
+    import ecoxipy.validation
+    import ecoxipy.transformation
     suite = unittest.TestSuite()
     suite.addTests(doctest.DocTestSuite(ecoxipy))
     suite.addTests(doctest.DocTestSuite(ecoxipy.dom_output))
@@ -21,4 +23,6 @@ def test_suite():
     suite.addTests(doctest.DocTestSuite(ecoxipy.pyxom.indexing))
     suite.addTests(doctest.DocTestSuite(ecoxipy.decorators))
     suite.addTests(doctest.DocTestSuite(ecoxipy.parsing))
+    suite.addTests(doctest.DocTestSuite(ecoxipy.validation))
+    suite.addTests(doctest.DocTestSuite(ecoxipy.transformation))
     return suite

@@ -4,7 +4,8 @@ ECoXiPy - Easy Creation of XML in Python
 This Python 2 and 3 project (tested with CPython 2.7 and 3.3  as well as PyPy
 2) allows for easy creation of `XML <http://www.w3.org/XML/>`_. The
 hierarchical structure of XML is easy to spot and the code to create XML
-is much shorter than using SAX, DOM or similar APIs.
+is much shorter than using SAX, DOM or similar APIs. There is also functionality
+to efficiently validate and transform XML while it is being created.
 
 Modules
 --------
@@ -14,6 +15,8 @@ Modules
     base
     decorators
     parsing
+    validation
+    transformation
     string_output
     etree_output
     dom_output
@@ -64,7 +67,7 @@ See this example of how to create a simple HTML5 document template function::
     # each HTML5 element a variable being a method of "_b", with the name of
     # element, variable and method all being equal.
 
-    from ecoxipy.decorators import html5
+    from ecoxipy.html import html5
 
     @html5
     def create_testdoc(title, subtitle, *content):

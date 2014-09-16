@@ -134,17 +134,18 @@ Indexing-related Classes
 
 import abc
 import collections
-
 from collections import Iterator as _Iterator
+
+from tinkerpy import metaclass
 
 from ecoxipy import _unicode
 
 
+@metaclass(abc.ABCMeta)
 class Indexer(object):
     '''\
     Abstract base class for :mod:`ecoxipy.pyxom` stucture indexers.
     '''
-    __metaclass__ = abc.ABCMeta
 
     def __call__(self, root_node):
         '''\
@@ -565,4 +566,4 @@ class IndexDescriptor(object):
         except KeyError:
             pass
 
-del abc, collections
+del abc, collections, metaclass

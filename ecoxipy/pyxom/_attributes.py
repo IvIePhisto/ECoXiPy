@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import abc
 import collections
 
 from ecoxipy import _unicode
@@ -7,15 +6,13 @@ from ecoxipy import _helpers
 
 from ._common import _string_repr
 
-
 class NamespaceNameMixin(object):
     '''\
     Contains functionality implementing `Namespaces in XML
     <http://www.w3.org/TR/REC-xml-names/>`_.
     '''
-    __metaclass__ = abc.ABCMeta
-    _namespace_name_slots__ = ('_namespace_prefix', '_local_name',
-        '_v_namespace_uri', '_v_namespace_source')
+    _slots = {'_namespace_prefix', '_local_name',
+        '_v_namespace_uri', '_v_namespace_source'}
 
     def _set_namespace_properties(self, index):
         components = _helpers.get_qualified_name_components(self.name)
@@ -99,9 +96,8 @@ class Attribute(NamespaceNameMixin):
     inherits from :class:`NamespaceNameMixin` and should not be
     instantiated on itself, rather use :meth:`Attributes.create_attribute`.
     '''
-    __slots__ = NamespaceNameMixin._namespace_name_slots__ + (
-        '_parent', '_name', '_value', '_check_well_formedness',
-        '_namespace_attribute_prefix')
+    __slots__ = {'_parent', '_name', '_value', '_check_well_formedness',
+        '_namespace_attribute_prefix'}
 
     def __init__(self, parent, name, value, check_well_formedness):
         if check_well_formedness:
@@ -230,7 +226,9 @@ class Attributes(collections.Mapping):
     names, represents attributes of an :class:`Element`. It should not
     be instantiated on itself.
     '''
-    __slots__ = ('_parent', '_attributes', '_check_well_formedness')
+    __slots__ = {'_parent', '_attributes', '_check_well_formedness'}
+    __slots__.update(NamespaceNameMixin._slots)
+
 
     def __init__(self, parent, attributes, check_well_formedness):
         self._parent = parent
@@ -353,7 +351,7 @@ class Attributes(collections.Mapping):
 
 
 class _AttributeValueMapping(collections.Mapping):
-    __slots__ = ('_attributes',)
+    __slots__ = {'_attributes'}
 
     def __init__(self, attributes):
         self._attributes = attributes
@@ -373,4 +371,4 @@ class _AttributeValueMapping(collections.Mapping):
             yield name, self._attributes[name].value
 
 
-del abc, collections
+del collections

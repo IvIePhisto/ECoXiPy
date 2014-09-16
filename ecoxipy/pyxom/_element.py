@@ -29,9 +29,10 @@ class Element(ContainerNode, NamespaceNameMixin):
         ``check_well_formedness`` is :const:`True` and the
         ``name`` is not a valid XML name.
     '''
-    __slots__ = NamespaceNameMixin._namespace_name_slots__ + (
-        '_name', '_attributes',  '_namespace_prefix_to_uri',
-        '_namespace_targets', '_namespace_prefix_to_target')
+    __slots__ = {'_name', '_attributes',  '_namespace_prefix_to_uri',
+        '_namespace_targets', '_namespace_prefix_to_target',
+        '_check_well_formedness'}
+    __slots__.update(NamespaceNameMixin._slots)
 
     def __init__(self, name, children, attributes,
             check_well_formedness=False):

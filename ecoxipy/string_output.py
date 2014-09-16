@@ -248,6 +248,14 @@ class StringOutput(Output):
         )
         return XMLDocument._create(document, encoding)
 
+    def fragment(self, children):
+        '''\
+        Return a XML fragment created from the children.
+
+        :rtype: :class:`XMLFragment`
+        '''
+        return XMLFragment(self._join([child for child in children]))
+
 
 class XMLFragment(_unicode):
     '''\
