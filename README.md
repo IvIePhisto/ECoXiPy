@@ -18,7 +18,7 @@ Install using [setuptools](https://pypi.python.org/pypi/setuptools):
 
 
 The [ECoXiPy Documentation](http://pythonhosted.org/ECoXiPy/) and the source
-distribution are available from [its PyPi
+distribution are available from [its PyPI
 entry](https://pypi.python.org/pypi/ECoXiPy).
 
 
